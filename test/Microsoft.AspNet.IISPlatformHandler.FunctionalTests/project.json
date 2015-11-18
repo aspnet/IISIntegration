@@ -1,23 +1,23 @@
 {
-    "compilationOptions": {
-        "warningsAsErrors": true
-    },
-    "commands": {
-        "test": "xunit.runner.aspnet"
-    },
-    "dependencies": {
-        "Microsoft.AspNet.Server.Testing": "1.0.0-*",
-        "Microsoft.Extensions.Logging.Console": "1.0.0-*",
-        "xunit.runner.aspnet": "2.0.0-aspnet-*"
-    },
-    "frameworks": {
-        "dnx451": {
-            "frameworkAssemblies": {
-                "System.Data": "",
-                "System.Net.Http": "",
-                "System.Net.Http.WebRequest": "",
-                "System.Xml": ""
-            }
-        }
+  "compilationOptions": {
+    "warningsAsErrors": true
+  },
+  "commands": {
+    "test": "xunit.runner.aspnet"
+  },
+  "dependencies": {
+    "Microsoft.AspNet.Server.Testing": "1.0.0-rc1-final",
+    "Microsoft.Extensions.Logging.Console": "1.0.0-rc1-final",
+    "xunit.runner.aspnet": "2.0.0-aspnet-rc1-final"
+  },
+  "frameworks": {
+    "dnx451": {
+      "frameworkAssemblies": {
+        "System.Data": "",
+        "System.Net.Http": "",
+        "System.Net.Http.WebRequest": "",
+        "System.Xml": ""
+      }
     }
+  }
 }

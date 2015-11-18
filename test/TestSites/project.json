@@ -2,21 +2,21 @@
   "webroot": "wwwroot",
   "version": "1.0.0-*",
   "dependencies": {
-    "Microsoft.AspNet.IISPlatformHandler": "1.0.0-*",
-    "Microsoft.AspNet.Server.Kestrel": "1.0.0-*",
-    "Microsoft.AspNet.Server.WebListener": "1.0.0-*",
-    "Microsoft.AspNet.WebUtilities": "1.0.0-*",
-    "Microsoft.Extensions.Configuration.EnvironmentVariables": "1.0.0-*",
-    "Microsoft.Extensions.Configuration.Json": "1.0.0-*",
-    "Microsoft.Extensions.Logging.Console": "1.0.0-*",
-    "xunit.runner.aspnet": "2.0.0-aspnet-*"
+    "Microsoft.AspNet.IISPlatformHandler": "1.0.0-rc1-final",
+    "Microsoft.AspNet.Server.Kestrel": "1.0.0-rc1-final",
+    "Microsoft.AspNet.Server.WebListener": "1.0.0-rc1-final",
+    "Microsoft.AspNet.WebUtilities": "1.0.0-rc1-final",
+    "Microsoft.Extensions.Configuration.EnvironmentVariables": "1.0.0-rc1-final",
+    "Microsoft.Extensions.Configuration.Json": "1.0.0-rc1-final",
+    "Microsoft.Extensions.Logging.Console": "1.0.0-rc1-final",
+    "xunit.runner.aspnet": "2.0.0-aspnet-rc1-final"
   },
   "frameworks": {
-    "dnx451": { },
+    "dnx451": {},
     "dnxcore50": {
       "dependencies": {
-        "System.Net.Primitives": "4.0.11-beta-*",
-        "System.Runtime": "4.0.21-beta-*"
+        "System.Net.Primitives": "4.0.11-beta-23516",
+        "System.Runtime": "4.0.21-beta-23516"
       }
     }
   },

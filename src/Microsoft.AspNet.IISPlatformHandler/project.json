@@ -1,27 +1,27 @@
 {
-  "version": "1.0.0-*",
+  "version": "1.0.0-rc1-final",
   "compilationOptions": {
     "warningsAsErrors": true,
     "keyFile": "../../tools/Key.snk"
   },
   "description": "ASP.NET 5 components for working with the IIS HttpPlatformHandler module.",
   "repository": {
-      "type": "git",
-      "url": "git://github.com/aspnet/IISIntegration"
+    "type": "git",
+    "url": "git://github.com/aspnet/IISIntegration"
   },
   "dependencies": {
-    "Microsoft.AspNet.Http": "1.0.0-*",
-    "Microsoft.AspNet.Http.Extensions": "1.0.0-*",
+    "Microsoft.AspNet.Http": "1.0.0-rc1-final",
+    "Microsoft.AspNet.Http.Extensions": "1.0.0-rc1-final",
     "Microsoft.Extensions.SecurityHelper.Sources": {
       "type": "build",
-      "version": "1.0.0-*"
+      "version": "1.0.0-rc1-final"
     }
   },
   "frameworks": {
-    "net451": { },
+    "net451": {},
     "dotnet5.4": {
       "dependencies": {
-        "System.Security.Principal.Windows": "4.0.0-beta-*"
+        "System.Security.Principal.Windows": "4.0.0-beta-23516"
       }
     }
   }
