@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-preview1-*",
+  "version": "1.0.0-preview1-final",
   "buildOptions": {
     "emitEntryPoint": true,
     "warningsAsErrors": true,
@@ -11,9 +11,9 @@
     "outputName": "dotnet-publish-iis"
   },
   "dependencies": {
-    "Microsoft.Extensions.CommandLineUtils": "1.0.0-*",
-    "Microsoft.DotNet.ProjectModel": "1.0.0-*",
-    "System.Diagnostics.Process": "4.1.0-*"
+    "Microsoft.Extensions.CommandLineUtils": "1.0.0-rc2-final",
+    "Microsoft.DotNet.ProjectModel": "1.0.0-rc2-002702",
+    "System.Diagnostics.Process": "4.1.0-rc2-24027"
   },
   "frameworks": {
     "netcoreapp1.0": {
@@ -23,7 +23,7 @@
       "dependencies": {
         "Microsoft.NETCore.App": {
           "type": "platform",
-          "version": "1.0.0-*"
+          "version": "1.0.0-rc2-3002702"
         }
       }
     }
