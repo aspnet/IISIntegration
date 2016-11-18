@@ -1,8 +1,8 @@
 {
   "dependencies": {
     "dotnet-test-xunit": "1.0.0-rc3-000000-01",
-    "xunit": "2.1.0",
-    "Microsoft.AspNetCore.Server.IISIntegration.Tools": "1.1.0-preview4-final"
+    "Microsoft.AspNetCore.Server.IISIntegration.Tools": "1.1.0-preview4-final",
+    "xunit": "2.1.0"
   },
   "frameworks": {
     "netcoreapp1.0": {
@@ -12,11 +12,11 @@
         "portable-net45+win8"
       ],
       "dependencies": {
-        "System.Diagnostics.Process": "4.3.0-*",
         "Microsoft.NETCore.App": {
           "type": "platform",
-          "version": "1.1.0-*"
-        }
+          "version": "1.1.0"
+        },
+        "System.Diagnostics.Process": "4.3.0"
       }
     }
   },
