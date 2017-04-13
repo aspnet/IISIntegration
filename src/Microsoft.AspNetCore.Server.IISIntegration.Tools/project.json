@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "Microsoft.DotNet.ProjectModel": "1.0.0-rc3-003121",
-    "Microsoft.Extensions.CommandLineUtils": "1.1.0",
+    "Microsoft.Extensions.CommandLineUtils": "1.1.1",
     "System.Diagnostics.Process": "4.3.0"
   },
   "frameworks": {
