@@ -9,9 +9,9 @@
     ]
   },
   "dependencies": {
-    "Microsoft.AspNetCore.Server.IISIntegration": "1.0.2",
+    "Microsoft.AspNetCore.Server.IISIntegration": "1.0.3",
     "Microsoft.AspNetCore.Server.Kestrel": "1.0.4",
-    "Microsoft.AspNetCore.WebUtilities": "1.0.2",
+    "Microsoft.AspNetCore.WebUtilities": "1.0.3",
     "Microsoft.Extensions.Configuration.EnvironmentVariables": "1.0.2",
     "Microsoft.Extensions.Configuration.Json": "1.0.2",
     "Microsoft.Extensions.Logging.Console": "1.0.2",
@@ -25,7 +25,7 @@
         "portable-net45+win8"
       ],
       "dependencies": {
-        "Microsoft.NETCore.App": "1.0.4",
+        "Microsoft.NETCore.App": "1.0.5",
         "System.Net.Primitives": "4.0.11",
         "System.Diagnostics.Process": "4.1.0"
       }
