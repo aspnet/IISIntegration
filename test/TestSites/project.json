@@ -25,7 +25,7 @@
         "portable-net45+win8"
       ],
       "dependencies": {
-        "Microsoft.NETCore.App": "1.0.5",
+        "Microsoft.NETCore.App": "1.0.6-servicing-004974-00",
         "System.Net.Primitives": "4.0.11",
         "System.Diagnostics.Process": "4.1.0"
       }
