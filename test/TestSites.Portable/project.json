@@ -28,7 +28,7 @@
       ],
       "dependencies": {
         "Microsoft.NETCore.App": {
-          "version": "1.0.6",
+          "version": "1.0.7",
           "type": "platform"
         },
         "System.Net.Primitives": "4.0.11",
