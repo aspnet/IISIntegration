@@ -75,4 +75,5 @@ private:
     {}
 
     REQUEST_HANDLER *     m_pHandler;
+
 };

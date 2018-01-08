@@ -38,6 +38,11 @@ public:
         HRESULT     hrCompletionStatus
     );
 
+    HRESULT
+    SetAsyncDisconnectContext(
+        IHttpConnection *pClientConnection
+    );
+
     VOID
     SetStatus(
         FORWARDING_REQUEST_STATUS status
@@ -172,7 +177,6 @@ private:
     //
     // WinHTTP request handle is protected using a read-write lock.
     //
-    SRWLOCK                             m_RequestLock;
     HINTERNET                           m_hRequest;
     FORWARDING_REQUEST_STATUS           m_RequestStatus;
 
@@ -215,7 +219,6 @@ private:
     DWORD                               m_cMinBufferLimit;
     ULONGLONG                           m_cContentLength;
     WEBSOCKET_HANDLER *                 m_pWebSocket;
-    ASYNC_DISCONNECT_CONTEXT *          m_pDisconnect;
 
     BYTE *                              m_pEntityBuffer;
     static const SIZE_T                 INLINE_ENTITY_BUFFERS = 8;

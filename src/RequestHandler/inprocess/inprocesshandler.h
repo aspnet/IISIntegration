@@ -1,3 +1,6 @@
+// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the MIT License. See License.txt in the project root for license information.
+
 #pragma once
 
 class IN_PROCESS_HANDLER : public REQUEST_HANDLER
@@ -29,6 +32,11 @@ public:
 
     );
 
+    HRESULT
+    SetAsyncDisconnectContext(
+        IHttpConnection *pClientConnection
+    );
+
     PVOID
     QueryManagedHttpContext(
         VOID
@@ -49,9 +57,10 @@ public:
         VOID
     );
 
-    VOID
+    HRESULT
     IndicateManagedRequestComplete(
-        VOID
+        _In_ REQUEST_NOTIFICATION_STATUS    requestNotificationStatus,
+        _In_ DWORD                          cbBytes
     );
 
     REQUEST_NOTIFICATION_STATUS
@@ -66,7 +75,6 @@ public:
 
 private:
     PVOID m_pManagedHttpContext;
-    IHttpContext* m_pHttpContext;
     BOOL m_fManagedRequestComplete;
     REQUEST_NOTIFICATION_STATUS m_requestNotificationStatus;
 };

@@ -289,6 +289,7 @@ IN_PROCESS_APPLICATION::OnAsyncCompletion(
     IN_PROCESS_HANDLER* pInProcessHandler
 )
 {
+<<<<<<< HEAD
     REQUEST_NOTIFICATION_STATUS dwRequestNotificationStatus = RQ_NOTIFICATION_CONTINUE;
 
     ReferenceApplication();
@@ -318,6 +319,12 @@ IN_PROCESS_APPLICATION::OnAsyncCompletion(
     DereferenceApplication();
 
     return dwRequestNotificationStatus;
+=======
+
+
+    // Call the managed handler for async completion.
+    return m_AsyncCompletionHandler(pInProcessHandler->QueryManagedHttpContext(), hrCompletionStatus, cbCompletion);
+>>>>>>> 9dba3d0... Start of terminate request and putting things in request handler
 }
 
 REQUEST_NOTIFICATION_STATUS
@@ -374,6 +381,7 @@ IN_PROCESS_APPLICATION::SetCallbackHandles(
     _In_ PFN_REQUEST_HANDLER request_handler,
     _In_ PFN_SHUTDOWN_HANDLER shutdown_handler,
     _In_ PFN_MANAGED_CONTEXT_HANDLER async_completion_handler,
+    _In_ PFN_CLIENT_DISCONNECT_HANDLER client_disconnect_handler,
     _In_ VOID* pvRequstHandlerContext,
     _In_ VOID* pvShutdownHandlerContext
 )
@@ -381,6 +389,7 @@ IN_PROCESS_APPLICATION::SetCallbackHandles(
     m_RequestHandler = request_handler;
     m_RequestHandlerContext = pvRequstHandlerContext;
     m_ShutdownHandler = shutdown_handler;
+    m_ClientDisconnectHandler = client_disconnect_handler;
     m_ShutdownHandlerContext = pvShutdownHandlerContext;
     m_AsyncCompletionHandler = async_completion_handler;
 
@@ -757,7 +766,7 @@ IN_PROCESS_APPLICATION::LoadManagedApplication
     // The thread ended it means that something failed
     if (dwResult == WAIT_OBJECT_0)
     {
-        hr = E_APPLICATION_ACTIVATION_EXEC_FAILURE;
+        hr = HRESULT_FROM_WIN32(GetLastError());
         goto Finished;
     }
 
@@ -1012,7 +1021,6 @@ IN_PROCESS_APPLICATION::LogErrorsOnMainExit(
 // Calls hostfxr_main with the hostfxr and application as arguments.
 // Method should be called with only 
 // Need to have __try / __except in methods that require unwinding.
-// Note, this will not 
 // 
 HRESULT
 IN_PROCESS_APPLICATION::RunDotnetApplication(DWORD argc, CONST PCWSTR* argv, hostfxr_main_fn pProc)
@@ -1038,4 +1046,16 @@ IN_PROCESS_APPLICATION::FilterException(unsigned int, struct _EXCEPTION_POINTERS
     // We assume that any exception is a failure as the applicaiton didn't start or there was a startup error.
     // TODO, log error based on exception code.
     return EXCEPTION_EXECUTE_HANDLER;
+}
+
+HRESULT
+IN_PROCESS_APPLICATION::TerminateRequest
+(
+    _In_ IN_PROCESS_HANDLER* pInProcessHandler
+)
+{
+
+    m_ClientDisconnectHandler(pInProcessHandler, pInProcessHandler->QueryManagedHttpContext());
+
+    return S_OK;
 }

@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "stdafx.h"
 #include "application.h"
 
+class ASYNC_DISCONNECT_CONTEXT;
 //
 // Abstract class
 //
@@ -52,8 +52,11 @@ public:
     ) const;
 
 protected:
-    mutable LONG    m_cRefs;
-    IHttpContext*   m_pW3Context;
-    APPLICATION*    m_pApplication;
-    HTTP_MODULE_ID   m_pModuleId;
+    mutable LONG                        m_cRefs;
+    IHttpContext*                       m_pW3Context;
+    APPLICATION*                        m_pApplication;
+    HTTP_MODULE_ID                      m_pModuleId;
+    ASYNC_DISCONNECT_CONTEXT *          m_pDisconnect;
+    SRWLOCK                             m_RequestLock;
+
 };

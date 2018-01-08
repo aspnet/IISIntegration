@@ -12,12 +12,32 @@ REQUEST_HANDLER::REQUEST_HANDLER(
     m_pW3Context = pW3Context;
     m_pApplication = pApplication;
     m_pModuleId = *pModuleId;
+    InitializeSRWLock(&m_RequestLock);
 }
 
 
 REQUEST_HANDLER::~REQUEST_HANDLER()
 {
+    //
+    // RemoveRequest() should already have been called and m_pDisconnect
+    // has been freed or m_pDisconnect was never initialized.
+    //
+    // Disconnect notification cleanup would happen first, before
+    // the FORWARDING_HANDLER instance got removed from m_pSharedhandler list.
+    // The m_pServer cleanup would happen afterwards, since there may be a 
+    // call pending from SHARED_HANDLER to  FORWARDING_HANDLER::SetStatusAndHeaders()
+    // 
+    DBG_ASSERT(m_pDisconnect == NULL);
+
+    if (m_pDisconnect != NULL)
+    {
+        m_pDisconnect->ResetHandler();
+        m_pDisconnect = NULL;
+    }
+
+    ReleaseSRWLockExclusive(&m_RequestLock);
 }
+
 
 VOID
 REQUEST_HANDLER::ReferenceRequestHandler(
@@ -40,5 +60,4 @@ REQUEST_HANDLER::DereferenceRequestHandler(
     {
         delete this;
     }
-
 }

@@ -26,8 +26,12 @@
 #include "aspnetcoreconfig.h"
 #include "application.h"
 #include "requesthandler.h"
+#include "disconnectcontext.h"
 #include "fx_ver.h"
 #include "hostfxr_utility.h"
+<<<<<<< HEAD
 #include "resources.h"
 #include "aspnetcore_msg.h"
+=======
+>>>>>>> 9dba3d0... Start of terminate request and putting things in request handler
 

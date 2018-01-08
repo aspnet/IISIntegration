@@ -12,7 +12,8 @@ register_callbacks(
     _In_ PFN_REQUEST_HANDLER request_handler,
     _In_ PFN_SHUTDOWN_HANDLER shutdown_handler,
     _In_ PFN_MANAGED_CONTEXT_HANDLER async_completion_handler,
-    _In_ VOID* pvRequstHandlerContext,
+    _In_ PFN_CLIENT_DISCONNECT_HANDLER client_disconnect_callback,
+    _In_ VOID* pvRequestHandlerContext,
     _In_ VOID* pvShutdownHandlerContext
 )
 {
@@ -20,7 +21,8 @@ register_callbacks(
         request_handler,
         shutdown_handler,
         async_completion_handler,
-        pvRequstHandlerContext,
+        client_disconnect_callback,
+        pvRequestHandlerContext,
         pvShutdownHandlerContext
     );
 }
@@ -87,26 +89,13 @@ http_set_response_status_code(
 
 EXTERN_C __MIDL_DECLSPEC_DLLEXPORT
 HRESULT
-http_post_completion(
-    _In_ IN_PROCESS_HANDLER* pInProcessHandler,
-    DWORD cbBytes
-)
-{
-    return pInProcessHandler->QueryHttpContext()->PostCompletion(cbBytes);
-}
-
-EXTERN_C __MIDL_DECLSPEC_DLLEXPORT
-HRESULT
 http_set_completion_status(
-    _In_ IN_PROCESS_HANDLER* pInProcessHandler,
-    _In_ REQUEST_NOTIFICATION_STATUS requestNotificationStatus
+    _In_ IN_PROCESS_HANDLER*            pInProcessHandler,
+    _In_ REQUEST_NOTIFICATION_STATUS    requestNotificationStatus,
+    _In_ DWORD                          cbBytes
 )
 {
-    HRESULT hr = S_OK;
-
-    pInProcessHandler->IndicateManagedRequestComplete();
-    pInProcessHandler->SetAsyncCompletionStatus(requestNotificationStatus);
-    return hr;
+    return pInProcessHandler->IndicateManagedRequestComplete(requestNotificationStatus, cbBytes);
 }
 
 EXTERN_C __MIDL_DECLSPEC_DLLEXPORT
@@ -121,16 +110,6 @@ http_set_managed_context(
     pInProcessHandler->SetManagedHttpContext(pvManagedContext);
 
     return hr;
-}
-
-EXTERN_C __MIDL_DECLSPEC_DLLEXPORT
-VOID
-http_indicate_completion(
-    _In_ IN_PROCESS_HANDLER* pInProcessHandler,
-    _In_ REQUEST_NOTIFICATION_STATUS notificationStatus
-)
-{
-    pInProcessHandler->QueryHttpContext()->IndicateCompletion(notificationStatus);
 }
 
 EXTERN_C __MIDL_DECLSPEC_DLLEXPORT

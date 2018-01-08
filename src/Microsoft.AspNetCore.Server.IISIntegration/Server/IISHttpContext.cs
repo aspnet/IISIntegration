@@ -56,6 +56,8 @@ namespace Microsoft.AspNetCore.Server.IISIntegration
         protected Task _processBodiesTask;
 
         protected int _requestAborted;
+        protected CancellationTokenSource _abortedCts;
+        private CancellationToken? _requestAbortedToken;
 
         private const string NtlmString = "NTLM";
         private const string NegotiateString = "Negotiate";
@@ -197,6 +199,41 @@ namespace Microsoft.AspNetCore.Server.IISIntegration
         public IHeaderDictionary ResponseHeaders { get; set; }
         private HeaderCollection HttpResponseHeaders { get; set; }
         internal HttpApiTypes.HTTP_VERB KnownMethod { get; }
+
+        public CancellationToken RequestAborted
+        {
+            get
+            {
+                if (_requestAbortedToken.HasValue)
+                {
+                    return _requestAbortedToken.Value;
+                }
+                var cts = _abortedCts;
+                return
+                    cts != null ? cts.Token :
+                    (_requestAborted == 1) ? new CancellationToken(true) :
+                    RequestAbortedSource.Token;
+            }
+            set
+            {
+                _requestAbortedToken = value;
+            }
+        }
+
+        private CancellationTokenSource RequestAbortedSource
+        {
+            get
+            {
+                var cts = LazyInitializer.EnsureInitialized(ref _abortedCts, () => new CancellationTokenSource())
+                            ?? new CancellationTokenSource();
+
+                if (_requestAborted == 1)
+                {
+                    cts.Cancel();
+                }
+                return cts;
+            }
+        }
 
         public int StatusCode
         {
@@ -371,9 +408,27 @@ namespace Microsoft.AspNetCore.Server.IISIntegration
             }
         }
 
-        public void Abort()
+        private void CancelRequestAbortedToken()
         {
-            // TODO
+            try
+            {
+                RequestAbortedSource.Cancel();
+                _abortedCts = null;
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+        public void Abort(Exception error = null)
+        {
+            // Only allow aborting once.
+            if (Interlocked.Exchange(ref _requestAborted, 1) == 0)
+            {
+                // TODO Stop both the request and response streams
+                CancelRequestAbortedToken();
+            }
         }
 
         public abstract Task<bool> ProcessRequestAsync();
@@ -475,13 +530,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration
         {
             Debug.Assert(!_operation.HasContinuation, "Pending async operation!");
 
-            var hr = NativeMethods.http_set_completion_status(_pInProcessHandler, requestNotificationStatus);
-            if (hr != NativeMethods.S_OK)
-            {
-                throw Marshal.GetExceptionForHR(hr);
-            }
-
-            hr = NativeMethods.http_post_completion(_pInProcessHandler, 0);
+            var hr = NativeMethods.http_set_completion_status(_pInProcessHandler, requestNotificationStatus, 0);
             if (hr != NativeMethods.S_OK)
             {
                 throw Marshal.GetExceptionForHR(hr);
@@ -507,22 +556,36 @@ namespace Microsoft.AspNetCore.Server.IISIntegration
             continuation?.Invoke();
         }
 
-        private bool disposedValue = false; // To detect redundant calls
+        private bool _disposed = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (_disposed)
             {
-                if (disposing)
-                {
-                    // TODO: dispose managed state (managed objects).
-                    _thisHandle.Free();
-                }
-                if (WindowsUser?.Identity is WindowsIdentity wi)
-                {
-                    wi.Dispose();
-                }
-                disposedValue = true;
+                return;
+            }
+
+            if (disposing)
+            {
+                // TODO: dispose managed state (managed objects).
+                _thisHandle.Free();
+            }
+            if (WindowsUser?.Identity is WindowsIdentity wi)
+            {
+                wi.Dispose();
+            }
+            try
+            {
+                _abortedCts?.Dispose();
+                ResponseBody.Dispose();
+            }
+            catch
+            {
+                Abort(null);
+            }
+            finally
+            {
+                RequestBody.Dispose();
             }
         }
 

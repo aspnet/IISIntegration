@@ -36,19 +36,23 @@ namespace Microsoft.AspNetCore.Server.IISIntegration
         public delegate bool PFN_SHUTDOWN_HANDLER(IntPtr pvRequestContext);
         public delegate REQUEST_NOTIFICATION_STATUS PFN_ASYNC_COMPLETION(IntPtr pvManagedHttpContext, int hr, int bytes);
         public delegate REQUEST_NOTIFICATION_STATUS PFN_WEBSOCKET_ASYNC_COMPLETION(IntPtr pInProcessHandler, IntPtr completionInfo, IntPtr pvCompletionContext);
+        public delegate bool PFN_CLIENT_DISCONNECT_HANDLER(IntPtr pInProcessHandler, IntPtr pvRequestContext);
 
         // TODO make this all internal
         [DllImport(AspNetCoreModuleDll)]
-        public static extern int http_post_completion(IntPtr pInProcessHandler, int cbBytes);
-
-        [DllImport(AspNetCoreModuleDll)]
-        public static extern int http_set_completion_status(IntPtr pInProcessHandler, REQUEST_NOTIFICATION_STATUS rquestNotificationStatus);
+        public static extern int http_set_completion_status(IntPtr pInProcessHandler, REQUEST_NOTIFICATION_STATUS rquestNotificationStatus, int cbBytes);
 
         [DllImport(AspNetCoreModuleDll)]
         public static extern void http_indicate_completion(IntPtr pInProcessHandler, REQUEST_NOTIFICATION_STATUS notificationStatus);
 
         [DllImport(AspNetCoreModuleDll)]
-        public static extern void register_callbacks(PFN_REQUEST_HANDLER request_callback, PFN_SHUTDOWN_HANDLER shutdown_callback, PFN_ASYNC_COMPLETION managed_context_handler, IntPtr pvRequestContext, IntPtr pvShutdownContext);
+        public static extern void register_callbacks(
+            PFN_REQUEST_HANDLER request_callback,
+            PFN_SHUTDOWN_HANDLER shutdown_callback,
+            PFN_ASYNC_COMPLETION managed_context_handler,
+            PFN_CLIENT_DISCONNECT_HANDLER client_disconnect_handler,
+            IntPtr pvRequestContext,
+            IntPtr pvShutdownContext);
 
         [DllImport(AspNetCoreModuleDll)]
         internal unsafe static extern int http_write_response_bytes(IntPtr pInProcessHandler, HttpApiTypes.HTTP_DATA_CHUNK* pDataChunks, int nChunks, out bool fCompletionExpected);

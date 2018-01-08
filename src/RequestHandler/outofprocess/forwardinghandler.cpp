@@ -1,3 +1,6 @@
+// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the MIT License. See License.txt in the project root for license information.
+
 #include "..\precomp.hxx"
 
 // Just to be aware of the FORWARDING_HANDLER object size.
@@ -198,35 +201,16 @@ FORWARDING_HANDLER::OnExecuteRequestHandler()
         goto Failure;
     }
 
-    // Set client disconnect callback contract with IIS
-    m_pDisconnect = static_cast<ASYNC_DISCONNECT_CONTEXT *>(
-        pClientConnection->GetModuleContextContainer()->
-        GetConnectionModuleContext(m_pModuleId));
-    if (m_pDisconnect == NULL)
-    {
-        m_pDisconnect = new ASYNC_DISCONNECT_CONTEXT();
-        if (m_pDisconnect == NULL)
-        {
-            hr = E_OUTOFMEMORY;
-            goto Failure;
-        }
-
-        hr = pClientConnection->GetModuleContextContainer()->
-            SetConnectionModuleContext(m_pDisconnect,
-                m_pModuleId);
-        DBG_ASSERT(hr != HRESULT_FROM_WIN32(ERROR_ALREADY_ASSIGNED));
-        if (FAILED(hr))
-        {
-            goto Failure;
-        }
-    }
-
-    m_pDisconnect->SetHandler(this);
-    fHandleSet = TRUE;
-
     // require lock as client disconnect callback may happen
     AcquireSRWLockShared(&m_RequestLock);
     fRequestLocked = TRUE;
+
+    if (FAILED(hr = SetAsyncDisconnectContext(pClientConnection)))
+    {
+        goto Failure;
+    }
+
+    fHandleSet = TRUE;
 
     //
     // Remember the handler being processed in the current thread
@@ -2744,4 +2728,42 @@ FORWARDING_HANDLER::ReleaseLockExclusive()
     TlsSetValue(g_dwTlsIndex, NULL);
     ReleaseSRWLockExclusive(&m_RequestLock);
     DBG_ASSERT(TlsGetValue(g_dwTlsIndex) == NULL);
+}
+
+
+HRESULT
+FORWARDING_HANDLER::SetAsyncDisconnectContext
+(
+    IHttpConnection *pClientConnection
+)
+{
+    HRESULT hr = S_OK;
+
+    // Set client disconnect callback contract with IIS
+    m_pDisconnect = static_cast<ASYNC_DISCONNECT_CONTEXT *>(
+        pClientConnection->GetModuleContextContainer()->
+        GetConnectionModuleContext(m_pModuleId));
+    if (m_pDisconnect == NULL)
+    {
+        m_pDisconnect = new ASYNC_DISCONNECT_CONTEXT();
+        if (m_pDisconnect == NULL)
+        {
+            hr = E_OUTOFMEMORY;
+            goto Finished;
+        }
+
+        hr = pClientConnection->GetModuleContextContainer()->
+            SetConnectionModuleContext(m_pDisconnect,
+                m_pModuleId);
+        DBG_ASSERT(hr != HRESULT_FROM_WIN32(ERROR_ALREADY_ASSIGNED));
+        if (FAILED(hr))
+        {
+            goto Finished;
+        }
+    }
+
+    m_pDisconnect->SetHandler(this);
+
+Finished:
+    return hr;
 }

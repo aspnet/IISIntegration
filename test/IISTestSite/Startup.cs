@@ -667,5 +667,50 @@ namespace IISTestSite
                 }
             });
         }
+
+        private void ClientDisconnect(IApplicationBuilder app)
+        {
+            var _cancelled = new ManualResetEvent(false);
+
+            app.Run(async ctx =>
+            {
+                if (ctx.Request.Path.StartsWithSegments("/ClientDisconnect"))
+                {
+                    // Make it a very large content length as we want to trigger disconnect
+                    await ctx.Response.WriteAsync("ClientDisconnect");
+                    ctx.RequestAborted.Register(() =>
+                    {
+                        _cancelled.Set();
+                    });
+
+                    var waitTime = Debugger.IsAttached ? 10000000 : 1000;
+                    await Task.Run(() =>
+                    {
+                        Assert.True(_cancelled.WaitOne(waitTime));
+                    });
+
+                }
+                else if (ctx.Request.Path.StartsWithSegments("/Results"))
+                {
+                    var waitTime = Debugger.IsAttached ? 10000000 : 1000;
+                    if (_cancelled.WaitOne(waitTime))
+                    {
+                        await ctx.Response.WriteAsync("Success");
+                    }
+                    else
+                    {
+                        await ctx.Response.WriteAsync("Failure");
+                    }
+                }
+                else if (ctx.Request.Path.StartsWithSegments("/Abort"))
+                {
+                    ctx.Abort();
+                }
+                else
+                {
+                    await ctx.Response.WriteAsync("Hello World");
+                }
+            });
+        }
     }
 }
