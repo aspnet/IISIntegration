@@ -1,5 +1,5 @@
 {
-  "version": "1.0.5",
+  "version": "1.0.6",
   "buildOptions": {
     "warningsAsErrors": true,
     "keyFile": "../../tools/Key.snk",
@@ -23,7 +23,7 @@
     "Microsoft.AspNetCore.Hosting.Abstractions": "1.0.5",
     "Microsoft.AspNetCore.Http": "1.0.4",
     "Microsoft.AspNetCore.Http.Extensions": "1.0.4",
-    "Microsoft.AspNetCore.HttpOverrides": "1.0.4",
+    "Microsoft.AspNetCore.HttpOverrides": "1.0.5",
     "Microsoft.Extensions.Logging.Abstractions": "1.0.2",
     "Microsoft.Extensions.Options": "1.0.2",
     "Microsoft.Extensions.SecurityHelper.Sources": {

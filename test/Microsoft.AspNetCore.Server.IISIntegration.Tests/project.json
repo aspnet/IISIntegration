@@ -2,7 +2,7 @@
   "version": "1.0.0-*",
   "dependencies": {
     "dotnet-test-xunit": "1.0.0-rc3-000000-01",
-    "Microsoft.AspNetCore.Server.IISIntegration": "1.0.5",
+    "Microsoft.AspNetCore.Server.IISIntegration": "1.0.6",
     "Microsoft.AspNetCore.TestHost": "1.0.5",
     "xunit": "2.1.0"
   },
