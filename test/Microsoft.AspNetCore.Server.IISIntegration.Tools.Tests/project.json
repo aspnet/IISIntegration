@@ -15,7 +15,7 @@
         "System.Diagnostics.Process": "4.1.0",
         "Microsoft.NETCore.App": {
           "type": "platform",
-          "version": "1.0.9"
+          "version": "1.0.10-servicing-005021-00"
         }
       }
     }
