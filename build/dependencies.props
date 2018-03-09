@@ -16,6 +16,7 @@
     <MicrosoftAspNetCoreServerKestrelPackageVersion>2.1.0-preview2-30131</MicrosoftAspNetCoreServerKestrelPackageVersion>
     <MicrosoftAspNetCoreTestHostPackageVersion>2.1.0-preview2-30131</MicrosoftAspNetCoreTestHostPackageVersion>
     <MicrosoftAspNetCoreTestingPackageVersion>2.1.0-preview2-30131</MicrosoftAspNetCoreTestingPackageVersion>
+    <MicrosoftAspNetCoreWebSocketsPackageVersion>2.1.0-a-preview2-pk-corefx0-16561</MicrosoftAspNetCoreWebSocketsPackageVersion>
     <MicrosoftAspNetCoreWebUtilitiesPackageVersion>2.1.0-preview2-30131</MicrosoftAspNetCoreWebUtilitiesPackageVersion>
     <MicrosoftExtensionsConfigurationEnvironmentVariablesPackageVersion>2.1.0-preview2-30131</MicrosoftExtensionsConfigurationEnvironmentVariablesPackageVersion>
     <MicrosoftExtensionsConfigurationJsonPackageVersion>2.1.0-preview2-30131</MicrosoftExtensionsConfigurationJsonPackageVersion>
