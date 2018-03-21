@@ -1,4 +1,7 @@
-﻿using System;
+// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,6 +11,7 @@ using System.Net.WebSockets;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Net.Http.Headers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
@@ -149,23 +153,25 @@ namespace ANCMStressTestApp
 
         private void WebSocket(IApplicationBuilder app)
         {
-            app.UseWebSockets(new WebSocketOptions
+            app.Run(async context =>
             {
-            });
+                var upgradeFeature = context.Features.Get<IHttpUpgradeFeature>();
 
-            app.Use(async (context, next) =>
-            {
-                if (context.WebSockets.IsWebSocketRequest)
+                // Generate WebSocket response headers
+                string key = string.Join(", ", context.Request.Headers[Constants.Headers.SecWebSocketKey]);
+                var responseHeaders = HandshakeHelpers.GenerateResponseHeaders(key);
+                foreach (var headerPair in responseHeaders)
                 {
-                    var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                    await Echo(webSocket);
+                    context.Response.Headers[headerPair.Key] = headerPair.Value;
                 }
-                else
-                {
-                    var wsScheme = context.Request.IsHttps ? "wss" : "ws";
-                    var wsUrl = $"{wsScheme}://{context.Request.Host.Host}:{context.Request.Host.Port}{context.Request.Path}";
-                    await context.Response.WriteAsync($"Ready to accept a WebSocket request at: {wsUrl}");
-                }
+
+                // Upgrade the connection
+                Stream opaqueTransport = await upgradeFeature.UpgradeAsync();
+
+                // Get the WebSocket object
+                var ws = WebSocketProtocol.CreateFromStream(opaqueTransport, isServer: true, subProtocol: null, keepAliveInterval: TimeSpan.FromMinutes(2));
+
+                await Echo(ws);
             });
         }
 

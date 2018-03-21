@@ -1,4 +1,4 @@
-﻿<Project>
+<Project>
   <PropertyGroup>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
   </PropertyGroup>
@@ -37,6 +37,7 @@
     <SystemIOPipelinesPackageVersion>4.5.0-preview2-26308-02</SystemIOPipelinesPackageVersion>
     <SystemManagementAutomationPackageVersion>6.1.7601.17515</SystemManagementAutomationPackageVersion>
     <SystemMemoryPackageVersion>4.5.0-preview2-26308-02</SystemMemoryPackageVersion>
+    <SystemNetWebSocketsWebSocketProtocolPackageVersion>4.5.0-preview2-26308-02</SystemNetWebSocketsWebSocketProtocolPackageVersion>
     <SystemNumericsVectorsPackageVersion>4.5.0-preview2-26308-02</SystemNumericsVectorsPackageVersion>
     <SystemRuntimeCompilerServicesUnsafePackageVersion>4.5.0-preview2-26308-02</SystemRuntimeCompilerServicesUnsafePackageVersion>
     <SystemSecurityPrincipalWindowsPackageVersion>4.5.0-preview2-26308-02</SystemSecurityPrincipalWindowsPackageVersion>
