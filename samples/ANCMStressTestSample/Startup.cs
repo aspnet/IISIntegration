@@ -183,9 +183,6 @@ namespace ANCMStressTestApp
             string closeFromServerCmd = "CloseFromServer";
             int closeFromServerLength = closeFromServerCmd.Length;
 
-            bool echoBack = true;
-            int repeatCount = 1;
-
             while (!result.CloseStatus.HasValue)
             {
                 if ((result.Count == closeFromServerLength && System.Text.Encoding.ASCII.GetString(buffer).Substring(0, result.Count) == closeFromServerCmd)
@@ -198,47 +195,18 @@ namespace ANCMStressTestApp
                 }
                 else
                 {
-
-                    if (buffer[0] == '_')
-                    {
-                        string tempString = System.Text.Encoding.ASCII.GetString(buffer).Substring(0, result.Count).ToLower();
-                        switch (tempString)
-                        {
-                            case "_donotecho":
-                                echoBack = false;
-                                break;
-                            case "_1":
-                                repeatCount = 1;
-                                break;
-                            case "_10":
-                                repeatCount = 10;
-                                break;
-                            case "_100":
-                                repeatCount = 100;
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                    if (echoBack)
-                    {
-                        for (int i = 0; i < repeatCount; i++)
-                        {
-                            await webSocket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), result.MessageType, result.EndOfMessage, CancellationToken.None);
-                        }
-                    }
+                    await webSocket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), result.MessageType, result.EndOfMessage, CancellationToken.None);
                 }
 
                 result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
             }
 
-            if (closeFromServer)
+            if (!closeFromServer)
             {
-                webSocket.Dispose();
-                return;
+                await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
+                
             }
 
-            await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
             webSocket.Dispose();
         }
     }
