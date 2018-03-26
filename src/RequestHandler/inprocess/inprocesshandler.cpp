@@ -210,14 +210,6 @@ IN_PROCESS_HANDLER::QueryAsyncCompletionStatus(
     return m_requestNotificationStatus;
 }
 
-VOID
-IN_PROCESS_HANDLER::SetManangedHttpContext(
-    PVOID pManagedHttpContext
-)
-{
-    m_pManagedHttpContext = pManagedHttpContext;
-}
-
 HRESULT
 IN_PROCESS_HANDLER::SetAsyncDisconnectContext
 (
@@ -253,4 +245,12 @@ IN_PROCESS_HANDLER::SetAsyncDisconnectContext
 
 Finished:
     return hr;
+}
+
+VOID
+IN_PROCESS_HANDLER::SetManagedHttpContext(
+    PVOID pManagedHttpContext
+)
+{
+    m_pManagedHttpContext = pManagedHttpContext;
 }

@@ -59,11 +59,8 @@
 #include "..\CommonLib\resources.h"
 #include "aspnetcore_event.h"
 #include "aspnetcore_msg.h"
-<<<<<<< HEAD
 #include "disconnectcontext.h"
 #include "environmentvariablehelpers.h"
-=======
->>>>>>> 9dba3d0... Start of terminate request and putting things in request handler
 #include "sttimer.h"
 #include ".\inprocess\inprocesshandler.h"
 #include ".\inprocess\inprocessapplication.h"

@@ -289,7 +289,6 @@ IN_PROCESS_APPLICATION::OnAsyncCompletion(
     IN_PROCESS_HANDLER* pInProcessHandler
 )
 {
-<<<<<<< HEAD
     REQUEST_NOTIFICATION_STATUS dwRequestNotificationStatus = RQ_NOTIFICATION_CONTINUE;
 
     ReferenceApplication();
@@ -319,12 +318,6 @@ IN_PROCESS_APPLICATION::OnAsyncCompletion(
     DereferenceApplication();
 
     return dwRequestNotificationStatus;
-=======
-
-
-    // Call the managed handler for async completion.
-    return m_AsyncCompletionHandler(pInProcessHandler->QueryManagedHttpContext(), hrCompletionStatus, cbCompletion);
->>>>>>> 9dba3d0... Start of terminate request and putting things in request handler
 }
 
 REQUEST_NOTIFICATION_STATUS

@@ -29,7 +29,6 @@ public:
     VOID
     TerminateRequest(
         bool    fClientInitiated
-
     );
 
     HRESULT

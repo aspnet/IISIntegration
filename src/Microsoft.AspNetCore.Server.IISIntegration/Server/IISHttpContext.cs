@@ -180,7 +180,6 @@ namespace Microsoft.AspNetCore.Server.IISIntegration
         public string Path { get; set; }
         public string QueryString { get; set; }
         public string RawTarget { get; set; }
-        public CancellationToken RequestAborted { get; set; }
         public bool HasResponseStarted => _hasResponseStarted;
         public IPAddress RemoteIpAddress { get; set; }
         public int RemotePort { get; set; }

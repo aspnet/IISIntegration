@@ -16,7 +16,7 @@ using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Microsoft.AspNetCore.Server.IIS.FunctionalTests
+namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     public class ClientDisconnectTests : LoggedTest
     {
@@ -48,7 +48,7 @@ namespace Microsoft.AspNetCore.Server.IIS.FunctionalTests
             {
                 var logger = loggerFactory.CreateLogger("ClientDisconnect");
 
-                var deploymentParameters = new DeploymentParameters(Helpers.GetTestSitesPath(), serverType, runtimeFlavor, architecture)
+                var deploymentParameters = new DeploymentParameters(Helpers.GetInProcessTestSitesPath(), serverType, runtimeFlavor, architecture)
                 {
                     EnvironmentName = "ClientDisconnect", // Will pick the Start class named 'StartupHelloWorld',
                     ServerConfigTemplateContent = (serverType == ServerType.IISExpress) ? File.ReadAllText("Http.config") : null,
