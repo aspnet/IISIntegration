@@ -22,6 +22,9 @@ IN_PROCESS_HANDLER::OnExecuteRequestHandler()
 {
     // First get the in process Application
     HRESULT hr;
+    DBG_ASSERT(m_pApplication);
+    DBG_ASSERT(m_pW3Context);
+
     hr = m_pApplication->LoadManagedApplication();
     if (FAILED(hr))
     {

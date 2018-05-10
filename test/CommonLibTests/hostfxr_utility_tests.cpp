@@ -8,11 +8,10 @@ TEST(ParseHostFxrArguments, BasicHostFxrArguments)
     DWORD retVal = 0;
     BSTR* bstrArray;
     PCWSTR exeStr = L"C:/Program Files/dotnet.exe";
-    HRESULT hr = HOSTFXR_UTILITY::ParseHostfxrArguments(
+    HRESULT hr = UTILITY::ParseHostfxrArguments(
         L"exec \"test.dll\"", // args
         exeStr,  // exe path
         L"invalid",  // physical path to application
-        NULL, // event log
         &retVal, // arg count
         &bstrArray); // args array.
 
@@ -29,11 +28,10 @@ TEST(ParseHostFxrArguments, NoExecProvided)
     BSTR* bstrArray;
     PCWSTR exeStr = L"C:/Program Files/dotnet.exe";
 
-    HRESULT hr = HOSTFXR_UTILITY::ParseHostfxrArguments(
+    HRESULT hr = UTILITY::ParseHostfxrArguments(
         L"test.dll", // args
         exeStr,  // exe path
         L"ignored",  // physical path to application
-        NULL, // event log
         &retVal, // arg count
         &bstrArray); // args array.
 
@@ -49,11 +47,10 @@ TEST(ParseHostFxrArguments, ConvertDllToAbsolutePath)
     BSTR* bstrArray;
     PCWSTR exeStr = L"C:/Program Files/dotnet.exe";
 
-    HRESULT hr = HOSTFXR_UTILITY::ParseHostfxrArguments(
+    HRESULT hr = UTILITY::ParseHostfxrArguments(
         L"exec \"test.dll\"", // args
         exeStr,  // exe path
         L"C:/test",  // physical path to application
-        NULL, // event log
         &retVal, // arg count
         &bstrArray); // args array.
 
@@ -70,11 +67,10 @@ TEST(ParseHostFxrArguments, ProvideNoArgs_InvalidArgs)
     BSTR* bstrArray;
     PCWSTR exeStr = L"C:/Program Files/dotnet.exe";
 
-    HRESULT hr = HOSTFXR_UTILITY::ParseHostfxrArguments(
+    HRESULT hr = UTILITY::ParseHostfxrArguments(
         L"", // args
         exeStr,  // exe path
         L"ignored",  // physical path to application
-        NULL, // event log
         &retVal, // arg count
         &bstrArray); // args array.
 

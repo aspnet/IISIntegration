@@ -38,6 +38,18 @@ APPLICATION_INFO::~APPLICATION_INFO()
         m_pConfiguration->DereferenceConfiguration();
         m_pConfiguration = NULL;
     }
+
+    if (m_ppStrHostFxrArguments != NULL)
+    {
+        delete[] m_ppStrHostFxrArguments;
+        m_ppStrHostFxrArguments = NULL;
+    }
+
+    if (m_hHostFxr != NULL)
+    {
+        FreeLibrary(m_hHostFxr);
+        m_hHostFxr = NULL;
+    }
 }
 
 HRESULT
@@ -216,13 +228,9 @@ APPLICATION_INFO::EnsureApplicationCreated()
                 goto Finished;
             }
 
-            if (m_pfnAspNetCoreCreateApplication == NULL)
-            {
-                hr = HRESULT_FROM_WIN32(ERROR_INVALID_FUNCTION);
-                goto Finished;
-            }
+            DBG_ASSERT(m_pfnAspNetCoreCreateApplication);
 
-            hr = m_pfnAspNetCoreCreateApplication(m_pServer, m_pConfiguration, &pApplication);
+            hr = m_pfnAspNetCoreCreateApplication(m_pServer, m_pConfiguration, m_hAspnetCoreRH, &pApplication);
             if (FAILED(hr))
             {
                 goto Finished;
@@ -239,82 +247,66 @@ Finished:
     return hr;
 }
 
+//
+// This function should be under a lock
+//
 HRESULT
 APPLICATION_INFO::FindRequestHandlerAssembly()
 {
     HRESULT             hr = S_OK;
-    BOOL                fLocked = FALSE;
     STACK_STRU(struFileName, 256);
 
-    if (g_fAspnetcoreRHLoadedError)
+    if (m_fAspnetcoreRHLoadedError)
     {
         hr = E_APPLICATION_ACTIVATION_EXEC_FAILURE;
         goto Finished;
     }
-    else if (!g_fAspnetcoreRHAssemblyLoaded)
+    else if (!m_fAspnetcoreRHAssemblyLoaded)
     {
-        AcquireSRWLockExclusive(&g_srwLock);
-        fLocked = TRUE;
-        if (g_fAspnetcoreRHLoadedError)
+        if (SUCCEEDED(hr = HOSTFXR_UTILITY::GetHostFxrParameters(
+            g_hEventLog,
+            m_pConfiguration->QueryProcessPath()->QueryStr(),
+            m_pConfiguration->QueryApplicationPhysicalPath()->QueryStr(),
+            m_pConfiguration->QueryArguments()->QueryStr(),
+            &m_struHostFxrLocation,
+            &m_dwHostFxrArgc,
+            &m_ppStrHostFxrArguments)))
         {
-            hr = E_APPLICATION_ACTIVATION_EXEC_FAILURE;
+
+            hr = FindNativeAssemblyFromHostfxr(&struFileName);
+        }
+
+        if (m_pConfiguration->QueryHostingModel() == HOSTING_OUT_PROCESS)
+        {
+            hr = FindNativeAssemblyFromGlobalLocation(&struFileName);
+        }
+
+        if (FAILED(hr))
+        {
+            UTILITY::LogEventF(g_hEventLog,
+                EVENTLOG_INFORMATION_TYPE,
+                ASPNETCORE_EVENT_RH_MISSING,
+                ASPNETCORE_EVENT_RH_MISSING_MSG,
+                m_pConfiguration->QueryApplicationPhysicalPath(),
+                m_struHostFxrLocation.QueryStr());
             goto Finished;
         }
-        if (g_fAspnetcoreRHAssemblyLoaded)
-        {
-            goto Finished;
-        }
 
-        if (m_pConfiguration->QueryHostingModel() == APP_HOSTING_MODEL::HOSTING_IN_PROCESS)
-        {
-            if (FAILED(hr = FindNativeAssemblyFromHostfxr(&struFileName)))
-            {
-                STACK_STRU(strEventMsg, 256);
-                if (SUCCEEDED(strEventMsg.SafeSnwprintf(
-                    ASPNETCORE_EVENT_INPROCESS_RH_MISSING_MSG)))
-                {
-                    UTILITY::LogEvent(g_hEventLog,
-                        EVENTLOG_INFORMATION_TYPE,
-                        ASPNETCORE_EVENT_INPROCESS_RH_MISSING,
-                        strEventMsg.QueryStr());
-                }
-
-                goto Finished;
-            }
-        }
-        else
-        {
-            if (FAILED(hr = FindNativeAssemblyFromGlobalLocation(&struFileName)))
-            {
-                STACK_STRU(strEventMsg, 256);
-                if (SUCCEEDED(strEventMsg.SafeSnwprintf(
-                    ASPNETCORE_EVENT_OUT_OF_PROCESS_RH_MISSING_MSG)))
-                {
-                    UTILITY::LogEvent(g_hEventLog,
-                        EVENTLOG_INFORMATION_TYPE,
-                        ASPNETCORE_EVENT_OUT_OF_PROCESS_RH_MISSING,
-                        strEventMsg.QueryStr());
-                }
-
-                goto Finished;
-            }
-        }
-
-        g_hAspnetCoreRH = LoadLibraryW(struFileName.QueryStr());
-        if (g_hAspnetCoreRH == NULL)
+        m_hAspnetCoreRH = LoadLibraryW(struFileName.QueryStr());
+        if (m_hAspnetCoreRH == NULL)
         {
             hr = HRESULT_FROM_WIN32(GetLastError());
             goto Finished;
         }
 
-        g_pfnAspNetCoreCreateApplication = (PFN_ASPNETCORE_CREATE_APPLICATION)
-            GetProcAddress(g_hAspnetCoreRH, "CreateApplication");
-        if (g_pfnAspNetCoreCreateApplication == NULL)
+        m_pfnAspNetCoreCreateApplication = (PFN_ASPNETCORE_CREATE_APPLICATION)
+            GetProcAddress(m_hAspnetCoreRH, "CreateApplication");
+        if (m_pfnAspNetCoreCreateApplication == NULL)
         {
             hr = HRESULT_FROM_WIN32(GetLastError());
             goto Finished;
         }
-        g_fAspnetcoreRHAssemblyLoaded = TRUE;
+        m_fAspnetcoreRHAssemblyLoaded = TRUE;
     }
 
 Finished:
@@ -322,16 +314,12 @@ Finished:
     // Question: we remember the load failure so that we will not try again.
     // User needs to check whether the fuction pointer is NULL
     //
-    m_pfnAspNetCoreCreateApplication = g_pfnAspNetCoreCreateApplication;
-    if (!g_fAspnetcoreRHLoadedError && FAILED(hr))
+    if (!m_fAspnetcoreRHLoadedError && FAILED(hr))
     {
-        g_fAspnetcoreRHLoadedError = TRUE;
+        m_fAspnetcoreRHLoadedError = TRUE;
+        m_pfnAspNetCoreCreateApplication = NULL;
     }
 
-    if (fLocked)
-    {
-        ReleaseSRWLockExclusive(&g_srwLock);
-    }
     return hr;
 }
 
@@ -406,7 +394,6 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
     STRU        struApplicationFullPath;
     STRU        struNativeSearchPaths;
     STRU        struNativeDllLocation;
-    HMODULE     hmHostFxrDll = NULL;
     INT         intHostFxrExitCode = 0;
     INT         intIndex = -1;
     INT         intPrevIndex = 0;
@@ -416,9 +403,9 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
 
     DBG_ASSERT(struFileName != NULL);
 
-    hmHostFxrDll = LoadLibraryW(m_pConfiguration->QueryHostFxrFullPath());
+    m_hHostFxr = LoadLibraryW(m_struHostFxrLocation.QueryStr());
 
-    if (hmHostFxrDll == NULL)
+    if (m_hHostFxr == NULL)
     {
         // Could not load hostfxr
         hr = HRESULT_FROM_WIN32(GetLastError());
@@ -426,7 +413,7 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
     }
 
     hostfxr_get_native_search_directories_fn pFnHostFxrSearchDirectories = (hostfxr_get_native_search_directories_fn)
-        GetProcAddress(hmHostFxrDll, "hostfxr_get_native_search_directories");
+        GetProcAddress(m_hHostFxr, "hostfxr_get_native_search_directories");
 
     if (pFnHostFxrSearchDirectories == NULL)
     {
@@ -444,8 +431,8 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
     while (TRUE)
     {
         intHostFxrExitCode = pFnHostFxrSearchDirectories(
-            m_pConfiguration->QueryHostFxrArgCount(),
-            m_pConfiguration->QueryHostFxrArguments(),
+            m_dwHostFxrArgc,
+            m_ppStrHostFxrArguments,
             struNativeSearchPaths.QueryStr(),
             dwBufferSize,
             &dwRequiredBufferSize
@@ -521,9 +508,10 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
     }
 
 Finished:
-    if (FAILED(hr) && hmHostFxrDll != NULL)
+    if (FAILED(hr) && m_hHostFxr != NULL)
     {
-        FreeLibrary(hmHostFxrDll);
+        FreeLibrary(m_hHostFxr);
+        m_hHostFxr = NULL;
     }
     return hr;
 }
@@ -534,6 +522,10 @@ APPLICATION_INFO::RecycleApplication()
     IAPPLICATION* pApplication = NULL;
     HANDLE       hThread = INVALID_HANDLE_VALUE;
     BOOL         fLockAcquired = FALSE;
+
+    // reset flags about loading requesthandle module 
+    m_fAspnetcoreRHAssemblyLoaded = FALSE;
+    m_fAspnetcoreRHLoadedError = FALSE;
 
     if (m_pApplication != NULL)
     {

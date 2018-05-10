@@ -1,8 +1,9 @@
 #include "..\precomp.hxx"
 
 OUT_OF_PROCESS_APPLICATION::OUT_OF_PROCESS_APPLICATION(
-    ASPNETCORE_CONFIG*  pConfig) :
-    m_pConfig(pConfig)
+    ASPNETCORE_CONFIG*  pConfig,
+    HINSTANCE hRequestHandlerModule) :
+    APPLICATION(pConfig, hRequestHandlerModule)
 {
     m_status = APPLICATION_STATUS::RUNNING;
     m_pProcessManager = NULL;
@@ -50,12 +51,6 @@ OUT_OF_PROCESS_APPLICATION::GetProcess(
 )
 {
     return m_pProcessManager->GetProcess(m_pConfig, ppServerProcess);
-}
-
-ASPNETCORE_CONFIG*
-OUT_OF_PROCESS_APPLICATION::QueryConfig() const
-{
-    return m_pConfig;
 }
 
 __override

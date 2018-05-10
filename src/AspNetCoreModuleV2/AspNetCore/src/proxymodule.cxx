@@ -83,13 +83,14 @@ ASPNET_CORE_PROXY_MODULE::OnExecuteRequestHandler(
     REQUEST_NOTIFICATION_STATUS retVal = RQ_NOTIFICATION_CONTINUE;
     IAPPLICATION* pApplication = NULL;
     STACK_STRU(struFileName, 256);
+
     if (g_fInShutdown)
     {
         hr = HRESULT_FROM_WIN32(ERROR_SERVER_SHUTDOWN_IN_PROGRESS);
         goto Finished;
     }
 
-    hr = ASPNETCORE_CONFIG::GetConfig(g_pHttpServer, g_pModuleId, pHttpContext, g_hEventLog, &pConfig);
+    hr = ASPNETCORE_CONFIG::GetConfig(g_pHttpServer, g_pModuleId, pHttpContext, &pConfig);
     if (FAILED(hr))
     {
         goto Finished;

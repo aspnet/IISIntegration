@@ -26,13 +26,7 @@
 #include "utility.h"
 #include "aspnetcoreconfig.h"
 #include "fx_ver.h"
-#include "hostfxr_utility.h"
 #include "resources.h"
 #include "aspnetcore_msg.h"
-
 #include "irequesthandler.h"
 #include "iapplication.h"
-#include "requesthandler.h"
-#include "application.h"
-
-

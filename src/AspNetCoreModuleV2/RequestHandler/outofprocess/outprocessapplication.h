@@ -4,7 +4,7 @@ class OUT_OF_PROCESS_APPLICATION : public APPLICATION
 {
 
 public:
-    OUT_OF_PROCESS_APPLICATION(ASPNETCORE_CONFIG  *pConfig);
+    OUT_OF_PROCESS_APPLICATION(ASPNETCORE_CONFIG  *pConfig, HINSTANCE hRequestHandlerModule);
 
     __override
     ~OUT_OF_PROCESS_APPLICATION() override;
@@ -35,14 +35,8 @@ public:
         _Out_ IREQUEST_HANDLER   **pRequestHandler)
     override;
 
-    ASPNETCORE_CONFIG*
-    QueryConfig()
-    const;
-
 private:
 
     PROCESS_MANAGER * m_pProcessManager;
     SRWLOCK           rwlock;
-
-    ASPNETCORE_CONFIG*              m_pConfig;
 };

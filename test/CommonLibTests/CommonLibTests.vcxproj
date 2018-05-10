@@ -33,9 +33,11 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
+    <ClInclude Include="..\..\src\AspNetCoreModuleV2\AspNetCore\Inc\hostfxr_utility.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\AspNetCoreModuleV2\AspNetCore\src\hostfxr_utility.cpp" />
     <ClCompile Include="hostfxr_utility_tests.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp">

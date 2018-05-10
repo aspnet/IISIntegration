@@ -206,9 +206,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="application.h" />
     <ClInclude Include="aspnetcore_event.h" />
+    <ClInclude Include="debugutil.h" />
     <ClInclude Include="disconnectcontext.h" />
     <ClInclude Include="environmentvariablehelpers.h" />
+    <ClInclude Include="requesthandler.h" />
     <ClInclude Include="sttimer.h" />
     <ClInclude Include="outofprocess\forwarderconnection.h" />
     <ClInclude Include="outofprocess\processmanager.h" />

@@ -1,15 +1,7 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
-#include "stdafx.h"
-
-HOSTFXR_UTILITY::HOSTFXR_UTILITY()
-{
-}
-
-HOSTFXR_UTILITY::~HOSTFXR_UTILITY()
-{
-}
+#include "precomp.hxx"
 
 //
 // Runs a standalone appliction.
@@ -28,7 +20,6 @@ HOSTFXR_UTILITY::GetStandaloneHostfxrParameters(
     PCWSTR              pwzExeAbsolutePath, // includes .exe file extension.
     PCWSTR              pcwzApplicationPhysicalPath,
     PCWSTR              pcwzArguments,
-    HANDLE              hEventLog,
     _Inout_ STRU*       struHostFxrDllLocation,
     _Out_ DWORD*        pdwArgCount,
     _Out_ PWSTR**       ppwzArgv
@@ -70,35 +61,37 @@ HOSTFXR_UTILITY::GetStandaloneHostfxrParameters(
     {
         // Most likely a full framework app.
         // Check that the runtime config file doesn't exist in the folder as another heuristic.
-        if (FAILED(hr = struRuntimeConfigLocation.Copy(struDllPath)) ||
+       /* if (FAILED(hr = struRuntimeConfigLocation.Copy(struDllPath)) ||
               FAILED(hr = struRuntimeConfigLocation.Append( L".runtimeconfig.json" )))
         {
             goto Finished;
         }
         if (!UTILITY::CheckIfFileExists(struRuntimeConfigLocation.QueryStr()))
-        {
+        {*/
 
-            hr = E_APPLICATION_ACTIVATION_EXEC_FAILURE;
-            UTILITY::LogEventF(hEventLog,
-                                EVENTLOG_ERROR_TYPE,
-                                ASPNETCORE_EVENT_INPROCESS_FULL_FRAMEWORK_APP,
-                                ASPNETCORE_EVENT_INPROCESS_FULL_FRAMEWORK_APP_MSG,
-                                pcwzApplicationPhysicalPath,
-                                hr);
-        }
-        else
-        {
-            // If a runtime config file does exist, report a file not found on the app.exe
             hr = HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
-	        UTILITY::LogEventF(hEventLog,
-		        EVENTLOG_ERROR_TYPE,
-		        ASPNETCORE_EVENT_APPLICATION_EXE_NOT_FOUND,
-		        ASPNETCORE_EVENT_APPLICATION_EXE_NOT_FOUND_MSG,
-	            pcwzApplicationPhysicalPath,
-	            hr);
-        }
+            goto Finished;
 
-        goto Finished;
+            //UTILITY::LogEventF(hEventLog,
+            //                    EVENTLOG_ERROR_TYPE,
+            //                    ASPNETCORE_EVENT_INPROCESS_FULL_FRAMEWORK_APP,
+            //                    ASPNETCORE_EVENT_INPROCESS_FULL_FRAMEWORK_APP_MSG,
+            //                    pcwzApplicationPhysicalPath,
+            //                    hr);
+        /*}*/
+        //else
+        //{
+       // If a runtime config file does exist, report a file not found on the app.exe
+       //hr = HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
+       //UTILITY::LogEventF(hEventLog,
+       //                   EVENTLOG_ERROR_TYPE,
+       //                   ASPNETCORE_EVENT_APPLICATION_EXE_NOT_FOUND,
+       //                   ASPNETCORE_EVENT_APPLICATION_EXE_NOT_FOUND_MSG,
+       //                   pcwzApplicationPhysicalPath,
+       //                   hr);
+       // //}
+
+        //goto Finished;
     }
 
     if (FAILED(hr = struHostFxrDllLocation->Copy(struHostFxrPath)))
@@ -126,14 +119,14 @@ HOSTFXR_UTILITY::GetStandaloneHostfxrParameters(
         goto Finished;
     }
 
-    if (FAILED(hr = ParseHostfxrArguments(
+    if (FAILED(hr = UTILITY::ParseHostfxrArguments(
         struArguments.QueryStr(),
         pwzExeAbsolutePath,
         pcwzApplicationPhysicalPath,
-        hEventLog,
         pdwArgCount,
         ppwzArgv)))
     {
+        // Adding Log
         goto Finished;
     }
 
@@ -148,9 +141,9 @@ HOSTFXR_UTILITY::GetHostFxrParameters(
     PCWSTR              pcwzProcessPath,
     PCWSTR              pcwzApplicationPhysicalPath,
     PCWSTR              pcwzArguments,
-    _Inout_ STRU*		struHostFxrDllLocation,
-    _Out_ DWORD*		pdwArgCount,
-    _Out_ BSTR**		pbstrArgv
+    _Inout_ STRU*       struHostFxrDllLocation,
+    _Out_ DWORD*        pdwArgCount,
+    _Out_ BSTR**        pbstrArgv
 )
 {
     HRESULT                     hr = S_OK;
@@ -199,14 +192,14 @@ HOSTFXR_UTILITY::GetHostFxrParameters(
             goto Finished;
         }
 
-        if (FAILED(hr = ParseHostfxrArguments(
+        if (FAILED(hr = UTILITY::ParseHostfxrArguments(
             struExpandedArguments.QueryStr(),
             struAbsolutePathToDotnet.QueryStr(),
             pcwzApplicationPhysicalPath,
-            hEventLog,
             pdwArgCount,
             pbstrArgv)))
         {
+            // Adding Log
             goto Finished;
         }
 
@@ -228,7 +221,6 @@ HOSTFXR_UTILITY::GetHostFxrParameters(
                 struAbsolutePathToDotnet.QueryStr(),
                 pcwzApplicationPhysicalPath,
                 struExpandedArguments.QueryStr(),
-                hEventLog,
                 struHostFxrDllLocation,
                 pdwArgCount,
                 pbstrArgv);
@@ -251,126 +243,6 @@ HOSTFXR_UTILITY::GetHostFxrParameters(
 
 Finished:
 
-    return hr;
-}
-
-//
-// Forms the argument list in HOSTFXR_PARAMETERS.
-// Sets the ArgCount and Arguments.
-// Arg structure:
-// argv[0] = Path to exe activating hostfxr.
-// argv[1] = L"exec"
-// argv[2] = absolute path to dll.
-//
-HRESULT
-HOSTFXR_UTILITY::ParseHostfxrArguments(
-    PCWSTR              pwzArgumentsFromConfig,
-    PCWSTR              pwzExePath,
-    PCWSTR              pcwzApplicationPhysicalPath,
-    HANDLE              hEventLog,
-    _Out_ DWORD*        pdwArgCount,
-    _Out_ BSTR**        pbstrArgv
-)
-{
-    UNREFERENCED_PARAMETER( hEventLog ); // TODO use event log to set errors.
-
-	DBG_ASSERT(dwArgCount != NULL);
-	DBG_ASSERT(pwzArgv != NULL);
-
-    HRESULT     hr = S_OK;
-    INT         argc = 0;
-    BSTR*       argv = NULL;
-    LPWSTR*     pwzArgs = NULL;
-    STRU        struTempPath;
-    INT         intArgsProcessed = 0;
-
-    // If we call CommandLineToArgvW with an empty string, argc is 5 for some interesting reason.
-    // Protectively guard against this by check if the string is null or empty.
-    if (pwzArgumentsFromConfig == NULL || wcscmp(pwzArgumentsFromConfig, L"") == 0)
-    {
-        hr = E_INVALIDARG;
-        goto Finished;
-    }
-
-    pwzArgs = CommandLineToArgvW(pwzArgumentsFromConfig, &argc);
-
-    if (pwzArgs == NULL)
-    {
-        hr = HRESULT_FROM_WIN32(GetLastError());
-        goto Failure;
-    }
-
-    argv = new BSTR[argc + 1];
-    if (argv == NULL)
-    {
-        hr = E_OUTOFMEMORY;
-        goto Failure;
-    }
-
-    argv[0] = SysAllocString(pwzExePath);
-
-    if (argv[0] == NULL)
-    {
-        hr = E_OUTOFMEMORY;
-        goto Failure;
-    }
-
-    // Try to convert the application dll from a relative to an absolute path
-    // Don't record this failure as pwzArgs[0] may already be an absolute path to the dll.
-    for (intArgsProcessed = 0; intArgsProcessed < argc; intArgsProcessed++)
-    {
-        struTempPath.Copy(pwzArgs[intArgsProcessed]);
-        if (struTempPath.EndsWith(L".dll"))
-        {
-            if (SUCCEEDED(UTILITY::ConvertPathToFullPath(pwzArgs[intArgsProcessed], pcwzApplicationPhysicalPath, &struTempPath)))
-            {
-                argv[intArgsProcessed + 1] = SysAllocString(struTempPath.QueryStr());
-            }
-            else
-            {
-                argv[intArgsProcessed + 1] = SysAllocString(pwzArgs[intArgsProcessed]);
-            }
-            if (argv[intArgsProcessed + 1] == NULL)
-            {
-                hr = E_OUTOFMEMORY;
-                goto Failure;
-            }
-        }
-        else
-        {
-            argv[intArgsProcessed + 1] = SysAllocString(pwzArgs[intArgsProcessed]);
-            if (argv[intArgsProcessed + 1] == NULL)
-            {
-                hr = E_OUTOFMEMORY;
-                goto Failure;
-            }
-        }
-    }
-
-    *pbstrArgv = argv;
-    *pdwArgCount = argc + 1;
-
-    goto Finished;
-
-Failure:
-    if (argv != NULL)
-    {
-        // intArgsProcess - 1 here as if we fail to allocated the ith string
-        // we don't want to free it.
-        for (INT i = 0; i < intArgsProcessed - 1; i++)
-        {
-            SysFreeString(argv[i]);
-        }
-    }
-
-    delete[] argv;
-
-Finished:
-    if (pwzArgs != NULL)
-    {
-        LocalFree(pwzArgs);
-        DBG_ASSERT(pwzArgs == NULL);
-    }
     return hr;
 }
 

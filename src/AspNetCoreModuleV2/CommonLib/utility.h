@@ -130,6 +130,16 @@ public:
         ...
     );
 
+    static
+    HRESULT
+    ParseHostfxrArguments(
+        PCWSTR              pwzArgumentsFromConfig,
+        PCWSTR              pwzExePath,
+        PCWSTR              pcwzApplicationPhysicalPath,
+        _Out_ DWORD*        pdwArgCount,
+        _Out_ BSTR**        ppwzArgv
+    );
+
 private:
 
     UTILITY() {}

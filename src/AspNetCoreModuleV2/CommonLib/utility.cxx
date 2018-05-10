@@ -654,3 +654,120 @@ UTILITY::LogEventF(
 
     va_end( argsList );
 }
+
+//
+// Forms the argument list in HOSTFXR_PARAMETERS.
+// Sets the ArgCount and Arguments.
+// Arg structure:
+// argv[0] = Path to exe activating hostfxr.
+// argv[1] = L"exec"
+// argv[2] = absolute path to dll.
+//
+HRESULT
+UTILITY::ParseHostfxrArguments(
+    PCWSTR              pwzArgumentsFromConfig,
+    PCWSTR              pwzExePath,
+    PCWSTR              pcwzApplicationPhysicalPath,
+    _Out_ DWORD*        pdwArgCount,
+    _Out_ BSTR**        pbstrArgv
+)
+{
+    DBG_ASSERT(dwArgCount != NULL);
+    DBG_ASSERT(pwzArgv != NULL);
+
+    HRESULT     hr = S_OK;
+    INT         argc = 0;
+    BSTR*       argv = NULL;
+    LPWSTR*     pwzArgs = NULL;
+    STRU        struTempPath;
+    INT         intArgsProcessed = 0;
+
+    // If we call CommandLineToArgvW with an empty string, argc is 5 for some interesting reason.
+    // Protectively guard against this by check if the string is null or empty.
+    if (pwzArgumentsFromConfig == NULL || wcscmp(pwzArgumentsFromConfig, L"") == 0)
+    {
+        hr = E_INVALIDARG;
+        goto Finished;
+    }
+
+    pwzArgs = CommandLineToArgvW(pwzArgumentsFromConfig, &argc);
+
+    if (pwzArgs == NULL)
+    {
+        hr = HRESULT_FROM_WIN32(GetLastError());
+        goto Failure;
+    }
+
+    argv = new BSTR[argc + 1];
+    if (argv == NULL)
+    {
+        hr = E_OUTOFMEMORY;
+        goto Failure;
+    }
+
+    argv[0] = SysAllocString(pwzExePath);
+
+    if (argv[0] == NULL)
+    {
+        hr = E_OUTOFMEMORY;
+        goto Failure;
+    }
+
+    // Try to convert the application dll from a relative to an absolute path
+    // Don't record this failure as pwzArgs[0] may already be an absolute path to the dll.
+    for (intArgsProcessed = 0; intArgsProcessed < argc; intArgsProcessed++)
+    {
+        struTempPath.Copy(pwzArgs[intArgsProcessed]);
+        if (struTempPath.EndsWith(L".dll"))
+        {
+            if (SUCCEEDED(ConvertPathToFullPath(pwzArgs[intArgsProcessed], pcwzApplicationPhysicalPath, &struTempPath)))
+            {
+                argv[intArgsProcessed + 1] = SysAllocString(struTempPath.QueryStr());
+            }
+            else
+            {
+                argv[intArgsProcessed + 1] = SysAllocString(pwzArgs[intArgsProcessed]);
+            }
+            if (argv[intArgsProcessed + 1] == NULL)
+            {
+                hr = E_OUTOFMEMORY;
+                goto Failure;
+            }
+        }
+        else
+        {
+            argv[intArgsProcessed + 1] = SysAllocString(pwzArgs[intArgsProcessed]);
+            if (argv[intArgsProcessed + 1] == NULL)
+            {
+                hr = E_OUTOFMEMORY;
+                goto Failure;
+            }
+        }
+    }
+
+    *pbstrArgv = argv;
+    *pdwArgCount = argc + 1;
+
+    goto Finished;
+
+Failure:
+    if (argv != NULL)
+    {
+        // intArgsProcess - 1 here as if we fail to allocated the ith string
+        // we don't want to free it.
+        for (INT i = 0; i < intArgsProcessed - 1; i++)
+        {
+            SysFreeString(argv[i]);
+        }
+    }
+
+    delete[] argv;
+
+Finished:
+    if (pwzArgs != NULL)
+    {
+        LocalFree(pwzArgs);
+        DBG_ASSERT(pwzArgs == NULL);
+    }
+    return hr;
+}

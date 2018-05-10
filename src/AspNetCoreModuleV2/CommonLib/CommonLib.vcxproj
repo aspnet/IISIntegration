@@ -170,16 +170,12 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="application.h" />
     <ClInclude Include="iapplication.h" />
     <ClInclude Include="aspnetcoreconfig.h" />
-    <ClInclude Include="debugutil.h" />
     <ClInclude Include="disconnectcontext.h" />
     <ClInclude Include="environmentvariablehash.h" />
     <ClInclude Include="fx_ver.h" />
-    <ClInclude Include="hostfxr_utility.h" />
     <ClInclude Include="irequesthandler.h" />
-    <ClInclude Include="requesthandler.h" />
     <ClInclude Include="resources.h" />
     <ClInclude Include="SRWLockWrapper.h" />
     <ClInclude Include="stdafx.h" />
@@ -188,7 +184,6 @@
   <ItemGroup>
     <ClCompile Include="aspnetcoreconfig.cxx" />
     <ClCompile Include="fx_ver.cxx" />
-    <ClCompile Include="hostfxr_utility.cpp" />
     <ClCompile Include="SRWLockWrapper.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

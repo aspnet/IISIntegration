@@ -11,6 +11,7 @@ HRESULT
 (WINAPI * PFN_ASPNETCORE_CREATE_APPLICATION)(
     _In_  IHttpServer        *pServer,
     _In_  ASPNETCORE_CONFIG  *pConfig,
+    _In_  HINSTANCE          hRequestHandlerModule,
     _Out_ IAPPLICATION       **pApplication
     );
 
@@ -60,9 +61,15 @@ public:
 
     APPLICATION_INFO(IHttpServer *pServer) :
         m_pServer(pServer),
-        m_cRefs(1), m_fAppOfflineFound(FALSE),
-        m_pAppOfflineHtm(NULL), m_pFileWatcherEntry(NULL),
+        m_cRefs(1),
+        m_fAppOfflineFound(FALSE),
+        m_pAppOfflineHtm(NULL),
+        m_pFileWatcherEntry(NULL),
         m_pConfiguration(NULL),
+        m_hHostFxr(NULL),
+        m_hAspnetCoreRH(NULL),
+        m_fAspnetcoreRHAssemblyLoaded(FALSE),
+        m_fAspnetcoreRHLoadedError(FALSE),
         m_pfnAspNetCoreCreateApplication(NULL)
     {
         InitializeSRWLock(&m_srwLock);
@@ -157,13 +164,20 @@ private:
     mutable LONG            m_cRefs;
     APPLICATION_INFO_KEY    m_applicationInfoKey;
     BOOL                    m_fAppOfflineFound;
+    BOOL                    m_fAspnetcoreRHAssemblyLoaded;
+    BOOL                    m_fAspnetcoreRHLoadedError;
     APP_OFFLINE_HTM        *m_pAppOfflineHtm;
     FILE_WATCHER_ENTRY     *m_pFileWatcherEntry;
     ASPNETCORE_CONFIG      *m_pConfiguration;
     IAPPLICATION            *m_pApplication;
     SRWLOCK                 m_srwLock;
     IHttpServer            *m_pServer;
+    HINSTANCE               m_hAspnetCoreRH;
     PFN_ASPNETCORE_CREATE_APPLICATION      m_pfnAspNetCoreCreateApplication;
+    STRU                   m_struHostFxrLocation;
+    PWSTR*                 m_ppStrHostFxrArguments;
+    DWORD                  m_dwHostFxrArgc;
+    HMODULE                m_hHostFxr;
 };
 
 class APPLICATION_INFO_HASH :

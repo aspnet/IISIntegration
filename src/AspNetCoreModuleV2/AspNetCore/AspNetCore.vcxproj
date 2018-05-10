@@ -216,6 +216,7 @@
     <ClInclude Include="inc\globalmodule.h" />
     <ClInclude Include="Inc\applicationmanager.h" />
     <ClInclude Include="Inc\filewatcher.h" />
+    <ClInclude Include="Inc\hostfxr_utility.h" />
     <ClInclude Include="Inc\proxymodule.h" />
     <ClInclude Include="Src\precomp.hxx" />
   </ItemGroup>
@@ -225,6 +226,7 @@
     <ClCompile Include="Src\dllmain.cpp" />
     <ClCompile Include="Src\filewatcher.cxx" />
     <ClCompile Include="src\globalmodule.cpp" />
+    <ClCompile Include="src\hostfxr_utility.cpp" />
     <ClCompile Include="Src\proxymodule.cxx" />
   </ItemGroup>
   <ItemGroup>

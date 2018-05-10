@@ -11,7 +11,6 @@ BOOL                g_fRecycleProcessCalled = FALSE;
 PCWSTR              g_pszModuleName = NULL;
 HINSTANCE           g_hModule;
 HMODULE             g_hAspnetCoreRH = NULL;
-BOOL                g_fAspnetcoreRHAssemblyLoaded = FALSE;
 BOOL                g_fAspnetcoreRHLoadedError = FALSE;
 BOOL                g_fInShutdown = FALSE;
 DWORD               g_dwAspNetCoreDebugFlags = 0;
@@ -20,7 +19,6 @@ SRWLOCK             g_srwLock;
 DWORD               g_dwDebugFlags = 0;
 PCSTR               g_szDebugLabel = "ASPNET_CORE_MODULE";
 PCWSTR              g_pwzAspnetcoreRequestHandlerName = L"aspnetcorerh.dll";
-PFN_ASPNETCORE_CREATE_APPLICATION      g_pfnAspNetCoreCreateApplication;
 
 VOID
 StaticCleanup()

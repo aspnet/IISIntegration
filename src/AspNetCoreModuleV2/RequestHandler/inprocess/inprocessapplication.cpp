@@ -4,7 +4,9 @@ IN_PROCESS_APPLICATION*  IN_PROCESS_APPLICATION::s_Application = NULL;
 
 IN_PROCESS_APPLICATION::IN_PROCESS_APPLICATION(
     IHttpServer*        pHttpServer,
-    ASPNETCORE_CONFIG*  pConfig) :
+    ASPNETCORE_CONFIG*  pConfig,
+    HINSTANCE hReuqestHanlderModule) :
+    APPLICATION(pConfig, hReuqestHanlderModule),
     m_pHttpServer(pHttpServer),
     m_ProcessExitCode(0),
     m_hLogFileHandle(INVALID_HANDLE_VALUE),
@@ -16,8 +18,7 @@ IN_PROCESS_APPLICATION::IN_PROCESS_APPLICATION(
     m_fInitialized(FALSE),
     m_fShutdownCalledFromNative(FALSE),
     m_fShutdownCalledFromManaged(FALSE),
-    m_srwLock(),
-    m_pConfig(pConfig)
+    m_srwLock()
 {
     // is it guaranteed that we have already checked app offline at this point?
     // If so, I don't think there is much to do here.
@@ -802,13 +803,12 @@ IN_PROCESS_APPLICATION::ExecuteApplication(
 )
 {
     HRESULT             hr = S_OK;
-    HMODULE             hModule;
+    HMODULE             hModule = NULL;
     hostfxr_main_fn     pProc;
-
+    STACK_STRU(strBuffer, MAX_PATH);
     DBG_ASSERT(m_status == APPLICATION_STATUS::STARTING);
 
-    hModule = LoadLibraryW(m_pConfig->QueryHostFxrFullPath());
-
+    hModule = GetModuleHandleA("hostfxr.dll");
     if (hModule == NULL)
     {
         // .NET Core not installed (we can log a more detailed error message here)
@@ -837,7 +837,28 @@ IN_PROCESS_APPLICATION::ExecuteApplication(
     // set the callbacks
     s_Application = this;
 
-    hr = RunDotnetApplication(m_pConfig->QueryHostFxrArgCount(), m_pConfig->QueryHostFxrArguments(), pProc);
+    if (m_pConfig->QueryProcessPath().EndsWith(L"dotnet.exe") || m_pConfig->QueryProcessPath().EndsWith(L"dotnet"))
+    {
+        DWORD dwBufferSize = MAX_PATH;
+        DWORD dwSize = dwBufferSize -1;
+        DWORD dwError = ERROR_INSUFFICIENT_BUFFER;
+        dwSize = GetModuleFileName(hModule, strBuffer.QueryStr(), dwBufferSize);
+        while (dwSize == dwBufferSize && dwError == ERROR_INSUFFICIENT_BUFFER)
+        {
+            dwBufferSize *= 2;
+            if (FAILED(hr = strBuffer.Resize(dwBufferSize)))
+            {
+                goto Finished;
+            }
+            dwSize = GetModuleFileName(hModule, strBuffer.QueryStr(), dwBufferSize);
+            dwError = GetLastError();
+        }
+        // we now have the hostfxr path
+
+    }
+    //panwang: todo
+    // UTILITY::ParseHostfxrArguments()
+    //hr = RunDotnetApplication(m_pConfig->QueryHostFxrArgCount(), m_pConfig->QueryHostFxrArguments(), pProc);
 
 Finished:
 

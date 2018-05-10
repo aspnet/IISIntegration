@@ -103,21 +103,18 @@ inline bool IsSpace(char ch)
 
 #include "..\..\CommonLib\environmentvariablehash.h"
 #include "..\..\CommonLib\aspnetcoreconfig.h"
-#include "..\..\CommonLib\hostfxr_utility.h"
 #include "..\..\CommonLib\iapplication.h"
 #include "..\..\CommonLib\utility.h"
-#include "..\..\CommonLib\debugutil.h"
-#include "..\..\CommonLib\requesthandler.h"
 #include "..\..\CommonLib\resources.h"
 #include "..\..\CommonLib\aspnetcore_msg.h"
 //#include "aspnetcore_event.h"
+#include "hostfxr_utility.h"
 #include "appoffline.h"
 #include "filewatcher.h"
 #include "applicationinfo.h"
 #include "applicationmanager.h"
 #include "globalmodule.h"
 #include "proxymodule.h"
-#include "applicationinfo.h"
 
 
 FORCEINLINE
@@ -144,8 +141,6 @@ HRESULT_FROM_GETLASTERROR()
 }
 
 extern PVOID        g_pModuleId;
-extern BOOL         g_fAspnetcoreRHAssemblyLoaded;
-extern BOOL         g_fAspnetcoreRHLoadedError;
 extern BOOL         g_fInShutdown;
 extern BOOL         g_fEnableReferenceCountTracing;
 extern DWORD        g_dwActiveServerProcesses;
@@ -154,5 +149,4 @@ extern HMODULE      g_hAspnetCoreRH;
 extern SRWLOCK      g_srwLock;
 extern PCWSTR       g_pwzAspnetcoreRequestHandlerName;
 extern HANDLE       g_hEventLog;
-extern PFN_ASPNETCORE_CREATE_APPLICATION      g_pfnAspNetCoreCreateApplication;
 #pragma warning( error : 4091)

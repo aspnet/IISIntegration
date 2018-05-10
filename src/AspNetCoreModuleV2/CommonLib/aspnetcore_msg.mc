@@ -195,18 +195,12 @@ Language=English
 .
 
 Messageid=1028
-SymbolicName=ASPNETCORE_EVENT_INPROCESS_RH_MISSING
+SymbolicName=ASPNETCORE_EVENT_RH_MISSING
 Language=English
 %1
 .
 
 Messageid=1029
-SymbolicName=ASPNETCORE_EVENT_OUT_OF_PROCESS_RH_MISSING
-Language=English
-%1
-.
-
-Messageid=1030
 SymbolicName=ASPNETCORE_EVENT_PROCESS_SHUTDOWN
 Language=English
 %1

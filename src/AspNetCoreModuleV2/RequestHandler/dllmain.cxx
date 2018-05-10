@@ -277,6 +277,7 @@ __stdcall
 CreateApplication(
     _In_  IHttpServer        *pServer,
     _In_  ASPNETCORE_CONFIG  *pConfig,
+    _In_  HINSTANCE          hRequestHandlerModule,
     _Out_ IAPPLICATION       **ppApplication
 )
 {
@@ -288,7 +289,7 @@ CreateApplication(
 
     if (pConfig->QueryHostingModel() == APP_HOSTING_MODEL::HOSTING_IN_PROCESS)
     {
-        pApplication = new IN_PROCESS_APPLICATION(pServer, pConfig);
+        pApplication = new IN_PROCESS_APPLICATION(pServer, pConfig, hRequestHandlerModule);
         if (pApplication == NULL)
         {
             hr = HRESULT_FROM_WIN32(ERROR_OUTOFMEMORY);
@@ -304,7 +305,7 @@ CreateApplication(
         }
 
 
-        pApplication = new OUT_OF_PROCESS_APPLICATION(pConfig);
+        pApplication = new OUT_OF_PROCESS_APPLICATION(pConfig, hRequestHandlerModule);
         if (pApplication == NULL)
         {
             hr = HRESULT_FROM_WIN32(ERROR_OUTOFMEMORY);

@@ -16,9 +16,21 @@ public:
         return m_status;
     }
 
-    APPLICATION()
-        : m_cRefs(1)
+    APPLICATION(
+        _In_  ASPNETCORE_CONFIG*  pConfig,
+        _In_  HINSTANCE hRequestHandlerModule) :
+          m_cRefs(1),
+          m_pConfig(pConfig),
+          m_hRequestHandlerModule(hRequestHandlerModule)
     {
+    }
+
+    ~APPLICATION()
+    {
+        if (m_hRequestHandlerModule)
+        {
+            FreeLibrary(m_hRequestHandlerModule);
+        }
     }
 
     VOID
@@ -39,9 +51,17 @@ public:
         }
     }
 
+    ASPNETCORE_CONFIG*
+    QueryConfig() const
+    {
+        return m_pConfig;
+    }
+
 protected:
     volatile APPLICATION_STATUS     m_status = APPLICATION_STATUS::UNKNOWN;
+    ASPNETCORE_CONFIG*              m_pConfig;
 
 private:
     mutable LONG                    m_cRefs;
+    HINSTANCE                       m_hRequestHandlerModule;
 };

@@ -69,7 +69,6 @@ public:
         _In_  IHttpServer             *pHttpServer,
         _In_  HTTP_MODULE_ID           pModuleId,
         _In_  IHttpContext            *pHttpContext,
-        _In_  HANDLE                   hEventLog,
         _Out_ ASPNETCORE_CONFIG       **ppAspNetCoreConfig
     );
 
@@ -223,56 +222,6 @@ public:
         return &m_struConfigPath;
     }
 
-    CONST
-    PCWSTR*
-    QueryHostFxrArguments(
-        VOID
-    )
-    {
-        return m_ppStrArguments;
-    }
-
-    CONST
-    DWORD
-    QueryHostFxrArgCount(
-        VOID
-    )
-    {
-        return m_dwArgc;
-    }
-
-    CONST
-    PCWSTR
-    QueryHostFxrFullPath(
-        VOID
-    )
-    {
-        return m_struHostFxrLocation.QueryStr();
-    }
-
-    HRESULT
-    SetHostFxrFullPath(
-        PCWSTR pStrHostFxrFullPath
-    )
-    {
-        return m_struHostFxrLocation.Copy(pStrHostFxrFullPath);
-    }
-
-    VOID
-    SetHostFxrArguments(
-        DWORD dwArgc,
-        PWSTR* ppStrArguments
-    )
-    {
-        if (m_ppStrArguments != NULL)
-        {
-            delete[] m_ppStrArguments;
-        }
-
-        m_dwArgc = dwArgc;
-        m_ppStrArguments = ppStrArguments;
-    }
-
     VOID
     ReferenceConfiguration(
         VOID
@@ -292,8 +241,7 @@ private:
         m_fStdoutLogEnabled( FALSE ),
         m_pEnvironmentVariables( NULL ),
         m_cRefs( 1 ),
-        m_hostingModel( HOSTING_UNKNOWN ),
-        m_ppStrArguments(NULL)
+        m_hostingModel( HOSTING_UNKNOWN )
     {
     }
 
@@ -326,7 +274,4 @@ private:
     BOOL                   m_fWebSocketEnabled;
     APP_HOSTING_MODEL      m_hostingModel;
     ENVIRONMENT_VAR_HASH*  m_pEnvironmentVariables;
-    STRU                   m_struHostFxrLocation;
-    PWSTR*                m_ppStrArguments;
-    DWORD                  m_dwArgc;
 };
