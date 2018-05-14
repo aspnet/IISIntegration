@@ -60,8 +60,10 @@
     <FilesToSign Include="AspNetCoreModuleV1/x86/aspnetcore.dll" Container="$(AncmZipOutputPath)" Certificate="$(AssemblySigningCertName)" />
     <FilesToSign Include="AspNetCoreModuleV2/x64/aspnetcore.dll" Container="$(AncmZipOutputPath)" Certificate="$(AssemblySigningCertName)" />
     <FilesToSign Include="AspNetCoreModuleV2/x86/aspnetcore.dll" Container="$(AncmZipOutputPath)" Certificate="$(AssemblySigningCertName)" />
-    <FilesToSign Include="AspNetCoreModuleV2/x64/aspnetcorerh.dll" Container="$(AncmZipOutputPath)" Certificate="$(AssemblySigningCertName)" />
-    <FilesToSign Include="AspNetCoreModuleV2/x86/aspnetcorerh.dll" Container="$(AncmZipOutputPath)" Certificate="$(AssemblySigningCertName)" />
+    <FilesToSign Include="AspNetCoreModuleV2/x64/aspnetcore_inprocess_rh.dll" Container="$(AncmZipOutputPath)" Certificate="$(AssemblySigningCertName)" />
+    <FilesToSign Include="AspNetCoreModuleV2/x64/aspnetcore_outofprocess_rh.dll" Container="$(AncmZipOutputPath)" Certificate="$(AssemblySigningCertName)" />
+    <FilesToSign Include="AspNetCoreModuleV2/x86/aspnetcore_inprocess_rh.dll" Container="$(AncmZipOutputPath)" Certificate="$(AssemblySigningCertName)" />
+    <FilesToSign Include="AspNetCoreModuleV2/x86/aspnetcore_outofprocess_rh.dll" Container="$(AncmZipOutputPath)" Certificate="$(AssemblySigningCertName)" />
   </ItemGroup>
 
   <Target Name="PackageNativeProjects">

@@ -242,7 +242,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="requesthandler.rc" />
+    <ResourceCompile Include="outofprocessrequesthandler.rc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Source.def" />

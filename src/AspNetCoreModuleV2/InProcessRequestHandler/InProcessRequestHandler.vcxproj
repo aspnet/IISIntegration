@@ -229,7 +229,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="requesthandler.rc" />
+    <ResourceCompile Include="inprocessrequesthandler.rc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Source.def" />
