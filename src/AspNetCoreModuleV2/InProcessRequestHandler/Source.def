@@ -1,4 +1,4 @@
-LIBRARY aspnetcorerh
+LIBRARY aspnetcore_inprocess_rh
 
 EXPORTS
     CreateApplication

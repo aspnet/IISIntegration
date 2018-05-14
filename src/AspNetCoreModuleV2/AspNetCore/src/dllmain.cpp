@@ -19,7 +19,8 @@ DWORD               g_dwActiveServerProcesses = 0;
 SRWLOCK             g_srwLock;
 DWORD               g_dwDebugFlags = 0;
 PCSTR               g_szDebugLabel = "ASPNET_CORE_MODULE";
-PCWSTR              g_pwzAspnetcoreRequestHandlerName = L"aspnetcorerh.dll"; // TODO change this!
+PCWSTR              g_pwzAspnetcoreInProcessRequestHandlerName = L"aspnetcore_inprocess_rh.dll";
+PCWSTR              g_pwzAspnetcoreOutOfProcessRequestHandlerName = L"aspnetcore_outofprocess_rh.dll";
 PFN_ASPNETCORE_CREATE_APPLICATION      g_pfnAspNetCoreCreateApplication;
 
 VOID

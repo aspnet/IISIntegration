@@ -45,7 +45,8 @@
 
     <AncmPath>$(NativePlatform)\aspnetcore.dll</AncmPath>
     <AncmV2Path>$(NativePlatform)\aspnetcorev2.dll</AncmV2Path>
-    <AncmRHPath>$(NativePlatform)\aspnetcorerh.dll</AncmRHPath>
+    <AncmInProcessRHPath>$(NativePlatform)\aspnetcore_inprocess_rh.dll</AncmInProcessRHPath>
+    <AncmOutOfProcessRHPath>$(NativePlatform)\aspnetcore_outofprocess_rh.dll</AncmOutOfProcessRHPath>
     <DotNetPath>$(userprofile)\.dotnet\$(NativePlatform)\dotnet.exe</DotNetPath>
   </PropertyGroup>
 
