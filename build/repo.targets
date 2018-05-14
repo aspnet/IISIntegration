@@ -24,7 +24,9 @@
       Condition="'$(VisualStudioMSBuildx86Path)' != ''" />
     <Exec Command="&quot;$(VisualStudioMSBuildx86Path)&quot; &quot;$(RepositoryRoot)src\AspNetCoreModuleV2\AspNetCore\AspNetCore.vcxproj&quot; $(BuildArgs) -p:Platform=%(Platforms.Identity) -bl:$(LogOutputDir)native.%(Platforms.Identity).binlog"
       Condition="'$(VisualStudioMSBuildx86Path)' != ''" />
-    <Exec Command="&quot;$(VisualStudioMSBuildx86Path)&quot; &quot;$(RepositoryRoot)src\AspNetCoreModuleV2\RequestHandler\RequestHandler.vcxproj&quot; $(BuildArgs) -p:Platform=%(Platforms.Identity) -bl:$(LogOutputDir)native.%(Platforms.Identity).binlog"
+    <Exec Command="&quot;$(VisualStudioMSBuildx86Path)&quot; &quot;$(RepositoryRoot)src\AspNetCoreModuleV2\InProcessRequestHandler\InProcessRequestHandler.vcxproj&quot; $(BuildArgs) -p:Platform=%(Platforms.Identity) -bl:$(LogOutputDir)native.%(Platforms.Identity).binlog"
+      Condition="'$(VisualStudioMSBuildx86Path)' != ''" />
+    <Exec Command="&quot;$(VisualStudioMSBuildx86Path)&quot; &quot;$(RepositoryRoot)src\AspNetCoreModuleV2\OutOfProcessRequestHandler\OutOfProcessRequestHandler.vcxproj&quot; $(BuildArgs) -p:Platform=%(Platforms.Identity) -bl:$(LogOutputDir)native.%(Platforms.Identity).binlog"
       Condition="'$(VisualStudioMSBuildx86Path)' != ''" />
     <Exec Command="&quot;$(VisualStudioMSBuildx86Path)&quot; &quot;$(RepositoryRoot)test\CommonLibTests\CommonLibTests.vcxproj&quot; $(BuildArgs) -p:Platform=%(Platforms.Identity) -bl:$(LogOutputDir)native.%(Platforms.Identity).binlog"
       Condition="'$(VisualStudioMSBuildx86Path)' != ''" />
@@ -81,15 +83,19 @@
       <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV1\AspNetCore\bin\$(Configuration)\x64\aspnetcore.pdb" Link="AspNetCoreModuleV1\x64\aspnetcore.pdb" />
       <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\AspNetCore\bin\$(Configuration)\x64\aspnetcorev2.dll" Link="AspNetCoreModuleV2\x64\aspnetcorev2.dll" />
       <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\AspNetCore\bin\$(Configuration)\x64\aspnetcorev2.pdb" Link="AspNetCoreModuleV2\x64\aspnetcorev2.pdb" />
-      <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\RequestHandler\bin\$(Configuration)\x64\aspnetcorerh.dll" Link="AspNetCoreModuleV2\x64\aspnetcorerh.dll" />
-      <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\RequestHandler\bin\$(Configuration)\x64\aspnetcorerh.pdb" Link="AspNetCoreModuleV2\x64\aspnetcorerh.pdb" />
+      <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\OutOfProcessRequestHandler\bin\$(Configuration)\x64\aspnetcore_outofprocess_rh.dll" Link="AspNetCoreModuleV2\x64\aspnetcore_outofprocess_rh.dll" />
+      <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\InProcessRequestHandler\bin\$(Configuration)\x64\aspnetcore_inprocess_rh.dll" Link="AspNetCoreModuleV2\x64\aspnetcore_inprocess_rh.dll" />
+      <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\OutOfProcessRequestHandler\bin\$(Configuration)\x64\aspnetcore_outofprocess_rh.pdb" Link="AspNetCoreModuleV2\x64\aspnetcore_outofprocess_rh.pdb" />
+      <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\InProcessRequestHandler\bin\$(Configuration)\x64\aspnetcore_inprocess_rh.pdb" Link="AspNetCoreModuleV2\x64\aspnetcore_inprocess_rh.pdb" />
       <!-- x86 -->
       <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV1\AspNetCore\bin\$(Configuration)\Win32\aspnetcore.dll" Link="AspNetCoreModuleV1\x86\aspnetcore.dll" />
       <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV1\AspNetCore\bin\$(Configuration)\Win32\aspnetcore.pdb" Link="AspNetCoreModuleV1\x86\aspnetcore.pdb" />
       <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\AspNetCore\bin\$(Configuration)\Win32\aspnetcorev2.dll" Link="AspNetCoreModuleV2\x86\aspnetcorev2.dll" />
       <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\AspNetCore\bin\$(Configuration)\Win32\aspnetcorev2.pdb" Link="AspNetCoreModuleV2\x86\aspnetcorev2.pdb" />
-      <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\RequestHandler\bin\$(Configuration)\Win32\aspnetcorerh.dll" Link="AspNetCoreModuleV2\x86\aspnetcorerh.dll" />
-      <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\RequestHandler\bin\$(Configuration)\Win32\aspnetcorerh.pdb" Link="AspNetCoreModuleV2\x86\aspnetcorerh.pdb" />
+      <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\OutOfProcessRequestHandler\bin\$(Configuration)\Win32\aspnetcore_outofprocess_rh.dll" Link="AspNetCoreModuleV2\x86\aspnetcore_outofprocess_rh.dll" />
+      <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\InProcessRequestHandler\bin\$(Configuration)\Win32\aspnetcore_inprocess_rh.dll" Link="AspNetCoreModuleV2\x86\aspnetcore_inprocess_rh.dll" />
+      <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\OutOfProcessRequestHandler\bin\$(Configuration)\Win32\aspnetcore_outofprocess_rh.pdb" Link="AspNetCoreModuleV2\x86\aspnetcore_outofprocess_rh.pdb" />
+      <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\InProcessRequestHandler\bin\$(Configuration)\Win32\aspnetcore_inprocess_rh.pdb" Link="AspNetCoreModuleV2\x86\aspnetcore_inprocess_rh.pdb" />
       <!-- Schema-->
       <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV1\AspNetCore\bin\$(Configuration)\x64\aspnetcore_schema.xml" Link="AspNetCoreModuleV1\aspnetcore_schema.xml" />
       <AncmFiles Include="$(RepositoryRoot)src\AspNetCoreModuleV2\AspNetCore\bin\$(Configuration)\x64\aspnetcore_schema_v2.xml" Link="AspNetCoreModuleV2\aspnetcore_schema_v2.xml" />

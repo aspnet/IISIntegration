@@ -1,0 +1,5 @@
+LIBRARY aspnetcorerh
+
+EXPORTS
+    CreateApplication
+
