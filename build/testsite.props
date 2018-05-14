@@ -67,7 +67,7 @@
     <PropertyGroup>
       <InjectDepsAssembly>$(MSBuildThisFileDirectory)..\test\TestTasks\bin\$(Configuration)\$(TargetFramework)\TestTasks</InjectDepsAssembly>
       <InjectDepsApp Condition="'$(TargetFramework)' == 'net461'">$(InjectDepsAssembly)</InjectDepsApp>
-      <InjectDepsArguments>"win7-$(NativePlatform)" "$(AncmRHPath)"</InjectDepsArguments>
+      <InjectDepsArguments>"win7-$(NativePlatform)" "$(AncmInProcessRHPath)"</InjectDepsArguments>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(TargetFramework)' == 'net461'">
