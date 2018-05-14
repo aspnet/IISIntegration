@@ -3,15 +3,8 @@
 #include <IPHlpApi.h>
 #include <VersionHelpers.h>
 
-BOOL                g_fNsiApiNotSupported = FALSE;
-BOOL                g_fWebSocketSupported = FALSE;
-BOOL                g_fEnableReferenceCountTracing = FALSE;
 BOOL                g_fGlobalInitialize = FALSE;
-BOOL                g_fOutOfProcessInitialize = FALSE;
-BOOL                g_fOutOfProcessInitializeError = FALSE;
-BOOL                g_fWinHttpNonBlockingCallbackAvailable = FALSE;
 BOOL                g_fProcessDetach = FALSE;
-DWORD               g_OptionalWinHttpFlags = 0;
 DWORD               g_dwAspNetCoreDebugFlags = 0;
 DWORD               g_dwDebugFlags = 0;
 DWORD               g_dwTlsIndex = TLS_OUT_OF_INDEXES;
@@ -30,8 +23,6 @@ InitializeGlobalConfiguration(
 {
     HKEY hKey;
     BOOL fLocked = FALSE;
-    DWORD dwSize = 0;
-    DWORD dwResult = 0;
 
     if (!g_fGlobalInitialize)
     {
@@ -66,30 +57,6 @@ InitializeGlobalConfiguration(
 
             cbData = sizeof(dwData);
             if ((RegQueryValueEx(hKey,
-                L"OptionalWinHttpFlags",
-                NULL,
-                &dwType,
-                (LPBYTE)&dwData,
-                &cbData) == NO_ERROR) &&
-                (dwType == REG_DWORD))
-            {
-                g_OptionalWinHttpFlags = dwData;
-            }
-
-            cbData = sizeof(dwData);
-            if ((RegQueryValueEx(hKey,
-                L"EnableReferenceCountTracing",
-                NULL,
-                &dwType,
-                (LPBYTE)&dwData,
-                &cbData) == NO_ERROR) &&
-                (dwType == REG_DWORD) && (dwData == 1 || dwData == 0))
-            {
-                g_fEnableReferenceCountTracing = !!dwData;
-            }
-
-            cbData = sizeof(dwData);
-            if ((RegQueryValueEx(hKey,
                 L"DebugFlags",
                 NULL,
                 &dwType,
@@ -101,19 +68,6 @@ InitializeGlobalConfiguration(
             }
             RegCloseKey(hKey);
         }
-
-        dwResult = GetExtendedTcpTable(NULL,
-            &dwSize,
-            FALSE,
-            AF_INET,
-            TCP_TABLE_OWNER_PID_LISTENER,
-            0);
-        if (dwResult != NO_ERROR && dwResult != ERROR_INSUFFICIENT_BUFFER)
-        {
-            g_fNsiApiNotSupported = TRUE;
-        }
-
-        g_fWebSocketSupported = IsWindows8OrGreater();
 
         g_fGlobalInitialize = TRUE;
     }
