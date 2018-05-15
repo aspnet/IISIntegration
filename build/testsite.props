@@ -29,10 +29,10 @@
     
   </PropertyGroup>
   <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
-    <None Include="$(MSBuildThisFileDirectory)..\src\AspNetCoreModuleV2\OutOfProcessRequestHandler\bin\$(Configuration)\$(NativeFolder)\aspnetcore_outofprocess_rh.dll" CopyToOutputDirectory="PreserveNewest" Visible="true" Link="$(BasePathForRequestHandler)%(FileName)%(Extension)" />
-    <None Include="$(MSBuildThisFileDirectory)..\src\AspNetCoreModuleV2\OutOfProcessRequestHandler\bin\$(Configuration)\$(NativeFolder)\aspnetcore_outofprocess_rh.pdb" CopyToOutputDirectory="PreserveNewest" Visible="true" Link="$(BasePathForRequestHandler)%(FileName)%(Extension)" />
-    <None Include="$(MSBuildThisFileDirectory)..\src\AspNetCoreModuleV2\InProcessRequestHandler\bin\$(Configuration)\$(NativeFolder)\aspnetcore_inprocess_rh.dll" CopyToOutputDirectory="PreserveNewest" Visible="true" Link="$(BasePathForRequestHandler)%(FileName)%(Extension)" />
-    <None Include="$(MSBuildThisFileDirectory)..\src\AspNetCoreModuleV2\InProcessRequestHandler\bin\$(Configuration)\$(NativeFolder)\aspnetcore_inprocess_rh.pdb" CopyToOutputDirectory="PreserveNewest" Visible="true" Link="$(BasePathForRequestHandler)%(FileName)%(Extension)" />
+    <None Include="$(MSBuildThisFileDirectory)..\src\AspNetCoreModuleV2\OutOfProcessRequestHandler\bin\$(Configuration)\$(NativeFolder)\aspnetcorev2_outofprocess.dll" CopyToOutputDirectory="PreserveNewest" Visible="true" Link="$(BasePathForRequestHandler)%(FileName)%(Extension)" />
+    <None Include="$(MSBuildThisFileDirectory)..\src\AspNetCoreModuleV2\OutOfProcessRequestHandler\bin\$(Configuration)\$(NativeFolder)\aspnetcorev2_outofprocess.pdb" CopyToOutputDirectory="PreserveNewest" Visible="true" Link="$(BasePathForRequestHandler)%(FileName)%(Extension)" />
+    <None Include="$(MSBuildThisFileDirectory)..\src\AspNetCoreModuleV2\InProcessRequestHandler\bin\$(Configuration)\$(NativeFolder)\aspnetcorev2_inprocess.dll" CopyToOutputDirectory="PreserveNewest" Visible="true" Link="$(BasePathForRequestHandler)%(FileName)%(Extension)" />
+    <None Include="$(MSBuildThisFileDirectory)..\src\AspNetCoreModuleV2\InProcessRequestHandler\bin\$(Configuration)\$(NativeFolder)\aspnetcorev2_inprocess.pdb" CopyToOutputDirectory="PreserveNewest" Visible="true" Link="$(BasePathForRequestHandler)%(FileName)%(Extension)" />
     <None Include="$(MSBuildThisFileDirectory)..\src\AspNetCoreModuleV2\AspNetCore\bin\$(Configuration)\$(NativeFolder)\aspnetcorev2.dll" CopyToOutputDirectory="PreserveNewest" Visible="true" Link="$(NativePlatform)\%(FileName)%(Extension)" />
     <None Include="$(MSBuildThisFileDirectory)..\src\AspNetCoreModuleV2\AspNetCore\bin\$(Configuration)\$(NativeFolder)\aspnetcorev2.pdb" CopyToOutputDirectory="PreserveNewest" Visible="true" Link="$(NativePlatform)\%(FileName)%(Extension)" />
     <None Include="$(MSBuildThisFileDirectory)..\src\AspNetCoreModuleV1\AspNetCore\bin\$(Configuration)\$(NativeFolder)\aspnetcore.dll" CopyToOutputDirectory="PreserveNewest" Visible="true" Link="$(NativePlatform)\%(FileName)%(Extension)" />
@@ -45,8 +45,8 @@
 
     <AncmPath>$(NativePlatform)\aspnetcore.dll</AncmPath>
     <AncmV2Path>$(NativePlatform)\aspnetcorev2.dll</AncmV2Path>
-    <AncmInProcessRHPath>$(NativePlatform)\aspnetcore_inprocess_rh.dll</AncmInProcessRHPath>
-    <AncmOutOfProcessRHPath>$(NativePlatform)\aspnetcore_outofprocess_rh.dll</AncmOutOfProcessRHPath>
+    <AncmInProcessRHPath>$(NativePlatform)\aspnetcorev2_inprocess.dll</AncmInProcessRHPath>
+    <AncmOutOfProcessRHPath>$(NativePlatform)\aspnetcorev2_outofprocess.dll</AncmOutOfProcessRHPath>
     <DotNetPath>$(userprofile)\.dotnet\$(NativePlatform)\dotnet.exe</DotNetPath>
   </PropertyGroup>
 

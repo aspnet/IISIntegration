@@ -1,4 +1,4 @@
-LIBRARY aspnetcore_outofprocess_rh
+LIBRARY aspnetcorev2_outofprocess
 
 EXPORTS
     CreateApplication

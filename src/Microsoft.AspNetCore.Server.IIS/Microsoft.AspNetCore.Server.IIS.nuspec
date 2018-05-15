@@ -26,7 +26,7 @@
 
     <file src="Microsoft.AspNetCore.Server.IIS.targets" target="build/$tfm$/Microsoft.AspNetCore.Server.IIS.targets" />
 
-    <file src="..\AspNetCoreModuleV2\InProcessRequestHandler\bin\$Configuration$\Win32\aspnetcore_inprocess_rh.dll" target="runtimes\win-x86\nativeassets\$tfm$\aspnetcore_inprocess_rh.dll" />
-    <file src="..\AspNetCoreModuleV2\InProcessRequestHandler\bin\$Configuration$\x64\aspnetcore_inprocess_rh.dll" target="runtimes\win-x64\nativeassets\$tfm$\aspnetcore_inprocess_rh.dll" />
+    <file src="..\AspNetCoreModuleV2\InProcessRequestHandler\bin\$Configuration$\Win32\aspnetcorev2_inprocess.dll" target="runtimes\win-x86\nativeassets\$tfm$\aspnetcorev2_inprocess.dll" />
+    <file src="..\AspNetCoreModuleV2\InProcessRequestHandler\bin\$Configuration$\x64\aspnetcorev2_inprocess.dll" target="runtimes\win-x64\nativeassets\$tfm$\aspnetcorev2_inprocess.dll" />
   </files>
 </package>
