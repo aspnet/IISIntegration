@@ -29,7 +29,7 @@
       <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
-
+  
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="$(BenchmarkDotNetPackageVersion)" />
     <PackageReference Include="Microsoft.AspNetCore.BenchmarkRunner.Sources" PrivateAssets="All" Version="$(MicrosoftAspNetCoreBenchmarkRunnerSourcesPackageVersion)" />
