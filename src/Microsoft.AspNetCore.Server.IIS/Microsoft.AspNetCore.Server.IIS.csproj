@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\AspNetCoreModuleV2\RequestHandler\bin\$(Configuration)\Win32\aspnetcorerh.dll" PackagePath="runtimes/win-x86/nativeassets/$(TargetFramework)/aspnetcorerh.dll" />
-    <Content Include="..\AspNetCoreModuleV2\RequestHandler\bin\$(Configuration)\x64\aspnetcorerh.dll" PackagePath="runtimes/win-x64/nativeassets/$(TargetFramework)/aspnetcorerh.dll" />
+    <Content Include="..\AspNetCoreModuleV2\InProcessRequestHandler\bin\$(Configuration)\Win32\aspnetcorev2_inprocess.dll" PackagePath="runtimes/win-x86/nativeassets/$(TargetFramework)/aspnetcorev2_inprocess.dll" />
+    <Content Include="..\AspNetCoreModuleV2\InProcessRequestHandler\bin\$(Configuration)\x64\aspnetcorev2_inprocess.dll" PackagePath="runtimes/win-x64/nativeassets/$(TargetFramework)/aspnetcorev2_inprocess.dll" />
   </ItemGroup>
 </Project>
