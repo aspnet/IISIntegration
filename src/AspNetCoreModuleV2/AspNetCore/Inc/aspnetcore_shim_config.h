@@ -114,14 +114,6 @@ public:
         return &m_struArguments;
     }
 
-    HRESULT
-    SetHostFxrFullPath(
-        PCWSTR pStrHostFxrFullPath
-    )
-    {
-        return m_struHostFxrLocation.Copy(pStrHostFxrFullPath);
-    }
-
     APP_HOSTING_MODEL
     QueryHostingModel(
         VOID

@@ -33,9 +33,8 @@ REQUESTHANDLER_CONFIG::CreateRequestHandlerConfig(
     HRESULT                 hr = S_OK;
     REQUESTHANDLER_CONFIG  *pRequestHandlerConfig = NULL;
     STRU                    struHostFxrDllLocation;
-    BSTR*                   pwzArgv;
-    DWORD                   dwArgCount;
     STRU                    struExeLocation;
+    MULTISZ                 mszArgs;
 
     if (ppAspNetCoreConfig == NULL)
     {
@@ -75,8 +74,7 @@ REQUESTHANDLER_CONFIG::CreateRequestHandlerConfig(
                 pRequestHandlerConfig->QueryArguments()->QueryStr(),
                 &struHostFxrDllLocation,
                 &struExeLocation,
-                &dwArgCount,
-                &pwzArgv)))
+                &mszArgs)))
             {
                 goto Finished;
             }
@@ -88,8 +86,7 @@ REQUESTHANDLER_CONFIG::CreateRequestHandlerConfig(
                 pwzExeLocation,
                 pRequestHandlerConfig->QueryApplicationPhysicalPath()->QueryStr(),
                 hEventLog,
-                &dwArgCount,
-                &pwzArgv)))
+                &mszArgs)))
             {
                 goto Finished;
             }
@@ -102,14 +99,13 @@ REQUESTHANDLER_CONFIG::CreateRequestHandlerConfig(
                 pRequestHandlerConfig->QueryArguments()->QueryStr(),
                 hEventLog,
                 &struHostFxrDllLocation,
-                &dwArgCount,
-                &pwzArgv)))
+                &mszArgs)))
             {
                 goto Finished;
             }
         }
-
-        pRequestHandlerConfig->SetHostFxrArguments(dwArgCount, pwzArgv);
+        //panwang
+        //pRequestHandlerConfig->SetHostFxrArguments(dwArgCount, pwzArgv);
     }
 
     DebugPrintf(ASPNETCORE_DEBUG_FLAG_INFO,

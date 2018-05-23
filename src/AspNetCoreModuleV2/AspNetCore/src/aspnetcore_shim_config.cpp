@@ -47,8 +47,9 @@ ASPNETCORE_SHIM_CONFIG::GetConfig(
     ASPNETCORE_SHIM_CONFIG *pAspNetCoreShimConfig = NULL;
     STRU                    struHostFxrDllLocation;
     STRU                    struExeAbsolutePath;
-    BSTR*                   pwzArgv;
-    DWORD                   dwArgCount;
+    //BSTR*                   pwzArgv;
+    //DWORD                   dwArgCount;
+    MULTISZ                 mszArgs;
     if (ppAspNetCoreShimConfig == NULL)
     {
         hr = E_INVALIDARG;
@@ -89,20 +90,20 @@ ASPNETCORE_SHIM_CONFIG::GetConfig(
             pAspNetCoreShimConfig->QueryProcessPath()->QueryStr(),
             pAspNetCoreShimConfig->QueryApplicationPhysicalPath()->QueryStr(),
             pAspNetCoreShimConfig->QueryArguments()->QueryStr(),
-            &struHostFxrDllLocation,
+            &(pAspNetCoreShimConfig->m_struHostFxrLocation), //; &struHostFxrDllLocation,
             &struExeAbsolutePath,
-            &dwArgCount,
-            &pwzArgv)))
+            &mszArgs
+            )))
         {
             goto Finished;
         }
 
-        if (FAILED(hr = pAspNetCoreShimConfig->SetHostFxrFullPath(struHostFxrDllLocation.QueryStr())))
+        if (FAILED(hr = pAspNetCoreShimConfig->m_struHostFxrLocation.Copy(struHostFxrDllLocation.QueryStr())))
         {
             goto Finished;
         }
-
-        pAspNetCoreShimConfig->SetHostFxrArguments(dwArgCount, pwzArgv);
+        //panwang
+        //pAspNetCoreShimConfig->SetHostFxrArguments(dwArgCount, pwzArgv);
 
         struExeLocation->Copy(struExeAbsolutePath);
     }

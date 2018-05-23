@@ -26,12 +26,11 @@ HOSTFXR_UTILITY::~HOSTFXR_UTILITY()
 HRESULT
 HOSTFXR_UTILITY::GetStandaloneHostfxrParameters(
     PCWSTR              pwzExeAbsolutePath, // includes .exe file extension.
-    PCWSTR				pcwzApplicationPhysicalPath,
+    PCWSTR              pcwzApplicationPhysicalPath,
     PCWSTR              pcwzArguments,
     HANDLE              hEventLog,
-    _Inout_ STRU*		pStruHostFxrDllLocation,
-    _Out_ DWORD*		pdwArgCount,
-    _Out_ BSTR**		ppwzArgv
+    _Inout_ STRU*       pStruHostFxrDllLocation,
+    _Out_  MULTISZ     *pmszArgs
 )
 {
     HRESULT             hr = S_OK;
@@ -40,7 +39,7 @@ HOSTFXR_UTILITY::GetStandaloneHostfxrParameters(
     STRU                struHostFxrPath;
     STRU                struRuntimeConfigLocation;
     DWORD               dwPosition;
-
+    //MULTISZ             mszArgs;
     // Obtain the app name from the processPath section.
     if (FAILED(hr = struDllPath.Copy(pwzExeAbsolutePath)))
     {
@@ -131,8 +130,7 @@ HOSTFXR_UTILITY::GetStandaloneHostfxrParameters(
         pwzExeAbsolutePath,
         pcwzApplicationPhysicalPath,
         hEventLog,
-        pdwArgCount,
-        ppwzArgv)))
+        pmszArgs)))
     {
         goto Finished;
     }
@@ -160,8 +158,7 @@ HOSTFXR_UTILITY::GetHostFxrParameters(
     _In_ PCWSTR         pcwzArguments,
     _Inout_ STRU       *pStruHostFxrDllLocation,
     _Inout_ STRU       *pStruExeAbsolutePath,
-    _Out_ DWORD        *pdwArgCount,
-    _Out_ BSTR        **pbstrArgv
+    _Out_ MULTISZ      *pmszArgs
 )
 {
     HRESULT                     hr = S_OK;
@@ -215,8 +212,7 @@ HOSTFXR_UTILITY::GetHostFxrParameters(
             struAbsolutePathToDotnet.QueryStr(),
             pcwzApplicationPhysicalPath,
             hEventLog,
-            pdwArgCount,
-            pbstrArgv)))
+            pmszArgs)))
         {
             goto Finished;
         }
@@ -245,8 +241,7 @@ HOSTFXR_UTILITY::GetHostFxrParameters(
                 struExpandedArguments.QueryStr(),
                 hEventLog,
                 pStruHostFxrDllLocation,
-                pdwArgCount,
-                pbstrArgv);
+                pmszArgs);
             if (FAILED(hr))
             {
                 goto Finished;
@@ -291,18 +286,13 @@ HOSTFXR_UTILITY::ParseHostfxrArguments(
     PCWSTR              pwzExePath,
     PCWSTR              pcwzApplicationPhysicalPath,
     HANDLE              hEventLog,
-    _Out_ DWORD*        pdwArgCount,
-    _Out_ BSTR**        pbstrArgv
+    _Out_ MULTISZ*       pMszArgs
 )
 {
     UNREFERENCED_PARAMETER(hEventLog); // TODO use event log to set errors.
 
-    DBG_ASSERT(dwArgCount != NULL);
-    DBG_ASSERT(pwzArgv != NULL);
-
     HRESULT     hr = S_OK;
     INT         argc = 0;
-    BSTR*       argv = NULL;
     LPWSTR*     pwzArgs = NULL;
     STRU        struTempPath;
     INT         intArgsProcessed = 0;
@@ -320,79 +310,47 @@ HOSTFXR_UTILITY::ParseHostfxrArguments(
     if (pwzArgs == NULL)
     {
         hr = HRESULT_FROM_WIN32(GetLastError());
-        goto Failure;
+        goto Finished;
     }
 
-    argv = new BSTR[argc + 1];
-    if (argv == NULL)
+    if(pMszArgs->Append(pwzExePath))
     {
-        hr = E_OUTOFMEMORY;
-        goto Failure;
-    }
-
-    argv[0] = SysAllocString(pwzExePath);
-
-    if (argv[0] == NULL)
-    {
-        hr = E_OUTOFMEMORY;
-        goto Failure;
+        hr = E_INVALIDARG;
+        goto Finished;
     }
 
     // Try to convert the application dll from a relative to an absolute path
     // Don't record this failure as pwzArgs[0] may already be an absolute path to the dll.
     for (intArgsProcessed = 0; intArgsProcessed < argc; intArgsProcessed++)
     {
+        BOOL fSuccess = TRUE;
         struTempPath.Copy(pwzArgs[intArgsProcessed]);
-        if (struTempPath.EndsWith(L".dll"))
+        if (struTempPath.EndsWith(L".dll") &&
+            SUCCEEDED(UTILITY::ConvertPathToFullPath(pwzArgs[intArgsProcessed], pcwzApplicationPhysicalPath, &struTempPath)))
         {
-            if (SUCCEEDED(UTILITY::ConvertPathToFullPath(pwzArgs[intArgsProcessed], pcwzApplicationPhysicalPath, &struTempPath)))
-            {
-                argv[intArgsProcessed + 1] = SysAllocString(struTempPath.QueryStr());
-            }
-            else
-            {
-                argv[intArgsProcessed + 1] = SysAllocString(pwzArgs[intArgsProcessed]);
-            }
-            if (argv[intArgsProcessed + 1] == NULL)
-            {
-                hr = E_OUTOFMEMORY;
-                goto Failure;
-            }
+            //argv[intArgsProcessed + 1] = SysAllocString(struTempPath.QueryStr());
+            fSuccess = pMszArgs->Append(struTempPath);
         }
         else
         {
-            argv[intArgsProcessed + 1] = SysAllocString(pwzArgs[intArgsProcessed]);
-            if (argv[intArgsProcessed + 1] == NULL)
-            {
-                hr = E_OUTOFMEMORY;
-                goto Failure;
-            }
+
+            fSuccess = pMszArgs->Append(pwzArgs[intArgsProcessed]);
         }
-    }
-
-    *pbstrArgv = argv;
-    *pdwArgCount = argc + 1;
-
-    goto Finished;
-
-Failure:
-    if (argv != NULL)
-    {
-        // intArgsProcess - 1 here as if we fail to allocated the ith string
-        // we don't want to free it.
-        for (INT i = 0; i < intArgsProcessed - 1; i++)
+        if (!fSuccess)
         {
-            SysFreeString(argv[i]);
+            hr = E_INVALIDARG;
+            goto Finished;
         }
     }
-
-    delete[] argv;
 
 Finished:
+    if (FAILED(hr))
+    {
+        pMszArgs->Reset();
+    }
     if (pwzArgs != NULL)
     {
         LocalFree(pwzArgs);
-        DBG_ASSERT(pwzArgs == NULL);
     }
     return hr;
 }

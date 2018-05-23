@@ -16,12 +16,11 @@ public:
     HRESULT
     GetStandaloneHostfxrParameters(
         PCWSTR              pwzExeAbsolutePath, // includes .exe file extension.
-        PCWSTR				pcwzApplicationPhysicalPath,
+        PCWSTR              pcwzApplicationPhysicalPath,
         PCWSTR              pcwzArguments,
         HANDLE              hEventLog,
-        _Inout_ STRU*		pStruHostFxrDllLocation,
-        _Out_ DWORD*		pdwArgCount,
-        _Out_ BSTR**		ppwzArgv
+        _Inout_ STRU*       pStruHostFxrDllLocation,
+       _Out_ MULTISZ       *pmszArgs
     );
 
     static
@@ -31,8 +30,7 @@ public:
         PCWSTR              pwzExePath,
         PCWSTR              pcwzApplicationPhysicalPath,
         HANDLE              hEventLog,
-        _Out_ DWORD*        pdwArgCount,
-        _Out_ BSTR**        pbstrArgv
+        MULTISZ*            pMszArgs
     );
 
     static
@@ -50,8 +48,7 @@ public:
         _In_ PCWSTR         pcwzArguments,
         _Inout_ STRU       *pStruHostFxrDllLocation,
         _Inout_ STRU       *struExeAbsolutePath,
-        _Out_ DWORD        *pdwArgCount,
-        _Out_ BSTR        **ppwzArgv
+        _Out_ MULTISZ      *pmszArgs
     );
 
     static
