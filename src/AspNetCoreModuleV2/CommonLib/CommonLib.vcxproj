@@ -203,7 +203,6 @@
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="NullOutputManager.cpp" />
     <ClCompile Include="FileOutputManager.cpp" />
     <ClCompile Include="fx_ver.cxx" />
     <ClCompile Include="hostfxr_utility.cpp" />

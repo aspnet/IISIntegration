@@ -3,14 +3,36 @@
 
 #pragma once
 
+#include "stdafx.h"
+
+
 class NullConsoleManager : public IOutputManager
 {
 public:
-    NullConsoleManager();
-    ~NullConsoleManager();
 
-    virtual HRESULT Start() override;
-    virtual void NotifyStartupComplete() override;
-    virtual bool GetStdOutContent(STRU* struStdOutput) override;
+    NullConsoleManager()
+    {
+    }
+
+    ~NullConsoleManager()
+    {
+
+    }
+
+    HRESULT Start()
+    {
+        // The process has console, e.g., IIS Express scenario
+        return S_OK;
+    }
+
+    void NotifyStartupComplete()
+    {
+        // Do nothing.
+    }
+
+    bool GetStdOutContent(STRU*)
+    {
+        return false;
+    }
 };
 
