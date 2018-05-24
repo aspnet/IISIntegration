@@ -143,6 +143,7 @@ FileOutputManager::Start()
     m_hLogFileHandle = (HANDLE)_get_osfhandle(_fileno(pStdOutFile));
     if (m_hLogFileHandle == INVALID_HANDLE_VALUE)
     {
+        hr = E_HANDLE;
         goto Finished;
     }
 
