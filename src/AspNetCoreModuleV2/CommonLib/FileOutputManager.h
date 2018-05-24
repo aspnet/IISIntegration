@@ -16,9 +16,9 @@ public:
 private:
     HANDLE m_hLogFileHandle;
     STTIMER m_Timer;
-    STRU m_struStdOutLogFileName;
+    std::wstring m_wsStdOutLogFileName;
+    std::wstring m_wsApplicationPath;
     STRU m_struLogFilePath;
-    STRU m_struApplicationPath;
     int m_fdStdOut;
     int m_fdStdErr;
 };

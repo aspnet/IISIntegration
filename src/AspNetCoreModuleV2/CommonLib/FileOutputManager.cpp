@@ -81,8 +81,8 @@ bool FileOutputManager::GetStdOutContent(STRU* struStdOutput)
 FileOutputManager::FileOutputManager(PCWSTR pwzStdOutLogFileName, PCWSTR pwzApplicationPath)
     : m_hLogFileHandle(INVALID_HANDLE_VALUE)
 {
-    m_struStdOutLogFileName.Copy(pwzStdOutLogFileName);
-    m_struApplicationPath.Copy(pwzApplicationPath);
+    m_wsApplicationPath = std::wstring(pwzApplicationPath);
+    m_wsStdOutLogFileName = std::wstring(pwzStdOutLogFileName);
 }
 
 HRESULT
@@ -96,8 +96,8 @@ FileOutputManager::Start()
     FILE* pStdOutFile;
 
     hr = UTILITY::ConvertPathToFullPath(
-        m_struStdOutLogFileName.QueryStr(),
-        m_struApplicationPath.QueryStr(),
+        m_wsApplicationPath.c_str(),
+        m_wsStdOutLogFileName.c_str(),
         &struPath);
 
     if (FAILED(hr))
