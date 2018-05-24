@@ -13,7 +13,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
     {
         [Theory]
         [InlineData("CheckLogFile")]
-        [InlineData("CheckErrLogFile")]
+        [InlineData("CheckErrLogFile", Skip = "std error logging doesn't go to output")]
         public async Task CheckStdoutLogging(string path)
         {
             var deploymentParameters = GetBaseDeploymentParameters();
