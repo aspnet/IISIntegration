@@ -13,11 +13,6 @@ namespace IISTestSite
             var randomNumber = Environment.GetEnvironmentVariable("ASPNETCORE_INPROCESS_RANDOM_VALUE");
 
             // Semicolons are appended to env variables; removing them.
-            envVariable = envVariable.Substring(0, envVariable.Length - 1);
-            if (!string.IsNullOrEmpty(randomNumber))
-            {
-                randomNumber = randomNumber.Substring(0, randomNumber.Length - 1);
-            }
             if (envVariable == "CheckLargeStdOutWrites")
             {
                 Console.WriteLine(new string('a', 4096));

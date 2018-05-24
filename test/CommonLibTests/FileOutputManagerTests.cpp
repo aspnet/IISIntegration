@@ -19,6 +19,7 @@ public:
         delete manager;
     }
 };
+
 namespace FileOutManagerStartupTests
 {
     using ::testing::Test;
@@ -49,6 +50,8 @@ namespace FileOutManagerStartupTests
                 ASSERT_EQ(content.length(), DWORD(4));
                 ASSERT_STREQ(content.c_str(), expected);
             }
+
+            Helpers::DeleteDirectory(tempDirectory);
         }
     };
 
@@ -78,6 +81,8 @@ namespace FileOutManagerOutputTests
 
             ASSERT_STREQ(struContent.QueryStr(), expected);
         }
+
+        Helpers::DeleteDirectory(tempDirectory);
     }
 
     TEST(FileOutManagerOutputTest, CheckFileOutput)
@@ -96,6 +101,8 @@ namespace FileOutManagerOutputTests
 
             ASSERT_STREQ(struContent.QueryStr(), expected);
         }
+
+        Helpers::DeleteDirectory(tempDirectory);
     }
 
     TEST(FileOutManagerOutputTest, CapAt4KB)
@@ -118,6 +125,8 @@ namespace FileOutManagerOutputTests
 
             ASSERT_EQ(struContent.QueryCCH(), 4096);
         }
+
+        Helpers::DeleteDirectory(tempDirectory);
     }
 }
 

@@ -27,6 +27,7 @@ FileOutputManager::~FileOutputManager()
         DeleteFile(m_struLogFilePath.QueryStr());
     }
 
+    // this fails with an invalid handle
     _dup2(m_fdStdOut, _fileno(stdout));
     _dup2(m_fdStdErr, _fileno(stderr));
 }
@@ -96,8 +97,8 @@ FileOutputManager::Start()
     FILE* pStdOutFile;
 
     hr = UTILITY::ConvertPathToFullPath(
-        m_wsApplicationPath.c_str(),
         m_wsStdOutLogFileName.c_str(),
+        m_wsApplicationPath.c_str(),
         &struPath);
 
     if (FAILED(hr))

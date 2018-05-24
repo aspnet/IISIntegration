@@ -20,7 +20,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         [Theory]
         [InlineData("CheckLogFile")]
         [InlineData("CheckErrLogFile")]
-        public async Task CheckStdoutWithStartupExcetion(string path)
+        public async Task CheckStdoutWithRandomNumber(string path)
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite");
             deploymentParameters.EnvironmentVariables["ASPNETCORE_INPROCESS_STARTUP_VALUE"] = path;

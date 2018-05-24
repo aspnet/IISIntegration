@@ -15,6 +15,10 @@ public:
         CreateRandomTempDirectory();
 
     static
+        void
+        DeleteDirectory(std::wstring directory);
+
+    static
         std::wstring
         ReadFileContent(std::wstring file);
 };

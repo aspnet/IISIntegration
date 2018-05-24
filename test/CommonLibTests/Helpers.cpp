@@ -20,6 +20,12 @@ Helpers::CreateRandomTempDirectory()
     return wstringPath.append(Helpers::CreateRandomValue()).append(L"\\");
 }
 
+void
+Helpers::DeleteDirectory(std::wstring directory)
+{
+    std::experimental::filesystem::remove_all(directory);
+}
+
 std::wstring
 Helpers::ReadFileContent(std::wstring file)
 {

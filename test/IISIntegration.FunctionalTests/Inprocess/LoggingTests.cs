@@ -15,7 +15,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     public class LoggingTests : IISFunctionalTestBase
     {
-        [Theory(Skip = "File in use issue")]
+        [Theory]
         [InlineData("CheckLogFile")]
         [InlineData("CheckErrLogFile")]
         public async Task CheckStdoutLogging(string path)
@@ -34,7 +34,8 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
             var responseText = await response.Content.ReadAsStringAsync();
             Assert.Equal("Hello World", responseText);
-          
+
+            Dispose();
             var filesInDirectory = Directory.GetFiles($@"{deploymentResult.DeploymentResult.ContentRoot}\logs\");
             Assert.NotEmpty(filesInDirectory);
             FileStream fileStream = null;
@@ -58,6 +59,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             var contents = fileReader.ReadToEnd();
             Assert.Contains("TEST MESSAGE", contents);
         }
+
         private DeploymentParameters GetBaseDeploymentParameters(string site = null)
         {
             return new DeploymentParameters(Helpers.GetTestWebSitePath(site ?? "InProcessWebSite"), ServerType.IISExpress, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64)
