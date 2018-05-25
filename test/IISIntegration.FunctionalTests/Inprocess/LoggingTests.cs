@@ -32,7 +32,9 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
             Dispose();
 
-            var fileInDirectory = Directory.GetFiles(Path.Combine(deploymentResult.DeploymentResult.ContentRoot, @"\logs\")).Single();
+            var folderPath = Path.Combine(deploymentResult.DeploymentResult.ContentRoot, @"logs");
+
+            var fileInDirectory = Directory.GetFiles(folderPath).Single();
             Assert.NotNull(fileInDirectory);
 
             string contents = null;

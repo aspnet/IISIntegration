@@ -373,11 +373,11 @@ IN_PROCESS_APPLICATION::LoadManagedApplication
         goto Finished;
     }
 
-    // Set up stdout redirect
-
-    if (m_pLoggerProvider == NULL)
     {
+        // Set up stdout redirect
+
         SRWLockWrapper lock(m_srwLock);
+
         if (m_pLoggerProvider == NULL)
         {
             m_pLoggerProvider = LoggingHelpers::CreateLoggingProvider(
@@ -388,10 +388,6 @@ IN_PROCESS_APPLICATION::LoadManagedApplication
 
             m_pLoggerProvider->Start();
         }
-    }
-
-    {
-        SRWLockWrapper lock(m_srwLock);
       
         if (m_status != APPLICATION_STATUS::STARTING)
         {
