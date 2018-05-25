@@ -132,7 +132,6 @@ FileOutputManager::Start()
     saAttr.bInheritHandle = TRUE;
     saAttr.lpSecurityDescriptor = NULL;
 
-    // TODO Does this redirect stderr?
     if (_wfreopen_s(&pStdOutFile, m_struLogFilePath.QueryStr(), L"w+", stdout) == 0)
     {
         setvbuf(pStdOutFile, NULL, _IONBF, 0);
@@ -148,7 +147,7 @@ FileOutputManager::Start()
     }
 
     // Periodically flush the log content to file
-    m_Timer.InitializeTimer(STTIMER::TimerCallback, &m_struLogFilePath, 3000, 3000);
+    m_Timer.InitializeTimer(STTIMER::TimerCallback, &m_struLogFilePath, FILE_FLUSH_TIMEOUT, FILE_FLUSH_TIMEOUT);
 
 Finished:
 

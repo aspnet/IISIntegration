@@ -3,8 +3,10 @@
 
 #pragma once
 
+
 class FileOutputManager : public IOutputManager
 {
+    #define FILE_FLUSH_TIMEOUT 3000
 public:
     FileOutputManager(PCWSTR pwzStdOutLogFileName, PCWSTR pwzApplciationpath);
     ~FileOutputManager();

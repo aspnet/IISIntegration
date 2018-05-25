@@ -158,10 +158,10 @@ PipeOutputManager::ReadStdErrHandleInternal(
     DWORD dwNumBytesRead = 0;
     while (true)
     {
-        if (ReadFile(m_hErrReadPipe, &m_pzFileContents[m_dwStdErrReadTotal], MAX_READ_SIZE - m_dwStdErrReadTotal, &dwNumBytesRead, NULL))
+        if (ReadFile(m_hErrReadPipe, &m_pzFileContents[m_dwStdErrReadTotal], MAX_PIPE_READ_SIZE - m_dwStdErrReadTotal, &dwNumBytesRead, NULL))
         {
             m_dwStdErrReadTotal += dwNumBytesRead;
-            if (m_dwStdErrReadTotal >= MAX_READ_SIZE)
+            if (m_dwStdErrReadTotal >= MAX_PIPE_READ_SIZE)
             {
                 break;
             }

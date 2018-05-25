@@ -3,10 +3,11 @@
 
 #pragma once
 
-#define PIPE_OUTPUT_THREAD_TIMEOUT 2000
-#define MAX_READ_SIZE 4096
+
 class PipeOutputManager : public IOutputManager
 {
+    #define PIPE_OUTPUT_THREAD_TIMEOUT 2000
+    #define MAX_PIPE_READ_SIZE 4096
 public:
     PipeOutputManager();
     ~PipeOutputManager();
@@ -32,7 +33,7 @@ private:
     STRU                            m_struLogFilePath;
     STRU                            m_struExeLocation;
     HANDLE                          m_hErrThread;
-    CHAR                            m_pzFileContents[MAX_READ_SIZE] = { 0 };
+    CHAR                            m_pzFileContents[MAX_PIPE_READ_SIZE] = { 0 };
     BOOL                            m_fDisposed;
     DWORD                           m_dwStdErrReadTotal;
     int                             m_fdStdOut;
