@@ -27,7 +27,7 @@ namespace FileOutManagerStartupTests
     {
     protected:
         void
-            Test(std::wstring fileNamePrefix)
+        Test(std::wstring fileNamePrefix, FILE* out)
         {
             PCWSTR expected = L"test";
 
@@ -36,7 +36,7 @@ namespace FileOutManagerStartupTests
             {
                 FileManagerWrapper wrapper(pManager);
 
-                wprintf(expected);
+                wprintf(expected, out);
             }
           
             // std::filesystem is available on c++17, however gtest fails to build when using it
@@ -57,8 +57,14 @@ namespace FileOutManagerStartupTests
 
     TEST_F(FileOutputManagerTest, WriteToFileCheckContentsWritten)
     {
-        Test(L"");
-        Test(L"log");
+        Test(L"", stdout);
+        Test(L"log", stdout);
+    }
+
+    TEST_F(FileOutputManagerTest, WriteToFileCheckContentsWrittenErr)
+    {
+        Test(L"", stderr);
+        Test(L"log", stderr);
     }
 }
 
