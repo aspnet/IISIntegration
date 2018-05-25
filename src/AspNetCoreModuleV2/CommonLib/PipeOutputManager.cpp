@@ -15,11 +15,11 @@ PipeOutputManager::PipeOutputManager() :
 
 PipeOutputManager::~PipeOutputManager()
 {
-    Dispose();
+    StopOutputRedirection();
 }
 
 VOID
-PipeOutputManager::Dispose()
+PipeOutputManager::StopOutputRedirection()
 {
     DWORD    dwThreadStatus = 0;
     STRU     struStdOutput;
@@ -176,5 +176,5 @@ PipeOutputManager::ReadStdErrHandleInternal(
 VOID
 PipeOutputManager::NotifyStartupComplete()
 {
-    Dispose();
+    StopOutputRedirection();
 }

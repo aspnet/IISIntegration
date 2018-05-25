@@ -39,7 +39,7 @@ ALLOC_CACHE_HANDLER::~ALLOC_CACHE_HANDLER(
     if (m_pFreeLists != NULL)
     {
         CleanupLookaside();
-        m_pFreeLists->Dispose();
+        m_pFreeLists->StopOutputRedirection();
         m_pFreeLists = NULL;
     }
 }

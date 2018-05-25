@@ -338,7 +338,6 @@ IN_PROCESS_APPLICATION::SetCallbackHandles(
 
     m_pLoggerProvider->NotifyStartupComplete();
     // Can't check the std err handle as it isn't a critical error
-    SetStdHandle(STD_ERROR_HANDLE, INVALID_HANDLE_VALUE);
     // Initialization complete
     SetEvent(m_pInitalizeEvent);
     m_fInitialized = TRUE;

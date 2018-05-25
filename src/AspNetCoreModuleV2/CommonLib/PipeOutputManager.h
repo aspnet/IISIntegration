@@ -23,7 +23,7 @@ public:
     static
     VOID ReadStdErrHandle(LPVOID pContext);
 
-    VOID Dispose();
+    VOID StopOutputRedirection();
 private:
     // The std log file handle
     HANDLE                          m_hLogFileHandle;
