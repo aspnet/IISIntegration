@@ -32,7 +32,7 @@ public:
 
     inline
     VOID
-    StopOutputRedirection(
+    Dispose(
         VOID
     );
 
@@ -162,7 +162,7 @@ Finished:
         //
         // Free the instance without disposing it.
         //
-        pInstance->StopOutputRedirection();
+        pInstance->Dispose();
         pInstance = NULL;
     }
 
@@ -216,7 +216,7 @@ PER_CPU<T>::ForEach(
 
 template<typename T>
 VOID
-PER_CPU<T>::StopOutputRedirection(
+PER_CPU<T>::Dispose(
     VOID
 )
 {
