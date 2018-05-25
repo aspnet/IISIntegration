@@ -2,14 +2,9 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.IO;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using IISIntegration.FunctionalTests.Utilities;
-using Microsoft.AspNetCore.Server.IntegrationTesting;
-using Microsoft.Extensions.Logging;
 using Xunit;
-using Xunit.Sdk;
 using System.Net;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
@@ -45,7 +40,6 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite");
             deploymentParameters.EnvironmentVariables["ASPNETCORE_INPROCESS_STARTUP_VALUE"] = path;
-
             var deploymentResult = await DeployAsync(deploymentParameters);
 
             var response = await deploymentResult.RetryingHttpClient.GetAsync(path);
