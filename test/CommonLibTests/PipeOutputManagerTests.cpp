@@ -4,17 +4,17 @@
 #include "stdafx.h"
 #include "gtest/internal/gtest-port.h"
 
-class PipeManagerWrapper
+class FileManagerWrapper
 {
 public:
     PipeOutputManager * manager;
-    PipeManagerWrapper(PipeOutputManager* m)
+    FileManagerWrapper(PipeOutputManager* m)
         : manager(m)
     {
         manager->Start();
     }
 
-    ~PipeManagerWrapper()
+    ~FileManagerWrapper()
     {
         delete manager;
     }
@@ -26,14 +26,14 @@ namespace PipeOutputManagerTests
     {
         PCWSTR expected = L"test";
 
-        std::wstring tempDirectory = Helpers::CreateRandomTempDirectory();
-
         PipeOutputManager* pManager = new PipeOutputManager();
         ASSERT_EQ(S_OK, pManager->Start());
 
         pManager->NotifyStartupComplete();
 
-        // This test will fail if we didn't redirect stdout back to a file descriptor.
+        // Test will fail if we didn't redirect stdout back to a file descriptor.
+        // This is because gtest relies on console output to know if a test succeeded or failed.
+        // If the output still points to a file/pipe, the test (and all other tests after it) will fail.
     }
 }
 

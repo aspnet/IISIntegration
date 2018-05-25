@@ -10,14 +10,9 @@ class NullConsoleManager : public IOutputManager
 {
 public:
 
-    NullConsoleManager()
-    {
-    }
+    NullConsoleManager() = default;
 
-    ~NullConsoleManager()
-    {
-
-    }
+    ~NullConsoleManager() = default;
 
     HRESULT Start()
     {
@@ -27,7 +22,6 @@ public:
 
     void NotifyStartupComplete()
     {
-        // Do nothing.
     }
 
     bool GetStdOutContent(STRU*)

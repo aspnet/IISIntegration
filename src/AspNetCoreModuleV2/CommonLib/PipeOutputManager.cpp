@@ -44,7 +44,7 @@ PipeOutputManager::Dispose()
         dwThreadStatus == STILL_ACTIVE)
     {
         // wait for gracefullshut down, i.e., the exit of the background thread or timeout
-        if (WaitForSingleObject(m_hErrThread, 2000) != WAIT_OBJECT_0)
+        if (WaitForSingleObject(m_hErrThread, PIPE_OUTPUT_THREAD_TIMEOUT) != WAIT_OBJECT_0)
         {
             // if the thread is still running, we need kill it first before exit to avoid AV
             if (GetExitCodeThread(m_hErrThread, &dwThreadStatus) != 0 && dwThreadStatus == STILL_ACTIVE)
@@ -63,8 +63,8 @@ PipeOutputManager::Dispose()
         m_hErrReadPipe = INVALID_HANDLE_VALUE;
     }
 
-    _dup2(m_fdStdOut, 1);
-    _dup2(m_fdStdErr, 2);
+    _dup2(m_fdStdOut, _fileno(stdout));
+    _dup2(m_fdStdErr, _fileno(stderr));
 
     // Write the remaining contents to the original stdout
     if (GetStdOutContent(&struStdOutput))
@@ -82,8 +82,8 @@ HRESULT PipeOutputManager::Start()
     HANDLE                  hStdErrReadPipe;
     HANDLE                  hStdErrWritePipe;
 
-    m_fdStdOut = _dup(1);
-    m_fdStdErr = _dup(2);
+    m_fdStdOut = _dup(_fileno(stdout));
+    m_fdStdErr = _dup(_fileno(stderr));
 
     //
     // CreatePipe for outputting stderr to the windows event log.
@@ -158,10 +158,10 @@ PipeOutputManager::ReadStdErrHandleInternal(
     DWORD dwNumBytesRead = 0;
     while (true)
     {
-        if (ReadFile(m_hErrReadPipe, &m_pzFileContents[m_dwStdErrReadTotal], 4096 - m_dwStdErrReadTotal, &dwNumBytesRead, NULL))
+        if (ReadFile(m_hErrReadPipe, &m_pzFileContents[m_dwStdErrReadTotal], MAX_READ_SIZE - m_dwStdErrReadTotal, &dwNumBytesRead, NULL))
         {
             m_dwStdErrReadTotal += dwNumBytesRead;
-            if (m_dwStdErrReadTotal >= 4096)
+            if (m_dwStdErrReadTotal >= MAX_READ_SIZE)
             {
                 break;
             }

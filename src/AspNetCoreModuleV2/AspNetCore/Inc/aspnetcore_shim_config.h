@@ -105,7 +105,6 @@ public:
         return m_hostingModel;
     }
 
-
 private:
     ASPNETCORE_SHIM_CONFIG() :
         m_cRefs(1),

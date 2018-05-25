@@ -137,15 +137,8 @@ FileOutputManager::Start()
     {
         setvbuf(pStdOutFile, NULL, _IONBF, 0);
         _dup2(_fileno(pStdOutFile), _fileno(stdout));
-    }
-
-    if (_wfreopen_s(&pStdOutFile, m_struLogFilePath.QueryStr(), L"w+", stderr) == 0)
-    {
         _dup2(_fileno(pStdOutFile), _fileno(stderr));
     }
-
-    fwprintf(stderr, L"test stderr");
-    fwprintf(stdout, L"test stdout");
 
     m_hLogFileHandle = (HANDLE)_get_osfhandle(_fileno(pStdOutFile));
     if (m_hLogFileHandle == INVALID_HANDLE_VALUE)

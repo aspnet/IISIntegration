@@ -4,17 +4,17 @@
 #include "stdafx.h"
 #include "gtest/internal/gtest-port.h"
 
-class PipeManagerWrapper
+class FileManagerWrapper
 {
 public:
     FileOutputManager* manager;
-    PipeManagerWrapper(FileOutputManager* m)
+    FileManagerWrapper(FileOutputManager* m)
         : manager(m)
     {
         manager->Start();
     }
 
-    ~PipeManagerWrapper()
+    ~FileManagerWrapper()
     {
         delete manager;
     }
@@ -34,7 +34,7 @@ namespace FileOutManagerStartupTests
             std::wstring tempDirectory = Helpers::CreateRandomTempDirectory();
             FileOutputManager* pManager = new FileOutputManager(fileNamePrefix.c_str(), tempDirectory.c_str());
             {
-                PipeManagerWrapper wrapper(pManager);
+                FileManagerWrapper wrapper(pManager);
 
                 wprintf(expected);
             }
@@ -73,7 +73,7 @@ namespace FileOutManagerOutputTests
 
         FileOutputManager* pManager = new FileOutputManager(L"", tempDirectory.c_str());
         {
-            PipeManagerWrapper wrapper(pManager);
+            FileManagerWrapper wrapper(pManager);
 
             wprintf(expected, stderr);
             STRU struContent;
@@ -93,7 +93,7 @@ namespace FileOutManagerOutputTests
 
         FileOutputManager* pManager = new FileOutputManager(L"", tempDirectory.c_str());
         {
-            PipeManagerWrapper wrapper(pManager);
+            FileManagerWrapper wrapper(pManager);
 
             wprintf(expected);
             STRU struContent;
@@ -113,7 +113,7 @@ namespace FileOutManagerOutputTests
 
         FileOutputManager* pManager = new FileOutputManager(L"", tempDirectory.c_str());
         {
-            PipeManagerWrapper wrapper(pManager);
+            FileManagerWrapper wrapper(pManager);
 
             for (int i = 0; i < 1200; i++)
             {

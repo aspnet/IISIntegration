@@ -385,11 +385,6 @@ IN_PROCESS_APPLICATION::LoadManagedApplication
                 GetConsoleWindow(),
                 m_pConfig->QueryStdoutLogFile()->QueryStr(),
                 m_pConfig->QueryApplicationPhysicalPath()->QueryStr());
-            if (m_pLoggerProvider == NULL)
-            {
-                hr = E_OUTOFMEMORY;
-                goto Finished;
-            }
 
             m_pLoggerProvider->Start();
         }

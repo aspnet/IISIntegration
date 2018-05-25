@@ -27,7 +27,6 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             var randomNumberString = new Random(Guid.NewGuid().GetHashCode()).Next(10000000).ToString();
             deploymentParameters.EnvironmentVariables["ASPNETCORE_INPROCESS_RANDOM_VALUE"] = randomNumberString;
 
-            // Point to dotnet installed in user profile.
             var deploymentResult = await DeployAsync(deploymentParameters);
 
             var response = await deploymentResult.RetryingHttpClient.GetAsync(path);
@@ -47,7 +46,6 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite");
             deploymentParameters.EnvironmentVariables["ASPNETCORE_INPROCESS_STARTUP_VALUE"] = path;
 
-            // Point to dotnet installed in user profile.
             var deploymentResult = await DeployAsync(deploymentParameters);
 
             var response = await deploymentResult.RetryingHttpClient.GetAsync(path);
