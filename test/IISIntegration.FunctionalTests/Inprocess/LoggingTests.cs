@@ -12,8 +12,8 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
     public class LoggingTests : IISFunctionalTestBase
     {
         [Theory]
+        [InlineData("CheckErrLogFile", Skip = "StdErr logs are now showing up in log file.")]
         [InlineData("CheckLogFile")]
-        [InlineData("CheckErrLogFile")]
         public async Task CheckStdoutLogging(string path)
         {
             var deploymentParameters = GetBaseDeploymentParameters();
