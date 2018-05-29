@@ -11,13 +11,14 @@ LoggingHelpers::CreateLoggingProvider(
     PCWSTR pwzApplicationPath
 )
 {
-    if (fIsConsoleWindow)
-    {
-        return new NullConsoleManager;
-    }
-    else if (fIsLoggingEnabled)
+
+    if (fIsLoggingEnabled)
     {
         return new FileOutputManager(pwzStdOutFileName, pwzApplicationPath);
+    }
+    else if (fIsConsoleWindow)
+    {
+        return new NullConsoleManager;
     }
     else
     {
