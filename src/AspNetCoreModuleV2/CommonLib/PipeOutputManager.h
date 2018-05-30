@@ -3,7 +3,6 @@
 
 #pragma once
 
-
 class PipeOutputManager : public IOutputManager
 {
     #define PIPE_OUTPUT_THREAD_TIMEOUT 2000
