@@ -33,8 +33,15 @@ FileOutputManager::~FileOutputManager()
         DeleteFile(m_struLogFilePath.QueryStr());
     }
 
-    _dup2(m_fdStdOut, _fileno(stdout));
-    _dup2(m_fdStdErr, _fileno(stderr));
+    if (_dup2(m_fdStdOut, _fileno(stdout)) == -1)
+    {
+        return;
+    }
+
+    if (_dup2(m_fdStdErr, _fileno(stderr)) == -1)
+    {
+        return;
+    }
 }
 
 HRESULT

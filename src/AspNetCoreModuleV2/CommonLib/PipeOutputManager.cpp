@@ -64,8 +64,15 @@ PipeOutputManager::StopOutputRedirection()
 
     // Restore the original stdout and stderr handles of the process,
     // as the application has either finished startup or has exited.
-    _dup2(m_fdStdOut, _fileno(stdout));
-    _dup2(m_fdStdErr, _fileno(stderr));
+    if (_dup2(m_fdStdOut, _fileno(stdout)) == -1)
+    {
+        return;
+    }
+
+    if (_dup2(m_fdStdErr, _fileno(stderr)) == -1)
+    {
+        return;
+    }
 
     if (GetStdOutContent(&straStdOutput))
     {
