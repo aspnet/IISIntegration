@@ -5,7 +5,6 @@
 
 PipeOutputManager::PipeOutputManager() :
     m_dwStdErrReadTotal(0),
-    m_hLogFileHandle(INVALID_HANDLE_VALUE),
     m_hErrReadPipe(INVALID_HANDLE_VALUE),
     m_hErrWritePipe(INVALID_HANDLE_VALUE),
     m_hErrThread(INVALID_HANDLE_VALUE),
@@ -22,7 +21,7 @@ VOID
 PipeOutputManager::StopOutputRedirection()
 {
     DWORD    dwThreadStatus = 0;
-    STRU     struStdOutput;
+    STRA     straStdOutput;
 
     if (m_fDisposed)
     {
@@ -63,13 +62,14 @@ PipeOutputManager::StopOutputRedirection()
         m_hErrReadPipe = INVALID_HANDLE_VALUE;
     }
 
+    // Restore the original stdout and stderr handles of the process,
+    // as the application has either finished startup or has exited.
     _dup2(m_fdStdOut, _fileno(stdout));
     _dup2(m_fdStdErr, _fileno(stderr));
 
-    // Write the remaining contents to the original stdout
-    if (GetStdOutContent(&struStdOutput))
+    if (GetStdOutContent(&straStdOutput))
     {
-        wprintf(struStdOutput.QueryStr());
+        printf(straStdOutput.QueryStr());
         // Need to flush contents.
         _flushall();
     }
@@ -83,25 +83,34 @@ HRESULT PipeOutputManager::Start()
     HANDLE                  hStdErrWritePipe;
 
     m_fdStdOut = _dup(_fileno(stdout));
+    if (m_fdStdOut == -1)
+    {
+        hr = E_HANDLE;
+        goto Finished;
+    }
     m_fdStdErr = _dup(_fileno(stderr));
+    if (m_fdStdErr == -1)
+    {
+        hr = E_HANDLE;
+        goto Finished;
+    }
 
-    //
-    // CreatePipe for outputting stderr to the windows event log.
-    // Ignore failures
-    //
     if (!CreatePipe(&hStdErrReadPipe, &hStdErrWritePipe, &saAttr, 0 /*nSize*/))
     {
+        hr = HRESULT_FROM_WIN32(GetLastError());
         goto Finished;
     }
 
     // TODO this still doesn't redirect calls in native, like wprintf
     if (!SetStdHandle(STD_ERROR_HANDLE, hStdErrWritePipe))
     {
+        hr = HRESULT_FROM_WIN32(GetLastError());
         goto Finished;
     }
 
     if (!SetStdHandle(STD_OUTPUT_HANDLE, hStdErrWritePipe))
     {
+        hr = HRESULT_FROM_WIN32(GetLastError());
         goto Finished;
     }
 
@@ -137,12 +146,12 @@ PipeOutputManager::ReadStdErrHandle(
     pLoggingProvider->ReadStdErrHandleInternal();
 }
 
-bool PipeOutputManager::GetStdOutContent(STRU* struStdOutput)
+bool PipeOutputManager::GetStdOutContent(STRA* struStdOutput)
 {
     bool fLogged = false;
     if (m_dwStdErrReadTotal > 0)
     {
-        if (SUCCEEDED(struStdOutput->CopyA(m_pzFileContents, m_dwStdErrReadTotal)))
+        if (SUCCEEDED(struStdOutput->Copy(m_pzFileContents, m_dwStdErrReadTotal)))
         {
             fLogged = TRUE;
         }

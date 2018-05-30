@@ -17,7 +17,7 @@ public:
     virtual void NotifyStartupComplete() override;
 
     // Inherited via IOutputManager
-    virtual bool GetStdOutContent(STRU* struStdOutput) override;
+    virtual bool GetStdOutContent(STRA* struStdOutput) override;
 
     VOID ReadStdErrHandleInternal(VOID);
 
@@ -26,18 +26,14 @@ public:
 
     VOID StopOutputRedirection();
 private:
-    // The std log file handle
-    HANDLE                          m_hLogFileHandle;
     HANDLE                          m_hErrReadPipe;
     HANDLE                          m_hErrWritePipe;
     STRU                            m_struLogFilePath;
-    STRU                            m_struExeLocation;
     HANDLE                          m_hErrThread;
     CHAR                            m_pzFileContents[MAX_PIPE_READ_SIZE] = { 0 };
     BOOL                            m_fDisposed;
     DWORD                           m_dwStdErrReadTotal;
     int                             m_fdStdOut;
     int                             m_fdStdErr;
-    FILE*                           m_fp;
 };
 

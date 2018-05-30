@@ -24,7 +24,7 @@ public:
     {
     }
 
-    bool GetStdOutContent(STRU*)
+    bool GetStdOutContent(STRA*)
     {
         return false;
     }

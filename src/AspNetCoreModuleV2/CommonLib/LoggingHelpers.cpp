@@ -3,25 +3,33 @@
 
 #include "stdafx.h"
 
-IOutputManager*
+HRESULT
 LoggingHelpers::CreateLoggingProvider(
     bool fIsLoggingEnabled,
     bool fIsConsoleWindow,
     PCWSTR pwzStdOutFileName,
-    PCWSTR pwzApplicationPath
+    PCWSTR pwzApplicationPath,
+    _Out_ IOutputManager** outputManager
 )
 {
+    HRESULT hr = S_OK;
+
+    DBG_ASSERT(outputManager != NULL);
 
     if (fIsLoggingEnabled)
     {
-        return new FileOutputManager(pwzStdOutFileName, pwzApplicationPath);
+        FileOutputManager* manager = new FileOutputManager;
+        hr = manager->Initialize(pwzStdOutFileName, pwzApplicationPath);
+        *outputManager = manager;
     }
     else if (fIsConsoleWindow)
     {
-        return new NullConsoleManager;
+        *outputManager = new NullConsoleManager;
     }
     else
     {
-        return new PipeOutputManager;
+        *outputManager = new PipeOutputManager;
     }
+
+    return hr;
 }

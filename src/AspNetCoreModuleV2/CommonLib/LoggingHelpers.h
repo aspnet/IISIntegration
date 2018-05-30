@@ -8,12 +8,13 @@ class LoggingHelpers
 public:
 
     static
-    IOutputManager*
+    HRESULT
     CreateLoggingProvider(
         bool fLoggingEnabled,
         bool fIsConsoleWindows,
         PCWSTR pwzStdOutFileName,
-        PCWSTR pwzApplicationPath
+        PCWSTR pwzApplicationPath,
+        _Out_ IOutputManager** outputManager
     );
 };
 

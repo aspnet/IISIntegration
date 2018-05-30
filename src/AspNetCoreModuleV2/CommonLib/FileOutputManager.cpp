@@ -3,16 +3,22 @@
 
 #include "stdafx.h"
 
+
+FileOutputManager::FileOutputManager()
+    : m_pStdOutFile(NULL)
+{
+}
+
 FileOutputManager::~FileOutputManager()
 {
     HANDLE   handle = NULL;
     WIN32_FIND_DATA fileData;
 
-    if (m_hLogFileHandle != INVALID_HANDLE_VALUE)
+    if (m_pStdOutFile != NULL)
     {
         m_Timer.CancelTimer();
-        CloseHandle(m_hLogFileHandle);
-        m_hLogFileHandle = INVALID_HANDLE_VALUE;
+        _close(_fileno(m_pStdOutFile));
+        m_pStdOutFile = NULL;
     }
 
     // delete empty log file
@@ -27,16 +33,33 @@ FileOutputManager::~FileOutputManager()
         DeleteFile(m_struLogFilePath.QueryStr());
     }
 
-    // this fails with an invalid handle
     _dup2(m_fdStdOut, _fileno(stdout));
     _dup2(m_fdStdErr, _fileno(stderr));
+}
+
+HRESULT
+FileOutputManager::Initialize(PCWSTR pwzStdOutLogFileName, PCWSTR pwzApplicationPath)
+{
+    HRESULT hr = S_OK;
+
+    if (FAILED(hr = m_wsApplicationPath.Copy(pwzApplicationPath)))
+    {
+        return hr;
+    }
+
+    if (FAILED(hr = m_wsStdOutLogFileName.Copy(pwzStdOutLogFileName)))
+    {
+        return hr;
+    }
+
+    return hr;
 }
 
 void FileOutputManager::NotifyStartupComplete()
 {
 }
 
-bool FileOutputManager::GetStdOutContent(STRU* struStdOutput)
+bool FileOutputManager::GetStdOutContent(STRA* struStdOutput)
 {
     //
     // Ungraceful shutdown, try to log an error message.
@@ -67,7 +90,7 @@ bool FileOutputManager::GetStdOutContent(STRU* struStdOutput)
                 // Read file fails.
                 if (ReadFile(m_hLogFileHandle, pzFileContents, 4096, &dwNumBytesRead, NULL))
                 {
-                    if (SUCCEEDED(struStdOutput->CopyA(pzFileContents, dwNumBytesRead)))
+                    if (SUCCEEDED(struStdOutput->Copy(pzFileContents, dwNumBytesRead)))
                     {
                         fLogged = TRUE;
                     }
@@ -79,13 +102,6 @@ bool FileOutputManager::GetStdOutContent(STRU* struStdOutput)
     return fLogged;
 }
 
-FileOutputManager::FileOutputManager(PCWSTR pwzStdOutLogFileName, PCWSTR pwzApplicationPath)
-    : m_hLogFileHandle(INVALID_HANDLE_VALUE)
-{
-    m_wsApplicationPath = std::wstring(pwzApplicationPath);
-    m_wsStdOutLogFileName = std::wstring(pwzStdOutLogFileName);
-}
-
 HRESULT
 FileOutputManager::Start()
 {
@@ -94,11 +110,9 @@ FileOutputManager::Start()
     SECURITY_ATTRIBUTES saAttr = { 0 };
     STRU struPath;
 
-    FILE* pStdOutFile;
-
     hr = UTILITY::ConvertPathToFullPath(
-        m_wsStdOutLogFileName.c_str(),
-        m_wsApplicationPath.c_str(),
+        m_wsStdOutLogFileName.QueryStr(),
+        m_wsApplicationPath.QueryStr(),
         &struPath);
 
     if (FAILED(hr))
@@ -111,8 +125,20 @@ FileOutputManager::Start()
     {
         goto Finished;
     }
+
     m_fdStdOut = _dup(_fileno(stdout));
+    if (m_fdStdOut == -1)
+    {
+        hr = E_HANDLE;
+        goto Finished;
+    }
+
     m_fdStdErr = _dup(_fileno(stderr));
+    if (m_fdStdErr == -1)
+    {
+        hr = E_HANDLE;
+        goto Finished;
+    }
 
     GetSystemTime(&systemTime);
     hr = m_struLogFilePath.SafeSnwprintf(L"%s_%d%02d%02d%02d%02d%02d_%d.log",
@@ -132,14 +158,14 @@ FileOutputManager::Start()
     saAttr.bInheritHandle = TRUE;
     saAttr.lpSecurityDescriptor = NULL;
 
-    if (_wfreopen_s(&pStdOutFile, m_struLogFilePath.QueryStr(), L"w+", stdout) == 0)
+    if (_wfreopen_s(&m_pStdOutFile, m_struLogFilePath.QueryStr(), L"w+", stdout) == 0)
     {
-        setvbuf(pStdOutFile, NULL, _IONBF, 0);
-        _dup2(_fileno(pStdOutFile), _fileno(stdout));
-        _dup2(_fileno(pStdOutFile), _fileno(stderr));
+        setvbuf(m_pStdOutFile, NULL, _IONBF, 0);
+        _dup2(_fileno(m_pStdOutFile), _fileno(stdout));
+        _dup2(_fileno(m_pStdOutFile), _fileno(stderr));
     }
 
-    m_hLogFileHandle = (HANDLE)_get_osfhandle(_fileno(pStdOutFile));
+    m_hLogFileHandle = (HANDLE)_get_osfhandle(_fileno(m_pStdOutFile));
     if (m_hLogFileHandle == INVALID_HANDLE_VALUE)
     {
         hr = E_HANDLE;

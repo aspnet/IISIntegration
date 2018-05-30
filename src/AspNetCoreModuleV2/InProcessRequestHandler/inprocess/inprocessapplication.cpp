@@ -379,11 +379,16 @@ IN_PROCESS_APPLICATION::LoadManagedApplication
 
         if (m_pLoggerProvider == NULL)
         {
-            m_pLoggerProvider = LoggingHelpers::CreateLoggingProvider(
+            hr =  LoggingHelpers::CreateLoggingProvider(
                 m_pConfig->QueryStdoutLogEnabled(),
                 GetConsoleWindow(),
                 m_pConfig->QueryStdoutLogFile()->QueryStr(),
-                m_pConfig->QueryApplicationPhysicalPath()->QueryStr());
+                m_pConfig->QueryApplicationPhysicalPath()->QueryStr(),
+                &m_pLoggerProvider);
+            if (FAILED(hr))
+            {
+                goto Finished;
+            }
 
             m_pLoggerProvider->Start();
         }
@@ -638,7 +643,7 @@ IN_PROCESS_APPLICATION::LogErrorsOnMainExit(
     // This will be a common place for errors as it means the hostfxr_main returned
     // or there was an exception.
     //
-    STRU struStdErrOutput;
+    STRA struStdErrOutput;
     if (m_pLoggerProvider->GetStdOutContent(&struStdErrOutput))
     {
         UTILITY::LogEventF(g_hEventLog,

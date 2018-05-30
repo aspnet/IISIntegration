@@ -20,6 +20,6 @@ public:
 
     virtual
     bool
-    GetStdOutContent(STRU* struStdOutput) = 0;
+    GetStdOutContent(STRA* struStdOutput) = 0;
 };
 
