@@ -6,7 +6,7 @@
 HRESULT
 LoggingHelpers::CreateLoggingProvider(
     bool fIsLoggingEnabled,
-    bool fIsConsoleWindow,
+    bool fEnablePipe,
     PCWSTR pwzStdOutFileName,
     PCWSTR pwzApplicationPath,
     _Out_ IOutputManager** outputManager
@@ -22,13 +22,13 @@ LoggingHelpers::CreateLoggingProvider(
         hr = manager->Initialize(pwzStdOutFileName, pwzApplicationPath);
         *outputManager = manager;
     }
-    else if (fIsConsoleWindow)
+    else if (fEnablePipe)
     {
-        *outputManager = new NullConsoleManager;
+        *outputManager = new PipeOutputManager;
     }
     else
     {
-        *outputManager = new PipeOutputManager;
+        *outputManager = new NullOutputManager;
     }
 
     return hr;

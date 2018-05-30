@@ -14,7 +14,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
     {
         [Theory]
         [InlineData("CheckErrLogFile")]
-        [InlineData("CheckLogFile")]
+        [InlineData("CheckLogFile", Skip = "Flaky on jenkins.")]
         public async Task CheckStdoutLogging(string path)
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters();

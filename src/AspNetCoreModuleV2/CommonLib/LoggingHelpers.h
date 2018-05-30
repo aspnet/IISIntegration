@@ -11,7 +11,7 @@ public:
     HRESULT
     CreateLoggingProvider(
         bool fLoggingEnabled,
-        bool fIsConsoleWindows,
+        bool fEnablePipe,
         PCWSTR pwzStdOutFileName,
         PCWSTR pwzApplicationPath,
         _Out_ IOutputManager** outputManager

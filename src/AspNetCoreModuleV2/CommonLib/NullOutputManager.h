@@ -5,14 +5,13 @@
 
 #include "stdafx.h"
 
-
-class NullConsoleManager : public IOutputManager
+class NullOutputManager : public IOutputManager
 {
 public:
 
-    NullConsoleManager() = default;
+    NullOutputManager() = default;
 
-    ~NullConsoleManager() = default;
+    ~NullOutputManager() = default;
 
     HRESULT Start()
     {
