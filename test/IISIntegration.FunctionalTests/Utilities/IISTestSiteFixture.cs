@@ -26,7 +26,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             {
                 ServerConfigTemplateContent = File.ReadAllText("AppHostConfig/Http.config"),
                 SiteName = "HttpTestSite",
-                TargetFramework = Tfm.NetCoreApp22,
+                TargetFramework = Tfm.NetCoreApp21,
                 ApplicationType = ApplicationType.Portable,
                 AncmVersion = AncmVersion.AspNetCoreModuleV2,
                 HostingModel = HostingModel.InProcess,

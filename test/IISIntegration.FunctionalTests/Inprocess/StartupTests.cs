@@ -63,7 +63,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
         public static TestMatrix TestVariants
             => TestMatrix.ForServers(ServerType.IISExpress)
-                .WithTfms(Tfm.NetCoreApp22)
+                .WithTfms(Tfm.NetCoreApp21)
                 .WithAllApplicationTypes()
                 .WithAncmV2InProcess();
 
@@ -97,7 +97,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         {
             return new DeploymentParameters(Helpers.GetTestWebSitePath(site ?? "InProcessWebSite"), ServerType.IISExpress, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64)
             {
-                TargetFramework = Tfm.NetCoreApp22,
+                TargetFramework = Tfm.NetCoreApp21,
                 ApplicationType = ApplicationType.Portable,
                 AncmVersion = AncmVersion.AspNetCoreModuleV2
             };

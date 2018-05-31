@@ -2,7 +2,7 @@
   <Import Project="..\..\..\build\testsite.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.2</TargetFrameworks>
+    <TargetFrameworks>$(StandardTestTfms)</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

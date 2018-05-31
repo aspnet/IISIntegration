@@ -60,7 +60,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         {
             var deploymentParameters = new DeploymentParameters(sitePath, ServerType.IISExpress, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64)
             {
-                TargetFramework = Tfm.NetCoreApp22,
+                TargetFramework = Tfm.NetCoreApp21,
                 ApplicationType = ApplicationType.Portable,
                 AncmVersion = AncmVersion.AspNetCoreModuleV2
             };

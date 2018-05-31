@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.2</TargetFrameworks>
+    <TargetFrameworks>$(DeveloperBuildTestTfms)</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
