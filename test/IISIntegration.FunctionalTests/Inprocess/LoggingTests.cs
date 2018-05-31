@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using IISIntegration.FunctionalTests.Utilities;
-using Microsoft.AspNetCore.Server.IntegrationTesting;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
@@ -14,7 +14,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
     {
         [Theory]
         [InlineData("CheckErrLogFile")]
-        [InlineData("CheckLogFile", Skip = "Flaky on jenkins.")]
+        [InlineData("CheckLogFile")]
         public async Task CheckStdoutLogging(string path)
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters();
@@ -53,6 +53,8 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             }
 
             Assert.NotNull(contents);
+
+            Logger.LogWarning(contents);
 
             // Open the log file and see if there are any contents.
             Assert.Contains("TEST MESSAGE", contents);
