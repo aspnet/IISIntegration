@@ -33,15 +33,8 @@ FileOutputManager::~FileOutputManager()
         DeleteFile(m_struLogFilePath.QueryStr());
     }
 
-    if (_dup2(m_fdStdOut, _fileno(stdout)) == -1)
-    {
-        return;
-    }
-
-    if (_dup2(m_fdStdErr, _fileno(stderr)) == -1)
-    {
-        return;
-    }
+    _dup2(m_fdStdOut, _fileno(stdout));
+    _dup2(m_fdStdErr, _fileno(stderr));
 }
 
 HRESULT
@@ -49,14 +42,9 @@ FileOutputManager::Initialize(PCWSTR pwzStdOutLogFileName, PCWSTR pwzApplication
 {
     HRESULT hr = S_OK;
 
-    if (FAILED(hr = m_wsApplicationPath.Copy(pwzApplicationPath)))
+    if (SUCCEEDED(hr = m_wsApplicationPath.Copy(pwzApplicationPath)))
     {
-        return hr;
-    }
-
-    if (FAILED(hr = m_wsStdOutLogFileName.Copy(pwzStdOutLogFileName)))
-    {
-        return hr;
+        hr = m_wsStdOutLogFileName.Copy(pwzStdOutLogFileName);
     }
 
     return hr;
@@ -168,8 +156,12 @@ FileOutputManager::Start()
     if (_wfreopen_s(&m_pStdOutFile, m_struLogFilePath.QueryStr(), L"w+", stdout) == 0)
     {
         setvbuf(m_pStdOutFile, NULL, _IONBF, 0);
-        _dup2(_fileno(m_pStdOutFile), _fileno(stdout));
-        _dup2(_fileno(m_pStdOutFile), _fileno(stderr));
+        if (_dup2(_fileno(m_pStdOutFile), _fileno(stdout)) == -1
+            && _dup2(_fileno(m_pStdOutFile), _fileno(stderr)))
+        {
+            hr = E_HANDLE;
+            goto Finished;
+        }
     }
 
     m_hLogFileHandle = (HANDLE)_get_osfhandle(_fileno(m_pStdOutFile));
