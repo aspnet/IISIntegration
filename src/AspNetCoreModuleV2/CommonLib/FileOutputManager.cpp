@@ -156,8 +156,12 @@ FileOutputManager::Start()
     if (_wfreopen_s(&m_pStdOutFile, m_struLogFilePath.QueryStr(), L"w+", stdout) == 0)
     {
         setvbuf(m_pStdOutFile, NULL, _IONBF, 0);
-        if (_dup2(_fileno(m_pStdOutFile), _fileno(stdout)) == -1
-            && _dup2(_fileno(m_pStdOutFile), _fileno(stderr)))
+        if (_dup2(_fileno(m_pStdOutFile), _fileno(stdout)) == -1)
+        {
+            hr = E_HANDLE;
+            goto Finished;
+        }
+        if (_dup2(_fileno(m_pStdOutFile), _fileno(stderr)) == -1)
         {
             hr = E_HANDLE;
             goto Finished;
