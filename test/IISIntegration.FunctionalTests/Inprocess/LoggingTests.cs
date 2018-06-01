@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using IISIntegration.FunctionalTests.Utilities;
+using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -18,6 +19,8 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         public async Task CheckStdoutLogging(string path)
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters();
+            deploymentParameters.PublishApplicationBeforeDeployment = true;
+            deploymentParameters.PreservePublishedApplicationForDebugging = true; // workaround for keeping 
 
             var deploymentResult = await DeployAsync(deploymentParameters);
 
@@ -54,10 +57,14 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
             Assert.NotNull(contents);
 
-            Logger.LogWarning(contents);
-
             // Open the log file and see if there are any contents.
             Assert.Contains("TEST MESSAGE", contents);
+
+            RetryHelper.RetryOperation(
+                () => Directory.Delete(deploymentParameters.PublishedApplicationRootPath, true),
+                e => Logger.LogWarning($"Failed to delete directory : {e.Message}"),
+                retryCount: 3,
+                retryDelayMilliseconds: 100);
         }
     }
 }

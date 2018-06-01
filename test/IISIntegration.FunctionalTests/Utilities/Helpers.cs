@@ -35,7 +35,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         }
 
         // Defaults to inprocess specific deployment parameters
-        private DeploymentParameters GetBaseDeploymentParameters(string site = "InProcessWebSite")
+        public static DeploymentParameters GetBaseDeploymentParameters(string site = "InProcessWebSite")
         {
             return new DeploymentParameters(Helpers.GetTestWebSitePath(site), ServerType.IISExpress, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64)
             {

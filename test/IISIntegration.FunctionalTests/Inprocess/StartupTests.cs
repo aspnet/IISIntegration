@@ -26,7 +26,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         public async Task ExpandEnvironmentVariableInWebConfig()
         {
             var dotnetLocation = DotNetMuxer.MuxerPathOrDefault();
-            var deploymentParameters = Helpers.GetBaseDeploymentParameters();
+            var deploymentParameters = GetBaseDeploymentParameters();
 
             // Point to dotnet installed in user profile.
             deploymentParameters.EnvironmentVariables["DotnetPath"] = dotnetLocation;
@@ -46,7 +46,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         {
             var dotnetLocation = "bogus";
 
-            var deploymentParameters = Helpers.GetBaseDeploymentParameters();
+            var deploymentParameters = GetBaseDeploymentParameters();
             // Point to dotnet installed in user profile.
             deploymentParameters.EnvironmentVariables["DotnetPath"] = Environment.ExpandEnvironmentVariables(dotnetLocation); // Path to dotnet.
 
@@ -59,7 +59,6 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
             Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         }
-
 
         public static TestMatrix TestVariants
             => TestMatrix.ForServers(ServerType.IISExpress)
@@ -88,10 +87,23 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         [Fact]
         public async Task DetectsOveriddenServer()
         {
-            var deploymentResult = await DeployAsync(Helpers.GetBaseDeploymentParameters("OverriddenServerWebSite"));
+            var deploymentResult = await DeployAsync(GetBaseDeploymentParameters("OverriddenServerWebSite"));
             var response = await deploymentResult.HttpClient.GetAsync("/");
             Assert.False(response.IsSuccessStatusCode);
             Assert.Contains(TestSink.Writes, context => context.Message.Contains("Application is running inside IIS process but is not configured to use IIS server"));
+        }
+
+        // Defaults to inprocess specific deployment parameters
+        public static DeploymentParameters GetBaseDeploymentParameters(string site = "InProcessWebSite")
+        {
+            return new DeploymentParameters(Helpers.GetTestWebSitePath(site), ServerType.IISExpress, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64)
+            {
+                TargetFramework = Tfm.NetCoreApp22,
+                ApplicationType = ApplicationType.Portable,
+                AncmVersion = AncmVersion.AspNetCoreModuleV2,
+                HostingModel = HostingModel.InProcess,
+                PublishApplicationBeforeDeployment = site == "InProcessWebSite",
+            };
         }
     }
 }
