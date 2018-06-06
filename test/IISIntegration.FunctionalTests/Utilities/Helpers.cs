@@ -39,7 +39,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         {
             return new DeploymentParameters(Helpers.GetTestWebSitePath(site), ServerType.IISExpress, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64)
             {
-                TargetFramework = Tfm.NetCoreApp22,
+                TargetFramework = Tfm.NetCoreApp21,
                 ApplicationType = ApplicationType.Portable,
                 AncmVersion = AncmVersion.AspNetCoreModuleV2,
                 HostingModel = HostingModel.InProcess,
