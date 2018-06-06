@@ -32,12 +32,30 @@
   <ImportGroup Label="Shared" />
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(MSBuildProjectDirectory)\bin\$(Configuration)\$(Platform)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(MSBuildProjectDirectory)\bin\$(Configuration)\$(Platform)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(MSBuildProjectDirectory)\bin\$(Configuration)\$(Platform)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(MSBuildProjectDirectory)\bin\$(Configuration)\$(Platform)\</OutDir>
+  </PropertyGroup>
   <ItemGroup>
+    <ClInclude Include="Helpers.h" />
+    <ClInclude Include="fakeclasses.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="FileOutputManagerTests.cpp" />
+    <ClCompile Include="Helpers.cpp" />
     <ClCompile Include="hostfxr_utility_tests.cpp" />
+    <ClCompile Include="inprocess_application_tests.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="PipeOutputManagerTests.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -56,8 +74,11 @@
     <ProjectReference Include="..\..\src\AspNetCoreModuleV2\IISLib\IISLib.vcxproj">
       <Project>{09d9d1d6-2951-4e14-bc35-76a23cf9391a}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\gtest-1.8.0\msvc\2010\gtest.vcxproj">
-      <Project>{2af210a9-5bdc-45e8-95dd-07b5a2616493}</Project>
+    <ProjectReference Include="..\gtest\gtest.vcxproj">
+      <Project>{cac1267b-8778-4257-aac6-caf481723b01}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\AspNetCoreModuleV2\InProcessRequestHandler\InProcessRequestHandler.vcxproj">
+      <Project>{d57ea297-6dc2-4bc0-8c91-334863327863}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemDefinitionGroup />
@@ -72,12 +93,15 @@
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);..\..\src\AspNetCoreModuleV2\IISLib;..\..\src\AspNetCoreModuleV2\CommonLib;..\gtest-1.8.0\include;..\..\src\AspNetCoreModuleV2\AspNetCore\Inc;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);..\..\src\AspNetCoreModuleV2\IISLib;..\..\src\AspNetCoreModuleV2\CommonLib;..\gtest\googletest\googletest\include;...\..\src\AspNetCoreModuleV2\AspNetCore\Inc;..\..\src\AspNetCoreModuleV2\InProcessRequestHandler\;</AdditionalIncludeDirectories>
       <AdditionalOptions>/D "_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING" </AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>..\..\src\AspNetCoreModuleV2\InProcessRequestHandler\$(Configuration)\;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;inprocessapplication.obj;inprocesshandler.obj;ahadmin.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>
@@ -94,12 +118,15 @@
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);..\..\src\AspNetCoreModuleV2\IISLib;..\..\src\AspNetCoreModuleV2\CommonLib;..\gtest-1.8.0\include;..\..\src\AspNetCoreModuleV2\AspNetCore\Inc;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);..\..\src\AspNetCoreModuleV2\IISLib;..\..\src\AspNetCoreModuleV2\CommonLib;..\gtest\googletest\googletest\include;...\..\src\AspNetCoreModuleV2\AspNetCore\Inc;..\..\src\AspNetCoreModuleV2\InProcessRequestHandler\;</AdditionalIncludeDirectories>
       <AdditionalOptions>/D "_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING" </AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>..\..\src\AspNetCoreModuleV2\InProcessRequestHandler\x64\$(Configuration)\;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;inprocessapplication.obj;inprocesshandler.obj;ahadmin.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>
@@ -114,14 +141,17 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);..\..\src\AspNetCoreModuleV2\IISLib;..\..\src\AspNetCoreModuleV2\CommonLib;..\gtest-1.8.0\include;..\..\src\AspNetCoreModuleV2\AspNetCore\Inc;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);..\..\src\AspNetCoreModuleV2\IISLib;..\..\src\AspNetCoreModuleV2\CommonLib;..\gtest\googletest\googletest\include;...\..\src\AspNetCoreModuleV2\AspNetCore\Inc;..\..\src\AspNetCoreModuleV2\InProcessRequestHandler\;</AdditionalIncludeDirectories>
       <AdditionalOptions>/D "_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING" </AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <AdditionalLibraryDirectories>..\..\src\AspNetCoreModuleV2\InProcessRequestHandler\$(Configuration)\;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;inprocessapplication.obj;inprocesshandler.obj;ahadmin.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>
@@ -136,14 +166,17 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);..\..\src\AspNetCoreModuleV2\IISLib;..\..\src\AspNetCoreModuleV2\CommonLib;..\gtest-1.8.0\include;..\..\src\AspNetCoreModuleV2\AspNetCore\Inc;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);..\..\src\AspNetCoreModuleV2\IISLib;..\..\src\AspNetCoreModuleV2\CommonLib;..\gtest\googletest\googletest\include;...\..\src\AspNetCoreModuleV2\AspNetCore\Inc;..\..\src\AspNetCoreModuleV2\InProcessRequestHandler\;</AdditionalIncludeDirectories>
       <AdditionalOptions>/D "_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING" </AdditionalOptions>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <AdditionalLibraryDirectories>..\..\src\AspNetCoreModuleV2\InProcessRequestHandler\x64\$(Configuration)\;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;inprocessapplication.obj;inprocesshandler.obj;ahadmin.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>
