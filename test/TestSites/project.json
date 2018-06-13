@@ -20,7 +20,7 @@
   "frameworks": {
     "netcoreapp1.1": {
       "dependencies": {
-        "Microsoft.NETCore.App": "1.1.9-servicing-001741-00"
+        "Microsoft.NETCore.App": "1.1.9-servicing-001750-00"
       }
     },
     "net451": {}
