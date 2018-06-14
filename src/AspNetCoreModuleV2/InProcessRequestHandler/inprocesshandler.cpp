@@ -5,6 +5,8 @@
 #include "inprocessapplication.h"
 #include "aspnetcore_event.h"
 
+ALLOC_CACHE_HANDLER * IN_PROCESS_HANDLER::sm_pAlloc = NULL;
+
 IN_PROCESS_HANDLER::IN_PROCESS_HANDLER(
     _In_ IHttpContext   *pW3Context,
     _In_ IN_PROCESS_APPLICATION    *pApplication
@@ -59,6 +61,80 @@ IN_PROCESS_HANDLER::OnExecuteRequestHandler()
     return m_pApplication->OnExecuteRequest(m_pW3Context, this);
 }
 
+// static
+void * IN_PROCESS_HANDLER::operator new(size_t)
+{
+    DBG_ASSERT(sm_pAlloc != NULL);
+    if (sm_pAlloc == NULL)
+    {
+        return NULL;
+    }
+    return sm_pAlloc->Alloc();
+}
+
+// static
+void IN_PROCESS_HANDLER::operator delete(void * pMemory)
+{
+    DBG_ASSERT(sm_pAlloc != NULL);
+    if (sm_pAlloc != NULL)
+    {
+        sm_pAlloc->Free(pMemory);
+    }
+}
+
+// static
+HRESULT
+IN_PROCESS_HANDLER::StaticInitialize( VOID )
+/*++
+
+Routine Description:
+
+Global initialization routine for IN_PROCESS_HANDLER
+
+Return Value:
+
+HRESULT
+
+--*/
+{
+    HRESULT                         hr = S_OK;
+    ALLOC_CACHE_HANDLER*            pAlloc = NULL;
+    if (sm_pAlloc == NULL)
+    {
+        pAlloc = new ALLOC_CACHE_HANDLER;
+        if (sm_pAlloc == NULL)
+        {
+            hr = E_OUTOFMEMORY;
+            goto Failure;
+        }
+
+        hr = pAlloc->Initialize(sizeof(IN_PROCESS_HANDLER),
+            64); // nThreshold
+        if (FAILED(hr))
+        {
+            goto Failure;
+        }
+
+        AcquireSRWLockExclusive(&g_srwLockRH);
+        if (sm_pAlloc == NULL)
+        {
+            sm_pAlloc = pAlloc;
+        }
+        ReleaseSRWLockExclusive(&g_srwLockRH);
+
+        pAlloc = NULL;
+    }
+
+Failure:
+
+    if (pAlloc != NULL)
+    {
+        delete pAlloc;
+        pAlloc = NULL;
+    }
+
+    return hr;
+}
 __override
 REQUEST_NOTIFICATION_STATUS
 IN_PROCESS_HANDLER::OnAsyncCompletion(

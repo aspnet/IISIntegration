@@ -815,6 +815,27 @@ FORWARDING_HANDLER::StaticTerminate()
     }
 }
 
+// static
+void * FORWARDING_HANDLER::operator new(size_t)
+{
+    DBG_ASSERT(sm_pAlloc != NULL);
+    if (sm_pAlloc == NULL)
+    {
+        return NULL;
+    }
+    return sm_pAlloc->Alloc();
+}
+
+// static
+void FORWARDING_HANDLER::operator delete(void * pMemory)
+{
+    DBG_ASSERT(sm_pAlloc != NULL);
+    if (sm_pAlloc != NULL)
+    {
+        sm_pAlloc->Free(pMemory);
+    }
+}
+
 HRESULT
 FORWARDING_HANDLER::GetHeaders(
     _In_ const PROTOCOL_CONFIG *    pProtocol,

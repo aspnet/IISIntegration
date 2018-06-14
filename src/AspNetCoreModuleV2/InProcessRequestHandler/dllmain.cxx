@@ -122,9 +122,16 @@ CreateApplication(
     // Initialze some global variables here
     InitializeGlobalConfiguration(pServer);
 
+
     try
     {
         hr = REQUESTHANDLER_CONFIG::CreateRequestHandlerConfig(pServer, pHttpContext->GetApplication(), &pConfig);
+        if (FAILED(hr))
+        {
+            goto Finished;
+        }
+
+        hr = IN_PROCESS_HANDLER::StaticInitialize();
         if (FAILED(hr))
         {
             goto Finished;
