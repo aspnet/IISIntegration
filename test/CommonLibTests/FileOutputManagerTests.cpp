@@ -40,8 +40,6 @@ namespace FileOutManagerStartupTests
                 wprintf(expected, out);
             }
           
-            // std::filesystem is available on c++17, however gtest fails to build when using it
-            // c++14 has filesystem as experimental.
             for (auto & p : std::experimental::filesystem::directory_iterator(tempDirectory))
             {
                 std::wstring filename(p.path().filename());
@@ -56,13 +54,13 @@ namespace FileOutManagerStartupTests
         }
     };
 
-    TEST_F(FileOutputManagerTest, WriteToFileCheckContentsWritten)
+    TEST_F(FileOutputManagerTest, DISABLED_WriteToFileCheckContentsWritten)
     {
         Test(L"", stdout);
         Test(L"log", stdout);
     }
 
-    TEST_F(FileOutputManagerTest, WriteToFileCheckContentsWrittenErr)
+    TEST_F(FileOutputManagerTest, DISABLED_WriteToFileCheckContentsWrittenErr)
     {
         Test(L"", stderr);
         Test(L"log", stderr);
@@ -72,7 +70,7 @@ namespace FileOutManagerStartupTests
 namespace FileOutManagerOutputTests
 {
 
-    TEST(FileOutManagerOutputTest, StdErr)
+    TEST(FileOutManagerOutputTest, DISABLED_StdErr)
     {
         PCSTR expected = "test";
 
@@ -93,7 +91,7 @@ namespace FileOutManagerOutputTests
         Helpers::DeleteDirectory(tempDirectory);
     }
 
-    TEST(FileOutManagerOutputTest, CheckFileOutput)
+    TEST(FileOutManagerOutputTest, DISABLED_CheckFileOutput)
     {
         PCSTR expected = "test";
 
@@ -114,7 +112,7 @@ namespace FileOutManagerOutputTests
         Helpers::DeleteDirectory(tempDirectory);
     }
 
-    TEST(FileOutManagerOutputTest, CapAt4KB)
+    TEST(FileOutManagerOutputTest, DISABLED_CapAt4KB)
     {
         PCSTR expected = "test";
 

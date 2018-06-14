@@ -41,38 +41,51 @@ APPLICATION_INFO::~APPLICATION_INFO()
     // since the former will use it during shutdown
     if (m_pConfiguration != NULL)
     {
-        // Need to dereference the configuration instance
-        m_pConfiguration->DereferenceConfiguration();
+        delete m_pConfiguration;
         m_pConfiguration = NULL;
     }
 }
 
 HRESULT
 APPLICATION_INFO::Initialize(
-    _In_ ASPNETCORE_SHIM_CONFIG   *pConfiguration,
+    _In_ IHttpServer              *pServer,
+    _In_ IHttpApplication         *pApplication,
     _In_ FILE_WATCHER             *pFileWatcher
 )
 {
     HRESULT hr = S_OK;
 
-    DBG_ASSERT(pConfiguration);
+    DBG_ASSERT(pServer);
+    DBG_ASSERT(pApplication);
     DBG_ASSERT(pFileWatcher);
 
-    m_pConfiguration = pConfiguration;
+    // todo: make sure Initialize should be called only once
+    m_pServer = pServer;
+    m_pConfiguration = new ASPNETCORE_SHIM_CONFIG();
 
-    // reference the configuration instance to prevent it will be not release
-    // earlier in case of configuration change and shutdown
-    m_pConfiguration->ReferenceConfiguration();
+    if (m_pConfiguration == NULL)
+    {
+        hr = E_OUTOFMEMORY;
+        goto Finished;
+    }
 
-    hr = m_applicationInfoKey.Initialize(pConfiguration->QueryConfigPath()->QueryStr());
+    hr = m_pConfiguration->Populate(m_pServer, pApplication);
     if (FAILED(hr))
     {
         goto Finished;
     }
 
+    hr = m_struInfoKey.Copy(pApplication->GetApplicationId());
+    if (FAILED(hr))
+    {
+        goto Finished;
+    }
+
+    m_pFileWatcherEntry = new FILE_WATCHER_ENTRY(pFileWatcher);
     if (m_pFileWatcherEntry == NULL)
     {
-        m_pFileWatcherEntry = new FILE_WATCHER_ENTRY(pFileWatcher);
+        hr = E_OUTOFMEMORY;
+        goto Finished;
     }
 
     UpdateAppOfflineFileHandle();
@@ -296,10 +309,11 @@ APPLICATION_INFO::FindRequestHandlerAssembly(STRU& location)
 
                 if (FAILED(hr = FindNativeAssemblyFromHostfxr(options.get(), pstrHandlerDllName, &struFileName)))
                 {
-                    UTILITY::LogEvent(g_hEventLog,
-                            EVENTLOG_INFORMATION_TYPE,
+                    UTILITY::LogEventF(g_hEventLog,
+                            EVENTLOG_ERROR_TYPE,
                             ASPNETCORE_EVENT_INPROCESS_RH_MISSING,
-                            ASPNETCORE_EVENT_INPROCESS_RH_MISSING_MSG);
+                            ASPNETCORE_EVENT_INPROCESS_RH_MISSING_MSG,
+                            struFileName.IsEmpty() ? s_pwzAspnetcoreInProcessRequestHandlerName : struFileName.QueryStr());
 
                     goto Finished;
                 }
@@ -308,10 +322,11 @@ APPLICATION_INFO::FindRequestHandlerAssembly(STRU& location)
             {
                 if (FAILED(hr = FindNativeAssemblyFromGlobalLocation(pstrHandlerDllName, &struFileName)))
                 {
-                    UTILITY::LogEvent(g_hEventLog,
-                        EVENTLOG_INFORMATION_TYPE,
+                    UTILITY::LogEventF(g_hEventLog,
+                        EVENTLOG_ERROR_TYPE,
                         ASPNETCORE_EVENT_OUT_OF_PROCESS_RH_MISSING,
-                        ASPNETCORE_EVENT_OUT_OF_PROCESS_RH_MISSING_MSG);
+                        ASPNETCORE_EVENT_OUT_OF_PROCESS_RH_MISSING_MSG,
+                        struFileName.IsEmpty() ? s_pwzAspnetcoreOutOfProcessRequestHandlerName : struFileName.QueryStr());
 
                     goto Finished;
                 }
@@ -358,60 +373,47 @@ Finished:
 
 HRESULT
 APPLICATION_INFO::FindNativeAssemblyFromGlobalLocation(
-    PCWSTR libraryName,
-    STRU* struFilename)
+    PCWSTR pstrHandlerDllName,
+    STRU* struFilename
+)
 {
     HRESULT hr = S_OK;
-    DWORD dwSize = MAX_PATH;
-    BOOL  fDone = FALSE;
-    DWORD dwPosition = 0;
 
-    // Though we could call LoadLibrary(L"aspnetcorerh.dll") relying the OS to solve
-    // the path (the targeted dll is the same folder of w3wp.exe/iisexpress)
-    // let's still load with full path to avoid security issue
-    if (FAILED(hr = struFilename->Resize(dwSize + 20)))
+    try
     {
-        goto Finished;
-    }
+        std::wstring modulePath = GlobalVersionUtility::GetModuleName(g_hModule);
 
-    while (!fDone)
-    {
-        DWORD dwReturnedSize = GetModuleFileNameW(g_hModule, struFilename->QueryStr(), dwSize);
-        if (dwReturnedSize == 0)
+        modulePath = GlobalVersionUtility::RemoveFileNameFromFolderPath(modulePath);
+
+        std::wstring retval = GlobalVersionUtility::GetGlobalRequestHandlerPath(modulePath.c_str(),
+            m_pConfiguration->QueryHandlerVersion()->QueryStr(),
+            pstrHandlerDllName
+        );
+
+        if (FAILED(hr = struFilename->Copy(retval.c_str())))
         {
-            hr = HRESULT_FROM_WIN32(GetLastError());
-            fDone = TRUE;
-            goto Finished;
-        }
-        else if ((dwReturnedSize == dwSize) && (GetLastError() == ERROR_INSUFFICIENT_BUFFER))
-        {
-            dwSize *= 2; // smaller buffer. increase the buffer and retry
-            if (FAILED(hr = struFilename->Resize(dwSize + 40))) // + 40 for aspnetcorerh.dll
-            {
-                goto Finished;
-            }
-        }
-        else
-        {
-            fDone = TRUE;
+            return hr;
         }
     }
-
-    if (FAILED(hr = struFilename->SyncWithBuffer()))
+    catch (std::exception& e)
     {
-        goto Finished;
+        STRU struEvent;
+        if (SUCCEEDED(struEvent.Copy(ASPNETCORE_EVENT_OUT_OF_PROCESS_RH_MISSING_MSG))
+            && SUCCEEDED(struEvent.AppendA(e.what())))
+        {
+            UTILITY::LogEvent(g_hEventLog,
+                EVENTLOG_INFORMATION_TYPE,
+                ASPNETCORE_EVENT_OUT_OF_PROCESS_RH_MISSING,
+                struEvent.QueryStr());
+        }
+       
+        hr = E_FAIL;
     }
-    dwPosition = struFilename->LastIndexOf(L'\\', 0);
-    struFilename->QueryStr()[dwPosition] = L'\0';
-
-    if (FAILED(hr = struFilename->SyncWithBuffer()) ||
-        FAILED(hr = struFilename->Append(L"\\")) ||
-        FAILED(hr = struFilename->Append(libraryName)))
+    catch (...)
     {
-        goto Finished;
+        hr = E_FAIL;
     }
 
-Finished:
     return hr;
 }
 
@@ -594,6 +596,15 @@ APPLICATION_INFO::RecycleApplication()
                 pApplication,       // thread function arguments
                 0,          // default creation flags
                 NULL);      // receive thread identifier
+        }
+        else
+        {
+            if (m_pConfiguration->QueryHostingModel() == HOSTING_IN_PROCESS)
+            {
+                // In process application failed to start for whatever reason, need to recycle the work process
+                m_pServer->RecycleProcess(L"AspNetCore InProcess Recycle Process on Demand");
+            }
+
         }
 
         if (hThread == NULL)

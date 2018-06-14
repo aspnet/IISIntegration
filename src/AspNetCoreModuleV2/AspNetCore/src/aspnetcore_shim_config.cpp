@@ -3,6 +3,7 @@
 
 #include "aspnetcore_shim_config.h"
 
+#include "config_utility.h"
 #include "hostfxr_utility.h"
 #include "debugutil.h"
 #include "ahutil.h"
@@ -10,110 +11,6 @@
 ASPNETCORE_SHIM_CONFIG::~ASPNETCORE_SHIM_CONFIG()
 {
 }
-
-VOID
-ASPNETCORE_SHIM_CONFIG::ReferenceConfiguration(
-    VOID
-) const
-{
-    InterlockedIncrement(&m_cRefs);
-}
-
-VOID
-ASPNETCORE_SHIM_CONFIG::DereferenceConfiguration(
-    VOID
-) const
-{
-    DBG_ASSERT(m_cRefs != 0);
-    LONG cRefs = 0;
-    if ((cRefs = InterlockedDecrement(&m_cRefs)) == 0)
-    {
-        delete this;
-    }
-}
-
-HRESULT
-ASPNETCORE_SHIM_CONFIG::GetConfig(
-    _In_  IHttpServer             *pHttpServer,
-    _In_  HTTP_MODULE_ID           pModuleId,
-    _In_  IHttpApplication        *pHttpApplication,
-    _Out_ ASPNETCORE_SHIM_CONFIG **ppAspNetCoreShimConfig
-)
-{
-    HRESULT                 hr = S_OK;
-    ASPNETCORE_SHIM_CONFIG *pAspNetCoreShimConfig = NULL;
-    STRU                    struHostFxrDllLocation;
-    STRU                    struExeAbsolutePath;
-
-    if (ppAspNetCoreShimConfig == NULL)
-    {
-        hr = E_INVALIDARG;
-        goto Finished;
-    }
-
-    *ppAspNetCoreShimConfig = NULL;
-
-    // potential bug if user sepcific config at virtual dir level
-    pAspNetCoreShimConfig = (ASPNETCORE_SHIM_CONFIG*)
-        pHttpApplication->GetModuleContextContainer()->GetModuleContext(pModuleId);
-
-    if (pAspNetCoreShimConfig != NULL)
-    {
-        *ppAspNetCoreShimConfig = pAspNetCoreShimConfig;
-        pAspNetCoreShimConfig = NULL;
-        goto Finished;
-    }
-
-    pAspNetCoreShimConfig = new ASPNETCORE_SHIM_CONFIG;
-
-    hr = pAspNetCoreShimConfig->Populate(pHttpServer, pHttpApplication);
-    if (FAILED(hr))
-    {
-        goto Finished;
-    }
-
-    hr = pHttpApplication->GetModuleContextContainer()->
-        SetModuleContext(pAspNetCoreShimConfig, pModuleId);
-
-    if (FAILED(hr))
-    {
-        if (hr == HRESULT_FROM_WIN32(ERROR_ALREADY_ASSIGNED))
-        {
-            delete pAspNetCoreShimConfig;
-
-            pAspNetCoreShimConfig = (ASPNETCORE_SHIM_CONFIG*)pHttpApplication->
-                GetModuleContextContainer()->
-                GetModuleContext(pModuleId);
-
-            _ASSERT(pAspNetCoreShimConfig != NULL);
-
-            hr = S_OK;
-        }
-        else
-        {
-            goto Finished;
-        }
-    }
-    else
-    {
-        DebugPrintf(ASPNETCORE_DEBUG_FLAG_INFO,
-            "ASPNETCORE_SHIM_CONFIG::GetConfig, set config to ModuleContext");
-    }
-
-    *ppAspNetCoreShimConfig = pAspNetCoreShimConfig;
-    pAspNetCoreShimConfig = NULL;
-
-Finished:
-
-    if (pAspNetCoreShimConfig != NULL)
-    {
-        delete pAspNetCoreShimConfig;
-        pAspNetCoreShimConfig = NULL;
-    }
-
-    return hr;
-}
-
 
 HRESULT
 ASPNETCORE_SHIM_CONFIG::Populate(
@@ -192,6 +89,8 @@ ASPNETCORE_SHIM_CONFIG::Populate(
         goto Finished;
     }
 
+    hr = ConfigUtility::FindHandlerVersion(pAspNetCoreElement, &m_struHandlerVersion);
+
 Finished:
 
     if (pAspNetCoreElement != NULL)
@@ -202,4 +101,3 @@ Finished:
 
     return hr;
 }
-

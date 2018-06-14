@@ -4,6 +4,7 @@
 #pragma once
 
 #include "precomp.hxx"
+#include <map>
 
 #define CS_ASPNETCORE_SECTION                            L"system.webServer/aspNetCore"
 #define CS_ASPNETCORE_PROCESS_EXE_PATH                   L"processPath"
@@ -17,45 +18,17 @@ enum APP_HOSTING_MODEL
     HOSTING_OUT_PROCESS
 };
 
-class ASPNETCORE_SHIM_CONFIG : IHttpStoredContext
+class ASPNETCORE_SHIM_CONFIG
 {
 public:
     virtual
     ~ASPNETCORE_SHIM_CONFIG();
-
-    static
-    HRESULT
-    GetConfig(
-        _In_  IHttpServer             *pHttpServer,
-        _In_  HTTP_MODULE_ID           pModuleId,
-        _In_  IHttpApplication        *pHttpApplication,
-        _Out_ ASPNETCORE_SHIM_CONFIG **ppAspNetCoreConfig
-    );
 
     HRESULT
     Populate(
         IHttpServer         *pHttpServer,
         IHttpApplication    *pHttpContext
     );
-
-    VOID
-    ReferenceConfiguration(
-        VOID
-    ) const;
-
-    VOID
-    DereferenceConfiguration(
-	    VOID
-    ) const;
-
-
-    VOID
-    CleanupStoredContext(
-        VOID
-    )
-    {
-        DereferenceConfiguration();
-    }
 
     STRU*
     QueryApplicationPhysicalPath(
@@ -105,14 +78,21 @@ public:
         return m_hostingModel;
     }
 
-private:
+    STRU*
+    QueryHandlerVersion(
+        VOID
+    )
+    {
+        return &m_struHandlerVersion;
+    }
+
     ASPNETCORE_SHIM_CONFIG() :
-        m_cRefs(1),
         m_hostingModel(HOSTING_UNKNOWN)
     {
     }
 
-    mutable LONG           m_cRefs;
+private:
+
     STRU                   m_struArguments;
     STRU                   m_struProcessPath;
     STRU                   m_struApplication;
@@ -120,5 +100,6 @@ private:
     STRU                   m_struConfigPath;
     APP_HOSTING_MODEL      m_hostingModel;
     STRU                   m_struHostFxrLocation;
+    STRU                   m_struHandlerVersion;
 };
 
