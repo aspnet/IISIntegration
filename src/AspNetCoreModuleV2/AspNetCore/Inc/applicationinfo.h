@@ -37,6 +37,7 @@ public:
         m_cRefs(1),
         m_fAppOfflineFound(FALSE),
         m_fAllowStart(FALSE),
+        m_fAppCreated(FALSE),
         m_pAppOfflineHtm(NULL),
         m_pFileWatcherEntry(NULL),
         m_pConfiguration(NULL),
@@ -90,6 +91,11 @@ public:
     BOOL QueryAllowStart()
     {
         return m_fAllowStart;
+    }
+
+    BOOL QueryAppCreated()
+    {
+        return m_fAppCreated;
     }
 
     VOID
@@ -150,6 +156,8 @@ private:
     STRU                    m_struInfoKey;
     BOOL                    m_fAppOfflineFound;
     BOOL                    m_fAllowStart; // Flag indicates whether there is (configuration) error blocking application from starting
+    BOOL                    m_fAppCreated; // Flag indicates if the application has been created successfully (runtime error).
+                                           // We don't want to create multiple times
     APP_OFFLINE_HTM        *m_pAppOfflineHtm;
     FILE_WATCHER_ENTRY     *m_pFileWatcherEntry;
     ASPNETCORE_SHIM_CONFIG *m_pConfiguration;

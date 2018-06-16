@@ -7,6 +7,7 @@
 #include <IPHlpApi.h>
 #include <VersionHelpers.h>
 
+#include "acache.h"
 #include "inprocessapplication.h"
 #include "requesthandler_config.h"
 #include "debugutil.h"
@@ -97,9 +98,14 @@ CreateApplication(
     // Initialze some global variables here
     InitializeGlobalConfiguration(pServer);
 
-
     try
     {
+        hr = ALLOC_CACHE_HANDLER::StaticInitialize();
+        if (FAILED(hr))
+        {
+            goto Finished;
+        }
+
         hr = REQUESTHANDLER_CONFIG::CreateRequestHandlerConfig(pServer, pHttpApplication, &pConfig);
         if (FAILED(hr))
         {

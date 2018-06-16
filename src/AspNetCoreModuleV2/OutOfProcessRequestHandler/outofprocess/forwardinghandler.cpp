@@ -725,7 +725,7 @@ HRESULT
     }
 
     hr = sm_pAlloc->Initialize(sizeof(FORWARDING_HANDLER),
-        64); // nThreshold
+                               64); // nThreshold
     if (FAILED(hr))
     {
         goto Finished;

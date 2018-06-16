@@ -195,6 +195,7 @@ APPLICATION_INFO::EnsureApplicationCreated(
     IHttpContext *pHttpContext
 )
 {
+    HRESULT             hr = S_OK;
     IAPPLICATION       *pApplication = NULL;
     STRU                struExeLocation;
     STRU                struHostFxrDllLocation;
@@ -224,20 +225,38 @@ APPLICATION_INFO::EnsureApplicationCreated(
             // FindRequestHandlerAssembly obtains a global lock, but after releasing the lock,
             // there is a period where we could call
 
-            RETURN_IF_FAILED(FindRequestHandlerAssembly(struExeLocation));
+            FINISHED_IF_FAILED(FindRequestHandlerAssembly(struExeLocation));
+
 
             if (m_pfnAspNetCoreCreateApplication == NULL)
             {
-                RETURN_IF_FAILED(HRESULT_FROM_WIN32(ERROR_INVALID_FUNCTION));
+                FINISHED_IF_FAILED(HRESULT_FROM_WIN32(ERROR_INVALID_FUNCTION));
             }
 
-            RETURN_IF_FAILED(m_pfnAspNetCoreCreateApplication(m_pServer, pHttpContext->GetApplication(), &pApplication));
+            FINISHED_IF_FAILED(m_pfnAspNetCoreCreateApplication(m_pServer, pHttpContext->GetApplication(), &pApplication));
+  
             pApplication->SetParameter(L"InProcessExeLocation", struExeLocation.QueryStr());
+
+            m_fAppCreated = TRUE;
+
             m_pApplication = pApplication;
         }
     }
 
-    return S_OK;
+Finished:
+
+    if (FAILED(hr))
+    {
+        // Log the failure and update application info to not try again
+        UTILITY::LogEventF(g_hEventLog,
+            EVENTLOG_ERROR_TYPE,
+            ASPNETCORE_EVENT_ADD_APPLICATION_ERROR,
+            ASPNETCORE_EVENT_ADD_APPLICATION_ERROR_MSG,
+            pHttpContext->GetApplication()->GetApplicationId(),
+            hr);
+    }
+
+    return hr;
 }
 
 HRESULT

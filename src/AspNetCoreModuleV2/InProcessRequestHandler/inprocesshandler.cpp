@@ -98,41 +98,26 @@ HRESULT
 --*/
 {
     HRESULT                         hr = S_OK;
-    ALLOC_CACHE_HANDLER*            pAlloc = NULL;
+
+    sm_pAlloc = new ALLOC_CACHE_HANDLER;
     if (sm_pAlloc == NULL)
     {
-        pAlloc = new ALLOC_CACHE_HANDLER;
-        if (sm_pAlloc == NULL)
-        {
-            hr = E_OUTOFMEMORY;
-            goto Failure;
-        }
-
-        hr = pAlloc->Initialize(sizeof(IN_PROCESS_HANDLER),
-            64); // nThreshold
-        if (FAILED(hr))
-        {
-            goto Failure;
-        }
-
-        AcquireSRWLockExclusive(&g_srwLockRH);
-        if (sm_pAlloc == NULL)
-        {
-            sm_pAlloc = pAlloc;
-        }
-        ReleaseSRWLockExclusive(&g_srwLockRH);
-
-        pAlloc = NULL;
+        hr = E_OUTOFMEMORY;
+        goto Finished;
     }
 
-Failure:
+    hr = sm_pAlloc->Initialize(sizeof(IN_PROCESS_HANDLER),
+                            64); // nThreshold
 
-    if (pAlloc != NULL)
+Finished:
+    if (FAILED(hr))
     {
-        delete pAlloc;
-        pAlloc = NULL;
+        if (sm_pAlloc != NULL)
+        {
+            delete sm_pAlloc;
+            sm_pAlloc = NULL;
+        }
     }
-
     return hr;
 }
 __override
