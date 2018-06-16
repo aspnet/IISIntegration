@@ -236,6 +236,12 @@ APPLICATION_INFO::EnsureApplicationCreated(
 
             hr = m_pfnAspNetCoreCreateApplication(m_pServer, pHttpContext, struExeLocation.QueryStr(), &pApplication);
 
+            if(FAILED(hr))
+            {
+                goto Finished;
+            }
+
+            m_fAppCreated = TRUE;
             m_pApplication = pApplication;
         }
     }
@@ -246,6 +252,20 @@ Finished:
     {
         ReleaseSRWLockExclusive(&m_srwLock);
     }
+
+    if (FAILED(hr))
+    {
+        // Log the failure and update application info to not try again
+        UTILITY::LogEventF(g_hEventLog,
+            EVENTLOG_ERROR_TYPE,
+            ASPNETCORE_EVENT_ADD_APPLICATION_ERROR,
+            ASPNETCORE_EVENT_ADD_APPLICATION_ERROR_MSG,
+            pHttpContext->GetApplication()->GetApplicationId(),
+            hr);
+
+        goto Finished;
+    }
+
     return hr;
 }
 
