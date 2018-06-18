@@ -241,7 +241,6 @@ APPLICATION_INFO::EnsureApplicationCreated(
                 goto Finished;
             }
 
-            m_fAppCreated = TRUE;
             m_pApplication = pApplication;
         }
     }
@@ -250,6 +249,7 @@ Finished:
 
     if (fLocked)
     {
+        m_appStatus = m_pApplication != NULL ? APPLICATION_STATUS::RUNNING : APPLICATION_STATUS::FAIL;
         ReleaseSRWLockExclusive(&m_srwLock);
     }
 
@@ -262,8 +262,6 @@ Finished:
             ASPNETCORE_EVENT_ADD_APPLICATION_ERROR_MSG,
             pHttpContext->GetApplication()->GetApplicationId(),
             hr);
-
-        goto Finished;
     }
 
     return hr;

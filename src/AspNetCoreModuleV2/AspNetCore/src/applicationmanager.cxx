@@ -95,13 +95,13 @@ APPLICATION_MANAGER::GetOrCreateApplicationInfo(
         if (m_pApplicationInfoHash->Count() == 1)
         {
             m_hostingModel = hostingModel;
-            pApplicationInfo->UpdateAllowStartStatus(TRUE);
+            pApplicationInfo->UpdateAppStatus(APPLICATION_STATUS::STARTING);
         }
         else
         {
             if (hostingModel == HOSTING_OUT_PROCESS &&  hostingModel == m_hostingModel)
             {
-                pApplicationInfo->UpdateAllowStartStatus(TRUE);
+                pApplicationInfo->UpdateAppStatus(APPLICATION_STATUS::STARTING);
             }
             else
             {
@@ -215,7 +215,6 @@ APPLICATION_MANAGER::RecycleApplicationFromManager(
     DWORD                   dwPreviousCounter = 0;
     APPLICATION_INFO_HASH*  table = NULL;
     CONFIG_CHANGE_CONTEXT   context;
-    BOOL                    fKeepTable = FALSE;
 
     if (g_fInShutdown)
     {
@@ -254,25 +253,9 @@ APPLICATION_MANAGER::RecycleApplicationFromManager(
     // Removed the applications which are impacted by the configurtion change
     m_pApplicationInfoHash->DeleteIf(FindConfigChangedApplication, (PVOID)&context);
 
-    if (dwPreviousCounter != m_pApplicationInfoHash->Count())
+    if (m_pApplicationInfoHash->Count() == 0 && m_hostingModel == HOSTING_OUT_PROCESS)
     {
-        if (m_hostingModel == HOSTING_IN_PROCESS)
-        {
-            // When we are inprocess, we need to keep the application the
-            // application manager that is being deleted. This is because we will always need to recycle the worker
-            // process and any requests that hit this worker process must be rejected (while out of process can
-            // start a new dotnet process). We will immediately call Recycle after this call.
-            DBG_ASSERT(m_pApplicationInfoHash->Count() == 0);
-            delete m_pApplicationInfoHash;
-
-            // We don't want to delete the table as m_pApplicationInfoHash = table
-            fKeepTable = TRUE;
-            m_pApplicationInfoHash = table;
-        }
-    }
-
-    if (m_pApplicationInfoHash->Count() == 0)
-    {
+        // Resue current worker process
         m_hostingModel = HOSTING_UNKNOWN;
     }
 
@@ -314,7 +297,7 @@ APPLICATION_MANAGER::RecycleApplicationFromManager(
     }
 
 Finished:
-    if (table != NULL && !fKeepTable)
+    if (table != NULL)
     {
         table->Clear();
         delete table;

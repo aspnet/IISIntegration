@@ -156,10 +156,6 @@ private:
 
     SRWLOCK                         m_srwLock;
 
-    // Thread for capturing startup stderr logs when logging is disabled
-    HANDLE                          m_hErrThread;
-    CHAR                            m_pzFileContents[4096] = { 0 };
-    DWORD                           m_dwStdErrReadTotal;
     static IN_PROCESS_APPLICATION*  s_Application;
 
     IOutputManager*                 m_pLoggerProvider;
