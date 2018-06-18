@@ -96,13 +96,13 @@ APPLICATION_MANAGER::GetOrCreateApplicationInfo(
         if (m_pApplicationInfoHash->Count() == 1)
         {
             m_hostingModel = hostingModel;
-            pApplicationInfo->UpdateAllowStartStatus(TRUE);
+            pApplicationInfo->UpdateAppStatus(APPLICATION_STATUS::STARTING);
         }
         else
         {
             if (hostingModel == HOSTING_OUT_PROCESS &&  hostingModel == m_hostingModel)
             {
-                pApplicationInfo->UpdateAllowStartStatus(TRUE);
+                pApplicationInfo->UpdateAppStatus(APPLICATION_STATUS::STARTING);
             }
             else
             {
@@ -213,7 +213,6 @@ APPLICATION_MANAGER::RecycleApplicationFromManager(
     DWORD                   dwPreviousCounter = 0;
     APPLICATION_INFO_HASH*  table = NULL;
     CONFIG_CHANGE_CONTEXT   context;
-    BOOL                    fKeepTable = FALSE;
 
     if (g_fInShutdown)
     {
@@ -252,6 +251,7 @@ APPLICATION_MANAGER::RecycleApplicationFromManager(
         // Removed the applications which are impacted by the configurtion change
         m_pApplicationInfoHash->DeleteIf(FindConfigChangedApplication, (PVOID)&context);
 
+<<<<<<< HEAD
         if (dwPreviousCounter != m_pApplicationInfoHash->Count())
         {
             if (m_hostingModel == HOSTING_IN_PROCESS)
@@ -273,6 +273,12 @@ APPLICATION_MANAGER::RecycleApplicationFromManager(
         {
             m_hostingModel = HOSTING_UNKNOWN;
         }
+=======
+    if (m_pApplicationInfoHash->Count() == 0 && m_hostingModel == HOSTING_OUT_PROCESS)
+    {
+        // Resue current worker process
+        m_hostingModel = HOSTING_UNKNOWN;
+>>>>>>> address some feedback and cleanup
     }
 
     // If we receive a request at this point.
@@ -311,7 +317,7 @@ APPLICATION_MANAGER::RecycleApplicationFromManager(
     }
 
 Finished:
-    if (table != NULL && !fKeepTable)
+    if (table != NULL)
     {
         table->Clear();
         delete table;

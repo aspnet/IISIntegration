@@ -237,14 +237,26 @@ APPLICATION_INFO::EnsureApplicationCreated(
   
             pApplication->SetParameter(L"InProcessExeLocation", struExeLocation.QueryStr());
 
+<<<<<<< HEAD
             m_fAppCreated = TRUE;
 
+=======
+>>>>>>> address some feedback and cleanup
             m_pApplication = pApplication;
         }
     }
 
 Finished:
 
+<<<<<<< HEAD
+=======
+    if (fLocked)
+    {
+        m_appStatus = m_pApplication != NULL ? APPLICATION_STATUS::RUNNING : APPLICATION_STATUS::FAIL;
+        ReleaseSRWLockExclusive(&m_srwLock);
+    }
+
+>>>>>>> address some feedback and cleanup
     if (FAILED(hr))
     {
         // Log the failure and update application info to not try again
