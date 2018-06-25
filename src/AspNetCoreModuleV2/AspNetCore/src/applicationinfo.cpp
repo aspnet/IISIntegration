@@ -237,37 +237,14 @@ APPLICATION_INFO::EnsureApplicationCreated(
   
             pApplication->SetParameter(L"InProcessExeLocation", struExeLocation.QueryStr());
 
-<<<<<<< HEAD
-<<<<<<< HEAD
             m_fAppCreated = TRUE;
 
-=======
->>>>>>> address some feedback and cleanup
-=======
-            if(FAILED(hr))
-            {
-                goto Finished;
-            }
-
->>>>>>> f23f456c9c1cc8c74505d5585bc1f448c9bc5c1e
             m_pApplication = pApplication;
         }
     }
 
 Finished:
 
-<<<<<<< HEAD
-=======
-    if (fLocked)
-    {
-        m_appStatus = m_pApplication != NULL ? APPLICATION_STATUS::RUNNING : APPLICATION_STATUS::FAIL;
-        ReleaseSRWLockExclusive(&m_srwLock);
-    }
-
-<<<<<<< HEAD
->>>>>>> address some feedback and cleanup
-=======
->>>>>>> f23f456c9c1cc8c74505d5585bc1f448c9bc5c1e
     if (FAILED(hr))
     {
         // Log the failure and update application info to not try again

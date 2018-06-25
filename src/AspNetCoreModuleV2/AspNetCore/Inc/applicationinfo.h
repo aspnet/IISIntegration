@@ -36,7 +36,8 @@ public:
         m_pServer(NULL),
         m_cRefs(1),
         m_fAppOfflineFound(FALSE),
-        m_appStatus(APPLICATION_STATUS::UNKNOWN),
+        m_fAllowStart(FALSE),
+        m_fAppCreated(FALSE),
         m_pAppOfflineHtm(NULL),
         m_pFileWatcherEntry(NULL),
         m_pConfiguration(NULL),
@@ -87,17 +88,21 @@ public:
         return m_fAppOfflineFound;
     }
 
-    APPLICATION_STATUS
-    QueryAppStatus()
+    BOOL QueryAllowStart()
     {
-        return m_appStatus;
+        return m_fAllowStart;
+    }
+
+    BOOL QueryAppCreated()
+    {
+        return m_fAppCreated;
     }
 
     VOID
-    UpdateAppStatus(APPLICATION_STATUS status)
+    UpdateAllowStartStatus(BOOL fAllowed)
     {
         // no lock, as no expectation for concurrent accesses
-        m_appStatus = status;
+        m_fAllowStart = fAllowed;
     }
 
     VOID
@@ -150,7 +155,9 @@ private:
     mutable LONG            m_cRefs;
     STRU                    m_struInfoKey;
     BOOL                    m_fAppOfflineFound;
-    APPLICATION_STATUS      m_appStatus;
+    BOOL                    m_fAllowStart; // Flag indicates whether there is (configuration) error blocking application from starting
+    BOOL                    m_fAppCreated; // Flag indicates if the application has been created successfully (runtime error).
+                                           // We don't want to create multiple times
     APP_OFFLINE_HTM        *m_pAppOfflineHtm;
     FILE_WATCHER_ENTRY     *m_pFileWatcherEntry;
     ASPNETCORE_SHIM_CONFIG *m_pConfiguration;
