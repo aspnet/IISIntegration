@@ -252,6 +252,7 @@ APPLICATION_MANAGER::RecycleApplicationFromManager(
         m_pApplicationInfoHash->DeleteIf(FindConfigChangedApplication, (PVOID)&context);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         if (dwPreviousCounter != m_pApplicationInfoHash->Count())
         {
             if (m_hostingModel == HOSTING_IN_PROCESS)
@@ -274,6 +275,8 @@ APPLICATION_MANAGER::RecycleApplicationFromManager(
             m_hostingModel = HOSTING_UNKNOWN;
         }
 =======
+=======
+>>>>>>> f23f456c9c1cc8c74505d5585bc1f448c9bc5c1e
     if (m_pApplicationInfoHash->Count() == 0 && m_hostingModel == HOSTING_OUT_PROCESS)
     {
         // Resue current worker process

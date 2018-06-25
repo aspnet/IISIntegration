@@ -101,16 +101,36 @@ CreateApplication(
     try
     {
         hr = ALLOC_CACHE_HANDLER::StaticInitialize();
+<<<<<<< HEAD
+=======
         if (FAILED(hr))
         {
             goto Finished;
         }
 
-        hr = REQUESTHANDLER_CONFIG::CreateRequestHandlerConfig(pServer, pHttpApplication, &pConfig);
+        hr = REQUESTHANDLER_CONFIG::CreateRequestHandlerConfig(pServer, pHttpContext->GetApplication(), &pConfig);
+>>>>>>> f23f456c9c1cc8c74505d5585bc1f448c9bc5c1e
         if (FAILED(hr))
         {
             goto Finished;
         }
+
+<<<<<<< HEAD
+        hr = REQUESTHANDLER_CONFIG::CreateRequestHandlerConfig(pServer, pHttpApplication, &pConfig);
+=======
+        hr = IN_PROCESS_HANDLER::StaticInitialize();
+>>>>>>> f23f456c9c1cc8c74505d5585bc1f448c9bc5c1e
+        if (FAILED(hr))
+        {
+            goto Finished;
+        }
+<<<<<<< HEAD
+=======
+
+        pApplication = new IN_PROCESS_APPLICATION(pServer, pConfig);
+
+        pConfig = NULL;
+>>>>>>> f23f456c9c1cc8c74505d5585bc1f448c9bc5c1e
 
         hr = IN_PROCESS_HANDLER::StaticInitialize();
         if (FAILED(hr))
