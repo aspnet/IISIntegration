@@ -24,17 +24,6 @@ APPLICATION_INFO::~APPLICATION_INFO()
         m_pAppOfflineHtm = NULL;
     }
 
-    if (m_pFileWatcherEntry != NULL)
-    {
-        // Mark the entry as invalid,
-        // StopMonitor will close the file handle and trigger a FCN
-        // the entry will delete itself when processing this FCN
-        m_pFileWatcherEntry->MarkEntryInValid();
-        m_pFileWatcherEntry->StopMonitor();
-        m_pFileWatcherEntry->DereferenceFileWatcherEntry();
-        m_pFileWatcherEntry = NULL;
-    }
-
     if (m_pApplication != NULL)
     {
         // shutdown the application
@@ -55,37 +44,24 @@ APPLICATION_INFO::~APPLICATION_INFO()
 HRESULT
 APPLICATION_INFO::Initialize(
     _In_ IHttpServer              *pServer,
-    _In_ IHttpApplication         *pApplication,
-    _In_ FILE_WATCHER             *pFileWatcher
+    _In_ IHttpApplication         *pApplication
 )
 {
     HRESULT hr = S_OK;
 
     DBG_ASSERT(pServer);
     DBG_ASSERT(pApplication);
-    DBG_ASSERT(pFileWatcher);
 
     // todo: make sure Initialize should be called only once
     m_pServer = pServer;
     FINISHED_IF_NULL_ALLOC(m_pConfiguration = new ASPNETCORE_SHIM_CONFIG());
     FINISHED_IF_FAILED(m_pConfiguration->Populate(m_pServer, pApplication));
     FINISHED_IF_FAILED(m_struInfoKey.Copy(pApplication->GetApplicationId()));
-    FINISHED_IF_NULL_ALLOC(m_pFileWatcherEntry = new FILE_WATCHER_ENTRY(pFileWatcher));
 
     UpdateAppOfflineFileHandle();
 
 Finished:
     return hr;
-}
-
-HRESULT
-APPLICATION_INFO::StartMonitoringAppOffline()
-{
-    if (m_pFileWatcherEntry != NULL)
-    {
-        RETURN_IF_FAILED(m_pFileWatcherEntry->Create(m_pConfiguration->QueryApplicationPhysicalPath()->QueryStr(), L"app_offline.htm", this, NULL));
-    }
-    return S_OK;
 }
 
 //

@@ -11,6 +11,7 @@ enum APPLICATION_STATUS
     STARTING,
     RUNNING,
     SHUTDOWN,
+    OFFLINE,
     FAIL
 };
 
@@ -52,4 +53,8 @@ public:
     CreateHandler(
         _In_  IHttpContext       *pHttpContext,
         _Out_ IREQUEST_HANDLER  **pRequestHandler) = 0;
+
+    virtual
+    VOID
+    OnAppOffline() = 0;
 };
