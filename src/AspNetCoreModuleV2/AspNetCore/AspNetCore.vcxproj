@@ -226,7 +226,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Inc\applicationinfo.h" />
-    <ClInclude Include="Inc\appoffline.h" />
     <ClInclude Include="Inc\aspnetcore_shim_config.h" />
     <ClInclude Include="inc\globalmodule.h" />
     <ClInclude Include="Inc\applicationmanager.h" />

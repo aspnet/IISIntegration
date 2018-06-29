@@ -11,10 +11,10 @@
 class StartupExceptionApplication : public InProcessApplicationBase
 {
 public:
-    StartupExceptionApplication(IHttpServer* pServer, BOOL disableLogs)
+    StartupExceptionApplication(IHttpServer* pServer, REQUESTHANDLER_CONFIG* pConfig, BOOL disableLogs)
         : m_disableLogs(disableLogs),
         m_pHttpServer(pServer),
-        InProcessApplicationBase(pServer)
+        InProcessApplicationBase(pServer, pConfig)
     {
         InitializeSRWLock(&m_srwLock);
         m_status = APPLICATION_STATUS::RUNNING;

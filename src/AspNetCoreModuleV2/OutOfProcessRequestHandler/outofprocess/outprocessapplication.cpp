@@ -2,8 +2,8 @@
 
 OUT_OF_PROCESS_APPLICATION::OUT_OF_PROCESS_APPLICATION(
     REQUESTHANDLER_CONFIG  *pConfig) :
-    m_fWebSocketSupported(WEBSOCKET_STATUS::WEBSOCKET_UNKNOWN),
-    m_pConfig(pConfig)
+    APPLICATION(pConfig),
+    m_fWebSocketSupported(WEBSOCKET_STATUS::WEBSOCKET_UNKNOWN)
 {
     m_status = APPLICATION_STATUS::RUNNING;
     m_pProcessManager = NULL;
@@ -14,7 +14,7 @@ OUT_OF_PROCESS_APPLICATION::~OUT_OF_PROCESS_APPLICATION()
 {
     if (m_pProcessManager != NULL)
     {
-        m_pProcessManager->ShutdownAllProcesses();
+        m_pProcessManager->Shutdown();
         m_pProcessManager->DereferenceProcessManager();
         m_pProcessManager = NULL;
     }
@@ -47,6 +47,16 @@ OUT_OF_PROCESS_APPLICATION::Initialize(
         }
     }
 
+    if (m_pFileWatcherEntry == NULL)
+    {
+        m_pFileWatcherEntry = new  FILE_WATCHER_ENTRY(g_pFileWatcher);
+        if (m_pFileWatcherEntry == NULL)
+        {
+            hr = E_OUTOFMEMORY;
+            goto Finished;
+        }
+    }
+
 Finished:
     return hr;
 }
@@ -73,9 +83,7 @@ OUT_OF_PROCESS_APPLICATION::ShutDown()
     {
         if (m_pProcessManager != NULL)
         {
-            m_pProcessManager->ShutdownAllProcesses();
-            m_pProcessManager->DereferenceProcessManager();
-            m_pProcessManager = NULL;
+            m_pProcessManager->Shutdown();
         }
     }
     ReleaseSRWLockExclusive(&m_srwLock);

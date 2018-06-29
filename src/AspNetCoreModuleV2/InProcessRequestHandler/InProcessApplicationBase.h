@@ -13,7 +13,7 @@ class InProcessApplicationBase : public APPLICATION
 {
 public:
 
-    InProcessApplicationBase(IHttpServer* pHttpServer);
+    InProcessApplicationBase(IHttpServer* pHttpServer, REQUESTHANDLER_CONFIG* pConfig);
 
     ~InProcessApplicationBase() = default;
 

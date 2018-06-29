@@ -327,6 +327,9 @@ HRESULT
         }
     }
 
+Finished:
+    ReleaseSRWLockExclusive(&_srwLock);
+
     if (fFileChanged)
     {
         //
@@ -334,9 +337,6 @@ HRESULT
         //
         _pApplication->OnAppOffline();
     }
-
-Finished:
-    ReleaseSRWLockExclusive(&_srwLock);
     return hr;
 }
 

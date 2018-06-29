@@ -21,6 +21,8 @@ IHttpServer *       g_pHttpServer = NULL;
 HINSTANCE           g_hWinHttpModule;
 HINSTANCE           g_hAspNetCoreModule;
 HANDLE              g_hEventLog = NULL;
+FILE_WATCHER*       g_pFileWatcher = NULL;
+
 
 VOID
 InitializeGlobalConfiguration(
@@ -146,9 +148,20 @@ EnsureOutOfProcessInitializtion()
             goto Finished;
         }
 
+        if (g_pFileWatcher == NULL)
+        {
+            g_pFileWatcher = new FILE_WATCHER;
+            if (g_pFileWatcher == NULL)
+            {
+                hr = HRESULT_FROM_WIN32(ERROR_NOT_ENOUGH_MEMORY);
+                goto Finished;
+            }
+            g_pFileWatcher->Create();
+        }
+
         g_hWinHttpModule = GetModuleHandle(TEXT("winhttp.dll"));
 
-        g_hAspNetCoreModule = GetModuleHandle(TEXT("aspnetcore.dll"));
+        g_hAspNetCoreModule = GetModuleHandle(TEXT("aspnetcorev2.dll"));
 
         hr = WINHTTP_HELPER::StaticInitialize();
         if (FAILED(hr))
@@ -280,7 +293,7 @@ CreateApplication(
     UNREFERENCED_PARAMETER(pParameters);
     UNREFERENCED_PARAMETER(nParameters);
     HRESULT      hr = S_OK;
-    IAPPLICATION *pApplication = NULL;
+    APPLICATION *pApplication = NULL;
     REQUESTHANDLER_CONFIG *pConfig = NULL;
 
     // Initialze some global variables here
@@ -304,17 +317,32 @@ CreateApplication(
         hr = HRESULT_FROM_WIN32(ERROR_OUTOFMEMORY);
         goto Finished;
     }
+    pConfig = NULL;
 
     hr = ((OUT_OF_PROCESS_APPLICATION*)pApplication)->Initialize();
     if (FAILED(hr))
     {
-        delete pApplication;
-        pApplication = NULL;
+        goto Finished;
+    }
+
+    hr = pApplication->StartMonitoringAppOffline();
+    if (FAILED(hr))
+    {
         goto Finished;
     }
 
     *ppApplication = pApplication;
+    pApplication = NULL;
+
 
 Finished:
+    if (pApplication != NULL)
+    {
+        delete pApplication;
+    }
+    if (pConfig != NULL)
+    {
+        delete pConfig;
+    }
     return hr;
 }

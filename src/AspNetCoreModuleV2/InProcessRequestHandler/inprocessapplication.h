@@ -105,9 +105,6 @@ public:
         return s_Application;
     }
 
-    REQUESTHANDLER_CONFIG*
-    QueryConfig() const;
-
     PCWSTR
     QueryExeLocation()
     {
@@ -149,7 +146,7 @@ private:
     static IN_PROCESS_APPLICATION*  s_Application;
 
     IOutputManager*                 m_pLoggerProvider;
-    std::unique_ptr<REQUESTHANDLER_CONFIG>          m_pConfig;
+    //std::unique_ptr<REQUESTHANDLER_CONFIG>          m_pConfig;
 
     static const LPCSTR             s_exeLocationParameterName;
 

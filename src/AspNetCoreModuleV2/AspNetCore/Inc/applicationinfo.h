@@ -6,7 +6,6 @@
 #include "precomp.hxx"
 
 #include "hostfxroptions.h"
-#include "appoffline.h"
 #include "hashtable.h"
 #include "hashfn.h"
 #include "aspnetcore_shim_config.h"
@@ -36,10 +35,11 @@ public:
     APPLICATION_INFO() :
         m_pServer(NULL),
         m_cRefs(1),
-        m_fAppOfflineFound(FALSE),
+        m_fAppOfflineFound(TRUE), // default true so that we do the file exist check for the first check
+        m_fAppOfflineLoaded(FALSE),
         m_fValid(FALSE),
         m_fDoneAppCreation(FALSE),
-        m_pAppOfflineHtm(NULL),
+        m_ulLastCheckTime(0),
         m_pConfiguration(NULL),
         m_pfnAspNetCoreCreateApplication(NULL)
     {
@@ -76,17 +76,8 @@ public:
         }
     }
 
-    APP_OFFLINE_HTM*
-    QueryAppOfflineHtm()
-    {
-        return m_pAppOfflineHtm;
-    }
-
     BOOL
-    AppOfflineFound()
-    {
-        return m_fAppOfflineFound;
-    }
+    AppOfflineFound();
 
     BOOL
     IsValid()
@@ -103,15 +94,14 @@ public:
     VOID
     UpdateAppOfflineFileHandle();
 
-    HRESULT
-    StartMonitoringAppOffline();
+    VOID
+    ServeAppOffline(IHttpResponse* pResponse);
 
     ASPNETCORE_SHIM_CONFIG*
     QueryConfig()
     {
         return m_pConfiguration;
     }
-
 
     //
     // ExtractApplication will increase the reference counter of the application
@@ -144,15 +134,18 @@ private:
     HRESULT FindRequestHandlerAssembly(STRU& location);
     HRESULT FindNativeAssemblyFromGlobalLocation(PCWSTR libraryName, STRU* location);
     HRESULT FindNativeAssemblyFromHostfxr(HOSTFXR_OPTIONS* hostfxrOptions, PCWSTR libraryName, STRU* location);
+    BOOL    LoadAppOffline(LPWSTR strFilePath);
 
     static VOID DoRecycleApplication(LPVOID lpParam);
 
     mutable LONG            m_cRefs;
     STRU                    m_struInfoKey;
+    STRA                    m_strAppOfflineContent;
     BOOL                    m_fAppOfflineFound;
+    BOOL                    m_fAppOfflineLoaded;
     BOOL                    m_fValid;
     BOOL                    m_fDoneAppCreation;
-    APP_OFFLINE_HTM        *m_pAppOfflineHtm;
+    ULONGLONG               m_ulLastCheckTime;
     ASPNETCORE_SHIM_CONFIG *m_pConfiguration;
     IAPPLICATION           *m_pApplication;
     SRWLOCK                 m_srwLock;

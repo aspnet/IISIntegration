@@ -7,11 +7,11 @@
 hostfxr_main_fn InProcessApplicationBase::s_fMainCallback = NULL;
 
 InProcessApplicationBase::InProcessApplicationBase(
-    IHttpServer *pHttpServer)
-    :
-    m_srwLock(),
-    m_fRecycleCalled(FALSE),
-    m_pHttpServer(pHttpServer)
+    IHttpServer *pHttpServer, REQUESTHANDLER_CONFIG* pConfig)
+    : APPLICATION(pConfig),
+      m_srwLock(),
+      m_fRecycleCalled(FALSE),
+      m_pHttpServer(pHttpServer)
 {
     InitializeSRWLock(&m_srwLock);
 }

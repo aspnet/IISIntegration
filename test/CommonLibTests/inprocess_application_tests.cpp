@@ -25,6 +25,7 @@ namespace InprocessTests
         };
 
         IN_PROCESS_APPLICATION *app = new IN_PROCESS_APPLICATION(server, std::move(config), parameters.data(), 1);
+
         ASSERT_STREQ(app->QueryExeLocation(), L"hello");
     }
 }

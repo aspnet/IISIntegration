@@ -60,6 +60,5 @@ private:
     SRWLOCK           m_srwLock;
     IHttpServer      *m_pHttpServer;
 
-    REQUESTHANDLER_CONFIG*        m_pConfig;
     WEBSOCKET_STATUS              m_fWebSocketSupported;
 };

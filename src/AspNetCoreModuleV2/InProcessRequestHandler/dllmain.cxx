@@ -101,12 +101,13 @@ CreateApplication(
 
         const bool disableStartupPage = pConfig->QueryDisableStartUpErrorPage();
 
+
         auto pApplication = std::make_unique<IN_PROCESS_APPLICATION>(pServer, std::move(config), pParameters, nParameters);
 
         if (FAILED_LOG(pApplication->LoadManagedApplication()))
         {
             // Set the currently running application to a fake application that returns startup exceptions.
-            *ppApplication = new StartupExceptionApplication(pServer, disableStartupPage);
+            *ppApplication = new StartupExceptionApplication(pServer, config.release(), disableStartupPage);
         }
         else
         {

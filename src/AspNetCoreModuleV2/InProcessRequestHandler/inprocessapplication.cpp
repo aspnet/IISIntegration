@@ -29,7 +29,7 @@ IN_PROCESS_APPLICATION::IN_PROCESS_APPLICATION(
     m_fShutdownCalledFromNative(FALSE),
     m_fShutdownCalledFromManaged(FALSE),
     m_fInitialized(FALSE),
-    m_pConfig(std::move(pConfig))
+    InProcessApplicationBase(pHttpServer, pConfig)
 {
     // is it guaranteed that we have already checked app offline at this point?
     // If so, I don't think there is much to do here.
@@ -662,14 +662,6 @@ IN_PROCESS_APPLICATION::RunDotnetApplication(DWORD argc, CONST PCWSTR* argv, hos
     }
 
     return hr;
-}
-
-// static
-
-REQUESTHANDLER_CONFIG*
-IN_PROCESS_APPLICATION::QueryConfig() const
-{
-    return m_pConfig.get();
 }
 
 HRESULT

@@ -57,7 +57,7 @@ APPLICATION_MANAGER::GetOrCreateApplicationInfo(
     {
         pApplicationInfo = new APPLICATION_INFO();
 
-        FINISHED_IF_FAILED(pApplicationInfo->Initialize(pServer, pHttpContext->GetApplication(), m_pFileWatcher));
+        FINISHED_IF_FAILED(pApplicationInfo->Initialize(pServer, pHttpContext->GetApplication()));
 
         SRWExclusiveLock lock(m_srwLock);
 

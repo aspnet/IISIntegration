@@ -4,7 +4,6 @@
 #pragma once
 
 #include "stdafx.h"
-<<<<<<< HEAD
 #include "exceptions.h"
 #include "requesthandler_config.h"
 #include "filewatcher.h"
@@ -14,8 +13,6 @@
 
 extern "C" FILE_WATCHER* g_pFileWatcher;
 extern "C" HANDLE        g_hEventLog;
-=======
->>>>>>> moving files
 
 class APPLICATION : public IAPPLICATION
 {
@@ -28,31 +25,20 @@ public:
         return m_status;
     }
 
-<<<<<<< HEAD
     APPLICATION(std::shared_ptr<REQUESTHANDLER_CONFIG> pConfig)
         : m_cRefs(1),
         m_pFileWatcherEntry(NULL)
     {
         m_pConfig = pConfig;
-=======
-    APPLICATION(REQUESTHANDLER_CONFIG* pConfig)
-        : m_cRefs(1)
-    {
         m_pConfiguration = pConfig;
->>>>>>> moving files
     }
 
     virtual ~APPLICATION() override
     {
-<<<<<<< HEAD
+
         if (m_pFileWatcherEntry != NULL)
         {
             m_pFileWatcherEntry->DereferenceFileWatcherEntry();
-=======
-        if (m_pConfiguration != NULL)
-        {
-            delete m_pConfiguration;
->>>>>>> moving files
         }
     }
 
@@ -88,7 +74,6 @@ public:
     StartMonitoringAppOffline()
     {
         HRESULT hr = S_OK;
-<<<<<<< HEAD
         if (g_pFileWatcher == NULL)
         {
             hr = E_INVALIDARG;
@@ -115,11 +100,13 @@ public:
                 ASPNETCORE_EVENT_MONITOR_APPOFFLINE_ERROR_MSG,
                 m_pConfig->QueryConfigPath()->QueryStr(),
                 hr);
-=======
         if (m_pFileWatcherEntry != NULL)
         {
+
             hr = m_pFileWatcherEntry->Create(m_pConfiguration->QueryApplicationPhysicalPath()->QueryStr(), L"app_offline.htm", this, NULL);
->>>>>>> moving files
+
+            hr = m_pFileWatcherEntry->Create(m_pConfig->QueryApplicationPhysicalPath()->QueryStr(), L"app_offline.htm", this, NULL);
+
         }
 
         return hr;
@@ -128,7 +115,6 @@ public:
     VOID
     OnAppOffline() override
     {
-<<<<<<< HEAD
         m_pFileWatcherEntry->StopMonitor();
         m_pFileWatcherEntry = NULL;
         m_status = APPLICATION_STATUS::OFFLINE;
@@ -144,20 +130,10 @@ public:
     QueryConfig() const
     {
         return m_pConfig.get();
-=======
-        m_status = APPLICATION_STATUS::OFFLINE;
-    }
-
-    REQUESTHANDLER_CONFIG*
-        QueryConfig() const
-    {
-        return m_pConfiguration;
->>>>>>> moving files
     }
 
 
 protected:
-<<<<<<< HEAD
     volatile APPLICATION_STATUS             m_status = APPLICATION_STATUS::UNKNOWN;
     FILE_WATCHER_ENTRY*                     m_pFileWatcherEntry;
     std::shared_ptr<REQUESTHANDLER_CONFIG>  m_pConfig;
@@ -165,13 +141,3 @@ protected:
 private:
     mutable LONG                    m_cRefs;
 };
-=======
-    volatile APPLICATION_STATUS     m_status = APPLICATION_STATUS::UNKNOWN;
-    FILE_WATCHER_ENTRY*             m_pFileWatcherEntry;
-    REQUESTHANDLER_CONFIG*          m_pConfiguration;
-
-
-private:
-    mutable LONG                    m_cRefs;
-};
->>>>>>> moving files

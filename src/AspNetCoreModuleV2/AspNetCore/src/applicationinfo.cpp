@@ -18,12 +18,6 @@ const PCWSTR APPLICATION_INFO::s_pwzAspnetcoreOutOfProcessRequestHandlerName = L
 
 APPLICATION_INFO::~APPLICATION_INFO()
 {
-    if (m_pAppOfflineHtm != NULL)
-    {
-        m_pAppOfflineHtm->DereferenceAppOfflineHtm();
-        m_pAppOfflineHtm = NULL;
-    }
-
     if (m_pApplication != NULL)
     {
         // shutdown the application
@@ -58,15 +52,105 @@ APPLICATION_INFO::Initialize(
     FINISHED_IF_FAILED(m_pConfiguration->Populate(m_pServer, pApplication));
     FINISHED_IF_FAILED(m_struInfoKey.Copy(pApplication->GetApplicationId()));
 
-    UpdateAppOfflineFileHandle();
+    //UpdateAppOfflineFileHandle();
 
 Finished:
     return hr;
 }
 
+BOOL
+APPLICATION_INFO::AppOfflineFound()
+{
+    ULONGLONG  ulCurrentTime = GetTickCount64();
+    //
+    // we only care about app offline presented. If not, it means the application has started
+    // and is monitoring  the app offline file
+    // we cache the file exist check for 1 minute
+    //
+    if (m_fAppOfflineFound && ulCurrentTime - m_ulLastCheckTime > 1000)
+    {
+        // double check to avoid expensive IO operation
+        SRWExclusiveLock lock(m_srwLock);
+        if (ulCurrentTime - m_ulLastCheckTime > 1000)
+        {
+            UpdateAppOfflineFileHandle();
+            m_ulLastCheckTime = ulCurrentTime;
+        }
+    }
+    return m_fAppOfflineFound;
+}
+
+// Load appoffline content
+BOOL APPLICATION_INFO::LoadAppOffline(LPWSTR strFilePath)
+{
+    BOOL            fResult = TRUE;
+    LARGE_INTEGER   li = { 0 };
+    CHAR           *pszBuff = NULL;
+    HANDLE         handle = INVALID_HANDLE_VALUE;
+
+    DBG_ASSERT(strFilePath);
+
+    handle = CreateFile(strFilePath,
+                        GENERIC_READ,
+                        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                        NULL,
+                        OPEN_EXISTING,
+                        FILE_ATTRIBUTE_NORMAL,
+                        NULL);
+
+    if (handle == INVALID_HANDLE_VALUE)
+    {
+        if (HRESULT_FROM_WIN32(GetLastError()) == ERROR_FILE_NOT_FOUND)
+        {
+            fResult = FALSE;
+        }
+
+        // If file is currenlty locked exclusively by other processes, we might get INVALID_HANDLE_VALUE even though the file exists. In that case, we should return TRUE here.
+        goto Finished;
+    }
+
+    if (!GetFileSizeEx(handle, &li))
+    {
+        goto Finished;
+    }
+
+    if (li.HighPart != 0)
+    {
+        // > 4gb file size not supported
+        // todo: log a warning at event log
+        goto Finished;
+    }
+
+    DWORD bytesRead = 0;
+
+    if (li.LowPart > 0)
+    {
+        pszBuff = new CHAR[li.LowPart + 1];
+
+        if (ReadFile(handle, pszBuff, li.LowPart, &bytesRead, NULL))
+        {
+            m_strAppOfflineContent.Copy(pszBuff, bytesRead);
+        }
+    }
+
+Finished:
+    if (handle != INVALID_HANDLE_VALUE)
+    {
+        CloseHandle(handle);
+        handle = INVALID_HANDLE_VALUE;
+    }
+
+    if (pszBuff != NULL)
+    {
+        delete[] pszBuff;
+        pszBuff = NULL;
+    }
+
+    return fResult;
+}
+
 //
-// Called by the file watcher when the app_offline.htm's file status has been changed.
-// If it finds it, we will call recycle on the application.
+//  Check AppOffline and load content into a buffer if file exists
 //
 VOID
 APPLICATION_INFO::UpdateAppOfflineFileHandle()
@@ -75,73 +159,45 @@ APPLICATION_INFO::UpdateAppOfflineFileHandle()
     UTILITY::ConvertPathToFullPath(L".\\app_offline.htm",
         m_pConfiguration->QueryApplicationPhysicalPath()->QueryStr(),
         &strFilePath);
-    APP_OFFLINE_HTM *pOldAppOfflineHtm = NULL;
-    APP_OFFLINE_HTM *pNewAppOfflineHtm = NULL;
-
-    ReferenceApplicationInfo();
 
     if (INVALID_FILE_ATTRIBUTES == GetFileAttributes(strFilePath.QueryStr()))
     {
-        // Check if app offline was originally present.
-        // if it was, log that app_offline has been dropped.
-        if (m_fAppOfflineFound)
-        {
-            UTILITY::LogEvent(g_hEventLog,
-                EVENTLOG_INFORMATION_TYPE,
-                ASPNETCORE_EVENT_RECYCLE_APPOFFLINE_REMOVED,
-                ASPNETCORE_EVENT_RECYCLE_APPOFFLINE_REMOVED_MSG);
-        }
-
         m_fAppOfflineFound = FALSE;
     }
     else
     {
-        pNewAppOfflineHtm = new APP_OFFLINE_HTM(strFilePath.QueryStr());
-
-        if (pNewAppOfflineHtm != NULL)
+        // Only load the appoffline file once to avoid expensive IO
+        // If appoffline file changes during offline, we will not refresh it
+        if (!m_fAppOfflineLoaded)
         {
-            if (pNewAppOfflineHtm->Load())
-            {
-                //
-                // loaded the new app_offline.htm
-                //
-                pOldAppOfflineHtm = (APP_OFFLINE_HTM *)InterlockedExchangePointer((VOID**)&m_pAppOfflineHtm, pNewAppOfflineHtm);
-
-                if (pOldAppOfflineHtm != NULL)
-                {
-                    pOldAppOfflineHtm->DereferenceAppOfflineHtm();
-                    pOldAppOfflineHtm = NULL;
-                }
-            }
-            else
-            {
-                // ignored the new app_offline file because the file does not exist.
-                pNewAppOfflineHtm->DereferenceAppOfflineHtm();
-                pNewAppOfflineHtm = NULL;
-            }
-        }
-
-        m_fAppOfflineFound = TRUE;
-
-        // recycle the application
-        if (m_pApplication != NULL)
-        {
-            STACK_STRU(strEventMsg, 256);
-            if (SUCCEEDED(strEventMsg.SafeSnwprintf(
-                ASPNETCORE_EVENT_RECYCLE_APPOFFLINE_MSG,
-                m_pConfiguration->QueryApplicationPhysicalPath()->QueryStr())))
-            {
-                UTILITY::LogEvent(g_hEventLog,
-                    EVENTLOG_INFORMATION_TYPE,
-                    ASPNETCORE_EVENT_RECYCLE_APPOFFLINE,
-                    strEventMsg.QueryStr());
-            }
-
-            RecycleApplication();
+            LoadAppOffline(strFilePath.QueryStr());
+            m_fAppOfflineFound = TRUE;
+            m_fAppOfflineLoaded = TRUE;
         }
     }
+}
 
-    DereferenceApplicationInfo();
+VOID
+APPLICATION_INFO::ServeAppOffline(IHttpResponse* pResponse)
+{
+    // servicing app_offline
+    HTTP_DATA_CHUNK   DataChunk;
+
+    DBG_ASSERT(pResponse);
+
+    // Ignore failure hresults as nothing we can do
+    // Set fTrySkipCustomErrors to true as we want client see the offline content
+    pResponse->SetStatus(503, "Service Unavailable", 0, S_OK, NULL, TRUE);
+    pResponse->SetHeader("Content-Type",
+        "text/html",
+        (USHORT)strlen("text/html"),
+        FALSE
+    );
+
+    DataChunk.DataChunkType = HttpDataChunkFromMemory;
+    DataChunk.FromMemory.pBuffer = (PVOID)m_strAppOfflineContent.QueryStr();
+    DataChunk.FromMemory.BufferLength = m_strAppOfflineContent.QueryCB();
+    pResponse->WriteEntityChunkByReference(&DataChunk);
 }
 
 HRESULT
@@ -163,7 +219,7 @@ APPLICATION_INFO::EnsureApplicationCreated(
     // one optimization for failure scenario is to reduce the lock scope
     SRWExclusiveLock lock(m_srwLock);
 
-    if (m_fDoneAppCreation)
+    if (m_fDoneAppCreation && m_pApplication == NULL)
     {
         // application is NULL and CreateApplication failed previously
         FINISHED(E_APPLICATION_ACTIVATION_EXEC_FAILURE);
