@@ -5,12 +5,7 @@
 
 #include "config_utility.h"
 #include "hostfxr_utility.h"
-#include "debugutil.h"
 #include "ahutil.h"
-
-ASPNETCORE_SHIM_CONFIG::~ASPNETCORE_SHIM_CONFIG()
-{
-}
 
 HRESULT
 ASPNETCORE_SHIM_CONFIG::Populate(
@@ -18,53 +13,30 @@ ASPNETCORE_SHIM_CONFIG::Populate(
     IHttpApplication *pHttpApplication
 )
 {
-    STACK_STRU(strHostingModel, 300);
-    HRESULT                         hr = S_OK;
+    STACK_STRU(strHostingModel, 12);
     STRU                            strApplicationFullPath;
     IAppHostAdminManager           *pAdminManager = NULL;
-    IAppHostElement                *pAspNetCoreElement = NULL;
-    BSTR                            bstrAspNetCoreSection = NULL;
+    CComPtr<IAppHostElement>        pAspNetCoreElement;
 
     pAdminManager = pHttpServer->GetAdminManager();
-    hr = m_struConfigPath.Copy(pHttpApplication->GetAppConfigPath());
-    if (FAILED(hr))
-    {
-        goto Finished;
-    }
+    RETURN_IF_FAILED(m_struConfigPath.Copy(pHttpApplication->GetAppConfigPath()));
+    RETURN_IF_FAILED(m_struApplicationPhysicalPath.Copy(pHttpApplication->GetApplicationPhysicalPath()));
 
-    hr = m_struApplicationPhysicalPath.Copy(pHttpApplication->GetApplicationPhysicalPath());
-    if (FAILED(hr))
-    {
-        goto Finished;
-    }
+    const CComBSTR bstrAspNetCoreSection = CS_ASPNETCORE_SECTION;
 
-    bstrAspNetCoreSection = SysAllocString(CS_ASPNETCORE_SECTION);
-
-    hr = pAdminManager->GetAdminSection(bstrAspNetCoreSection,
+    RETURN_IF_FAILED(pAdminManager->GetAdminSection(bstrAspNetCoreSection,
         m_struConfigPath.QueryStr(),
-        &pAspNetCoreElement);
-    if (FAILED(hr))
-    {
-        goto Finished;
-    }
+        &pAspNetCoreElement));
 
-    hr = GetElementStringProperty(pAspNetCoreElement,
+    RETURN_IF_FAILED(GetElementStringProperty(pAspNetCoreElement,
         CS_ASPNETCORE_PROCESS_EXE_PATH,
-        &m_struProcessPath);
-    if (FAILED(hr))
-    {
-        goto Finished;
-    }
+        &m_struProcessPath));
 
-    hr = GetElementStringProperty(pAspNetCoreElement,
+    // Swallow this error for backward compatability
+    // Use default behavior for empty string
+    GetElementStringProperty(pAspNetCoreElement,
         CS_ASPNETCORE_HOSTING_MODEL,
         &strHostingModel);
-    if (FAILED(hr))
-    {
-        // Swallow this error for backward compatability
-        // Use default behavior for empty string
-        hr = S_OK;
-    }
 
     if (strHostingModel.IsEmpty() || strHostingModel.Equals(L"outofprocess", TRUE))
     {
@@ -77,27 +49,17 @@ ASPNETCORE_SHIM_CONFIG::Populate(
     else
     {
         // block unknown hosting value
-        hr = HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
-        goto Finished;
+        RETURN_IF_FAILED(HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED));
     }
 
-    hr = GetElementStringProperty(pAspNetCoreElement,
+    RETURN_IF_FAILED(GetElementStringProperty(pAspNetCoreElement,
         CS_ASPNETCORE_PROCESS_ARGUMENTS,
-        &m_struArguments);
-    if (FAILED(hr))
+        &m_struArguments));
+
+    if (m_hostingModel == HOSTING_OUT_PROCESS)
     {
-        goto Finished;
+        RETURN_IF_FAILED(ConfigUtility::FindHandlerVersion(pAspNetCoreElement, &m_struHandlerVersion));
     }
 
-    hr = ConfigUtility::FindHandlerVersion(pAspNetCoreElement, &m_struHandlerVersion);
-
-Finished:
-
-    if (pAspNetCoreElement != NULL)
-    {
-        pAspNetCoreElement->Release();
-        pAspNetCoreElement = NULL;
-    }
-
-    return hr;
+    return S_OK;
 }

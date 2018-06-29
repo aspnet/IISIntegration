@@ -7,49 +7,37 @@
 #include "requesthandler_config.h"
 #include "environmentvariablehelpers.h"
 #include "aspnetcore_event.h"
+#include "utility.h"
+#include "EventLog.h"
+#include "SRWExclusiveLock.h"
+#include "exceptions.h"
+#include "LoggingHelpers.h"
 
 IN_PROCESS_APPLICATION*  IN_PROCESS_APPLICATION::s_Application = NULL;
-hostfxr_main_fn IN_PROCESS_APPLICATION::s_fMainCallback = NULL;
 
 IN_PROCESS_APPLICATION::IN_PROCESS_APPLICATION(
     IHttpServer *pHttpServer,
-    REQUESTHANDLER_CONFIG *pConfig) :
+    std::unique_ptr<REQUESTHANDLER_CONFIG> pConfig) :
     m_pHttpServer(pHttpServer),
     m_ProcessExitCode(0),
     m_fBlockCallbacksIntoManaged(FALSE),
     m_fInitialized(FALSE),
     m_fShutdownCalledFromNative(FALSE),
     m_fShutdownCalledFromManaged(FALSE),
-    m_srwLock()
+    InProcessApplicationBase(pHttpServer),
+    m_pConfig(std::move(pConfig))
 {
     // is it guaranteed that we have already checked app offline at this point?
     // If so, I don't think there is much to do here.
     DBG_ASSERT(pHttpServer != NULL);
     DBG_ASSERT(pConfig != NULL);
 
-    InitializeSRWLock(&m_srwLock);
-    m_pConfig = pConfig;
 
     m_status = APPLICATION_STATUS::STARTING;
 }
 
-HRESULT
-IN_PROCESS_APPLICATION::Initialize(
-    PCWSTR pDotnetExeLocation
-)
-{
-    return m_struExeLocation.Copy(pDotnetExeLocation);
-}
-
 IN_PROCESS_APPLICATION::~IN_PROCESS_APPLICATION()
 {
-
-    if (m_pConfig != NULL)
-    {
-        delete m_pConfig;
-        m_pConfig = NULL;
-    }
-
     m_hThread = NULL;
     s_Application = NULL;
 }
@@ -133,7 +121,6 @@ Finished:
     }
 }
 
-
 VOID
 IN_PROCESS_APPLICATION::ShutDownInternal()
 {
@@ -153,7 +140,7 @@ IN_PROCESS_APPLICATION::ShutDownInternal()
     }
 
     {
-        SRWLockWrapper lock(m_srwLock);
+        SRWExclusiveLock lock(m_srwLock);
 
         if (m_fShutdownCalledFromNative ||
             m_status == APPLICATION_STATUS::STARTING ||
@@ -207,44 +194,6 @@ IN_PROCESS_APPLICATION::ShutDownInternal()
     CloseHandle(m_hThread);
     m_hThread = NULL;
     s_Application = NULL;
-}
-
-__override
-VOID
-IN_PROCESS_APPLICATION::Recycle(
-    VOID
-)
-{
-    // We need to guarantee that recycle is only called once, as calling pHttpServer->RecycleProcess
-    // multiple times can lead to AVs.
-    if (m_fRecycleCalled)
-    {
-        return;
-    }
-
-    {
-        SRWLockWrapper lock(m_srwLock);
-
-        if (m_fRecycleCalled)
-        {
-            return;
-        }
-
-        m_fRecycleCalled = true;
-    }
-
-    if (!m_pHttpServer->IsCommandLineLaunch())
-    {
-        // IIS scenario.
-        // notify IIS first so that new request will be routed to new worker process
-        m_pHttpServer->RecycleProcess(L"AspNetCore InProcess Recycle Process on Demand");
-    }
-    else
-    {
-        // IISExpress scenario
-        // Shutdown the managed application and call exit to terminate current process
-        ShutDown();
-    }
 }
 
 REQUEST_NOTIFICATION_STATUS
@@ -388,7 +337,7 @@ IN_PROCESS_APPLICATION::LoadManagedApplication
     {
         // Set up stdout redirect
 
-        SRWLockWrapper lock(m_srwLock);
+        SRWExclusiveLock lock(m_srwLock);
 
         if (m_pLoggerProvider == NULL)
         {
@@ -408,7 +357,7 @@ IN_PROCESS_APPLICATION::LoadManagedApplication
                 goto Finished;
             }
         }
-      
+
         if (m_status != APPLICATION_STATUS::STARTING)
         {
             if (m_status == APPLICATION_STATUS::FAIL)
@@ -557,7 +506,7 @@ IN_PROCESS_APPLICATION::ExecuteApplication(
     VOID
 )
 {
-    HRESULT             hr = S_OK;
+    HRESULT             hr;
     HMODULE             hModule = nullptr;
     DWORD               hostfxrArgc = 0;
     BSTR               *hostfxrArgv = NULL;
@@ -576,7 +525,7 @@ IN_PROCESS_APPLICATION::ExecuteApplication(
         if (hModule == NULL)
         {
             // .NET Core not installed (we can log a more detailed error message here)
-            hr = ERROR_BAD_ENVIRONMENT;
+            hr = LOG_IF_FAILED(ERROR_BAD_ENVIRONMENT);
             goto Finished;
         }
 
@@ -584,29 +533,23 @@ IN_PROCESS_APPLICATION::ExecuteApplication(
         pProc = (hostfxr_main_fn)GetProcAddress(hModule, "hostfxr_main");
         if (pProc == NULL)
         {
-            hr = ERROR_BAD_ENVIRONMENT;
+            hr = LOG_IF_FAILED(ERROR_BAD_ENVIRONMENT);
             goto Finished;
         }
 
-        if (FAILED(hr = HOSTFXR_OPTIONS::Create(
+        FINISHED_IF_FAILED(hr = HOSTFXR_OPTIONS::Create(
             m_struExeLocation.QueryStr(),
             m_pConfig->QueryProcessPath()->QueryStr(),
             m_pConfig->QueryApplicationPhysicalPath()->QueryStr(),
             m_pConfig->QueryArguments()->QueryStr(),
             g_hEventLog,
             hostFxrOptions
-            )))
-        {
-            goto Finished;
-        }
+            ));
 
         hostfxrArgc = hostFxrOptions->GetArgc();
         hostfxrArgv = hostFxrOptions->GetArgv();
 
-        if (FAILED(hr = SetEnvironementVariablesOnWorkerProcess()))
-        {
-            goto Finished;
-        }
+        FINISHED_IF_FAILED(SetEnvironementVariablesOnWorkerProcess());
     }
 
     // There can only ever be a single instance of .NET Core
@@ -659,17 +602,20 @@ IN_PROCESS_APPLICATION::LogErrorsOnMainExit(
     // This will be a common place for errors as it means the hostfxr_main returned
     // or there was an exception.
     //
-    STRA struStdErrOutput;
-    if (m_pLoggerProvider->GetStdOutContent(&struStdErrOutput))
+    STRA straStdErrOutput;
+    STRU struStdMsg;
+    if (m_pLoggerProvider->GetStdOutContent(&straStdErrOutput))
     {
-        UTILITY::LogEventF(g_hEventLog,
-            EVENTLOG_ERROR_TYPE,
-            ASPNETCORE_EVENT_INPROCESS_THREAD_EXIT,
-            ASPNETCORE_EVENT_INPROCESS_THREAD_EXIT_STDOUT_MSG,
-            m_pConfig->QueryApplicationPath()->QueryStr(),
-            m_pConfig->QueryApplicationPhysicalPath()->QueryStr(),
-            hr,
-            struStdErrOutput.QueryStr());
+        if (SUCCEEDED(struStdMsg.CopyA(straStdErrOutput.QueryStr()))) {
+            UTILITY::LogEventF(g_hEventLog,
+                EVENTLOG_ERROR_TYPE,
+                ASPNETCORE_EVENT_INPROCESS_THREAD_EXIT,
+                ASPNETCORE_EVENT_INPROCESS_THREAD_EXIT_STDOUT_MSG,
+                m_pConfig->QueryApplicationPath()->QueryStr(),
+                m_pConfig->QueryApplicationPhysicalPath()->QueryStr(),
+                hr,
+                struStdMsg.QueryStr());
+        }
     }
     else
     {
@@ -712,7 +658,7 @@ IN_PROCESS_APPLICATION::RunDotnetApplication(DWORD argc, CONST PCWSTR* argv, hos
 REQUESTHANDLER_CONFIG*
 IN_PROCESS_APPLICATION::QueryConfig() const
 {
-    return m_pConfig;
+    return m_pConfig.get();
 }
 
 HRESULT

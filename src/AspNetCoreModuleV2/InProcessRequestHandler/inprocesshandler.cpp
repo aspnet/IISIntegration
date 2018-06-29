@@ -4,6 +4,9 @@
 #include "inprocesshandler.h"
 #include "inprocessapplication.h"
 #include "aspnetcore_event.h"
+#include "IOutputManager.h"
+
+ALLOC_CACHE_HANDLER * IN_PROCESS_HANDLER::sm_pAlloc = NULL;
 
 IN_PROCESS_HANDLER::IN_PROCESS_HANDLER(
     _In_ IHttpContext   *pW3Context,
@@ -23,28 +26,6 @@ __override
 REQUEST_NOTIFICATION_STATUS
 IN_PROCESS_HANDLER::OnExecuteRequestHandler()
 {
-    // First get the in process Application
-    HRESULT hr;
-
-    hr = m_pApplication->LoadManagedApplication();
-
-    if (FAILED(hr))
-    {
-        // TODO remove com_error?
-        /*_com_error err(hr);
-        if (ANCMEvents::ANCM_START_APPLICATION_FAIL::IsEnabled(m_pW3Context->GetTraceContext()))
-        {
-            ANCMEvents::ANCM_START_APPLICATION_FAIL::RaiseEvent(
-                m_pW3Context->GetTraceContext(),
-                NULL,
-                err.ErrorMessage());
-        }
-        */
-        //fInternalError = TRUE;
-        m_pW3Context->GetResponse()->SetStatus(500, "Internal Server Error", 0, hr);
-        return REQUEST_NOTIFICATION_STATUS::RQ_NOTIFICATION_FINISH_REQUEST;
-    }
-
     // FREB log
 
     if (ANCMEvents::ANCM_START_APPLICATION_SUCCESS::IsEnabled(m_pW3Context->GetTraceContext()))
@@ -134,4 +115,64 @@ IN_PROCESS_HANDLER::SetManagedHttpContext(
 )
 {
     m_pManagedHttpContext = pManagedHttpContext;
+}
+
+// static
+void * IN_PROCESS_HANDLER::operator new(size_t)
+{
+    DBG_ASSERT(sm_pAlloc != NULL);
+    if (sm_pAlloc == NULL)
+    {
+        return NULL;
+    }
+    return sm_pAlloc->Alloc();
+}
+
+// static
+void IN_PROCESS_HANDLER::operator delete(void * pMemory)
+{
+    DBG_ASSERT(sm_pAlloc != NULL);
+    if (sm_pAlloc != NULL)
+    {
+        sm_pAlloc->Free(pMemory);
+    }
+}
+
+// static
+HRESULT
+IN_PROCESS_HANDLER::StaticInitialize(VOID)
+/*++
+
+Routine Description:
+
+Global initialization routine for IN_PROCESS_HANDLER
+
+Return Value:
+
+HRESULT
+
+--*/
+{
+    HRESULT                         hr = S_OK;
+
+    sm_pAlloc = new ALLOC_CACHE_HANDLER;
+    if (sm_pAlloc == NULL)
+    {
+        hr = E_OUTOFMEMORY;
+        goto Finished;
+    }
+
+    hr = sm_pAlloc->Initialize(sizeof(IN_PROCESS_HANDLER),
+        64); // nThreshold
+
+Finished:
+    if (FAILED(hr))
+    {
+        if (sm_pAlloc != NULL)
+        {
+            delete sm_pAlloc;
+            sm_pAlloc = NULL;
+        }
+    }
+    return hr;
 }

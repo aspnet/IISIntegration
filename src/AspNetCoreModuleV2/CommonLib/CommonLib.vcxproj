@@ -91,6 +91,8 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ShowIncludes>false</ShowIncludes>
@@ -98,6 +100,7 @@
       <AdditionalIncludeDirectories>..\iislib;</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -112,6 +115,8 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <ConformanceMode>true</ConformanceMode>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MinimalRebuild>false</MinimalRebuild>
@@ -120,6 +125,7 @@
       <AdditionalIncludeDirectories>..\iislib;</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -136,12 +142,15 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ShowIncludes>false</ShowIncludes>
       <AdditionalIncludeDirectories>..\iislib;</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -160,6 +169,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\iislib;</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -168,6 +179,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ShowIncludes>false</ShowIncludes>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -182,42 +194,39 @@
   <ItemGroup>
     <ClInclude Include="application.h" />
     <ClInclude Include="config_utility.h" />
+    <ClInclude Include="Environment.h" />
+    <ClInclude Include="exceptions.h" />
     <ClInclude Include="GlobalVersionUtility.h" />
-    <ClInclude Include="NullOutputManager.h" />
-    <ClInclude Include="FileOutputManager.h" />
     <ClInclude Include="fx_ver.h" />
+    <ClInclude Include="HandleWrapper.h" />
     <ClInclude Include="hostfxroptions.h" />
     <ClInclude Include="hostfxr_utility.h" />
     <ClInclude Include="iapplication.h" />
     <ClInclude Include="debugutil.h" />
     <ClInclude Include="disconnectcontext.h" />
-    <ClInclude Include="environmentvariablehash.h" />
-    <ClInclude Include="IOutputManager.h" />
     <ClInclude Include="irequesthandler.h" />
-    <ClInclude Include="LoggingHelpers.h" />
-    <ClInclude Include="PipeOutputManager.h" />
     <ClInclude Include="requesthandler.h" />
-    <ClInclude Include="requesthandler_config.h" />
     <ClInclude Include="resources.h" />
-    <ClInclude Include="SRWLockWrapper.h" />
+    <ClInclude Include="SRWExclusiveLock.h" />
+    <ClInclude Include="SRWSharedLock.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="sttimer.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="FileOutputManager.cpp" />
+    <ClCompile Include="debugutil.cpp" />
+    <ClCompile Include="Environment.cpp" />
     <ClCompile Include="fx_ver.cxx" />
     <ClCompile Include="GlobalVersionUtility.cpp" />
+    <ClCompile Include="HandleWrapper.cpp" />
     <ClCompile Include="hostfxr_utility.cpp" />
     <ClCompile Include="hostfxroptions.cpp" />
-    <ClCompile Include="requesthandler_config.cpp" />
-    <ClCompile Include="LoggingHelpers.cpp" />
-    <ClCompile Include="PipeOutputManager.cpp" />
-    <ClCompile Include="SRWLockWrapper.cpp" />
+    <ClCompile Include="SRWExclusiveLock.cpp" />
+    <ClCompile Include="SRWSharedLock.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="utility.cxx" />

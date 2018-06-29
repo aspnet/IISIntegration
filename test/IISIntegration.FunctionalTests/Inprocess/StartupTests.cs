@@ -2,10 +2,9 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Linq;
+using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using IISIntegration.FunctionalTests.Utilities;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.AspNetCore.Testing.xunit;
@@ -18,30 +17,22 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
     [SkipIfIISExpressSchemaMissingInProcess]
     public class StartupTests : IISFunctionalTestBase
     {
+        private readonly string _dotnetLocation = DotNetMuxer.MuxerPathOrDefault();
+
         public StartupTests(ITestOutputHelper output) : base(output)
         {
         }
 
-        [Fact]
+        [ConditionalFact]
         public async Task ExpandEnvironmentVariableInWebConfig()
         {
-            var dotnetLocation = DotNetMuxer.MuxerPathOrDefault();
-            var deploymentParameters = GetBaseDeploymentParameters();
-
             // Point to dotnet installed in user profile.
-            deploymentParameters.EnvironmentVariables["DotnetPath"] = dotnetLocation;
-
-            var deploymentResult = await DeployAsync(deploymentParameters);
-
-            Helpers.ModifyAspNetCoreSectionInWebConfig(deploymentResult, "processPath", "%DotnetPath%");
-
-            var response = await deploymentResult.RetryingHttpClient.GetAsync("HelloWorld");
-
-            var responseText = await response.Content.ReadAsStringAsync();
-            Assert.Equal("Hello World", responseText);
+            await AssertStarts(
+                deploymentResult => Helpers.ModifyAspNetCoreSectionInWebConfig(deploymentResult, "processPath", "%DotnetPath%"),
+                deploymentParameters => deploymentParameters.EnvironmentVariables["DotnetPath"] = _dotnetLocation);
         }
 
-        [Fact]
+        [ConditionalFact]
         public async Task InvalidProcessPath_ExpectServerError()
         {
             var dotnetLocation = "bogus";
@@ -60,6 +51,50 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         }
 
+        [ConditionalFact]
+        public async Task StartsWithDotnetLocationWithoutExe()
+        {
+            var dotnetLocationWithoutExtension = _dotnetLocation.Substring(0, _dotnetLocation.LastIndexOf("."));
+
+            await AssertStarts(
+                deploymentResult => Helpers.ModifyAspNetCoreSectionInWebConfig(deploymentResult, "processPath", dotnetLocationWithoutExtension));
+        }
+
+        [ConditionalFact]
+        public async Task StartsWithDotnetLocationUppercase()
+        {
+            var dotnetLocationWithoutExtension = _dotnetLocation.Substring(0, _dotnetLocation.LastIndexOf(".")).ToUpperInvariant();
+
+            await AssertStarts(
+                deploymentResult => Helpers.ModifyAspNetCoreSectionInWebConfig(deploymentResult, "processPath", dotnetLocationWithoutExtension));
+        }
+
+        [ConditionalTheory]
+        [InlineData("dotnet")]
+        [InlineData("dotnet.EXE")]
+        public async Task StartsWithDotnetOnThePath(string path)
+        {
+            await AssertStarts(
+                deploymentResult => Helpers.ModifyAspNetCoreSectionInWebConfig(deploymentResult, "processPath", path),
+                deploymentParameters => deploymentParameters.EnvironmentVariables["PATH"] = Path.GetDirectoryName(_dotnetLocation));
+        }
+
+        private async Task AssertStarts(Action<IISDeploymentResult> postDeploy, Action<DeploymentParameters> preDeploy = null)
+        {
+            var deploymentParameters = GetBaseDeploymentParameters();
+
+            preDeploy?.Invoke(deploymentParameters);
+
+            var deploymentResult = await DeployAsync(deploymentParameters);
+
+            postDeploy?.Invoke(deploymentResult);
+
+            var response = await deploymentResult.RetryingHttpClient.GetAsync("HelloWorld");
+
+            var responseText = await response.Content.ReadAsStringAsync();
+            Assert.Equal("Hello World", responseText);
+        }
+
         public static TestMatrix TestVariants
             => TestMatrix.ForServers(ServerType.IISExpress)
                 .WithTfms(Tfm.NetCoreApp21)
@@ -73,7 +108,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             var deploymentParameters = new DeploymentParameters(variant)
             {
                 ApplicationPath = Helpers.GetInProcessTestSitesPath(),
-                PublishApplicationBeforeDeployment = true,
+                PublishApplicationBeforeDeployment = true
             };
 
             var deploymentResult = await DeployAsync(deploymentParameters);
@@ -90,6 +125,9 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             var deploymentResult = await DeployAsync(GetBaseDeploymentParameters("OverriddenServerWebSite"));
             var response = await deploymentResult.HttpClient.GetAsync("/");
             Assert.False(response.IsSuccessStatusCode);
+
+            StopServer();
+
             Assert.Contains(TestSink.Writes, context => context.Message.Contains("Application is running inside IIS process but is not configured to use IIS server"));
         }
 

@@ -8,80 +8,53 @@
 #include <VersionHelpers.h>
 
 #include "inprocessapplication.h"
+#include "StartupExceptionApplication.h"
 #include "inprocesshandler.h"
 #include "requesthandler_config.h"
+#include "debugutil.h"
+#include "resources.h"
+#include "exceptions.h"
+
+DECLARE_DEBUG_PRINT_OBJECT("aspnetcorev2_inprocess.dll");
 
 BOOL                g_fGlobalInitialize = FALSE;
 BOOL                g_fProcessDetach = FALSE;
-DWORD               g_dwAspNetCoreDebugFlags = 0;
-DWORD               g_dwDebugFlags = 0;
 SRWLOCK             g_srwLockRH;
 IHttpServer *       g_pHttpServer = NULL;
 HINSTANCE           g_hWinHttpModule;
 HINSTANCE           g_hAspNetCoreModule;
 HANDLE              g_hEventLog = NULL;
-PCSTR               g_szDebugLabel = "ASPNET_CORE_MODULE_INPROCESS_REQUEST_HANDLER";
 
-VOID
+HRESULT
 InitializeGlobalConfiguration(
     IHttpServer * pServer
 )
 {
-    HKEY hKey;
-    BOOL fLocked = FALSE;
-
     if (!g_fGlobalInitialize)
     {
-        AcquireSRWLockExclusive(&g_srwLockRH);
-        fLocked = TRUE;
+        SRWExclusiveLock lock(g_srwLockRH);
 
-        if (g_fGlobalInitialize)
+        if (!g_fGlobalInitialize)
         {
-            // Done by another thread
-            goto Finished;
-        }
+            g_pHttpServer = pServer;
+            RETURN_IF_FAILED(ALLOC_CACHE_HANDLER::StaticInitialize());
+            RETURN_IF_FAILED(IN_PROCESS_HANDLER::StaticInitialize());
 
-        g_pHttpServer = pServer;
-        if (pServer->IsCommandLineLaunch())
-        {
-            g_hEventLog = RegisterEventSource(NULL, ASPNETCORE_IISEXPRESS_EVENT_PROVIDER);
-        }
-        else
-        {
-            g_hEventLog = RegisterEventSource(NULL, ASPNETCORE_EVENT_PROVIDER);
-        }
-
-        if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-            L"SOFTWARE\\Microsoft\\IIS Extensions\\IIS AspNetCore Module\\Parameters",
-            0,
-            KEY_READ,
-            &hKey) == NO_ERROR)
-        {
-            DWORD dwType;
-            DWORD dwData;
-            DWORD cbData;
-
-            cbData = sizeof(dwData);
-            if ((RegQueryValueEx(hKey,
-                L"DebugFlags",
-                NULL,
-                &dwType,
-                (LPBYTE)&dwData,
-                &cbData) == NO_ERROR) &&
-                (dwType == REG_DWORD))
+            if (pServer->IsCommandLineLaunch())
             {
-                g_dwAspNetCoreDebugFlags = dwData;
+                g_hEventLog = RegisterEventSource(NULL, ASPNETCORE_IISEXPRESS_EVENT_PROVIDER);
             }
-            RegCloseKey(hKey);
-        }
+            else
+            {
+                g_hEventLog = RegisterEventSource(NULL, ASPNETCORE_EVENT_PROVIDER);
+            }
 
-        g_fGlobalInitialize = TRUE;
+            DebugInitialize();
+            g_fGlobalInitialize = TRUE;
+        }
     }
-Finished:
-    if (fLocked)
-    {
-        ReleaseSRWLockExclusive(&g_srwLockRH);
-    }
+
+    return S_OK;
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule,
@@ -99,68 +72,46 @@ BOOL APIENTRY DllMain(HMODULE hModule,
         break;
     case DLL_PROCESS_DETACH:
         g_fProcessDetach = TRUE;
+        DebugStop();
     default:
         break;
     }
     return TRUE;
 }
 
-// TODO remove pHttpContext from the CreateApplication call.
 HRESULT
 __stdcall
 CreateApplication(
     _In_  IHttpServer        *pServer,
-    _In_  IHttpContext       *pHttpContext,
-    _In_  PCWSTR              pwzExeLocation,
+    _In_  IHttpApplication   *pHttpApplication,
     _Out_ IAPPLICATION      **ppApplication
 )
 {
-    HRESULT                 hr = S_OK;
-    IN_PROCESS_APPLICATION *pApplication = NULL;
     REQUESTHANDLER_CONFIG  *pConfig = NULL;
-
-    // Initialze some global variables here
-    InitializeGlobalConfiguration(pServer);
 
     try
     {
-        hr = REQUESTHANDLER_CONFIG::CreateRequestHandlerConfig(pServer, pHttpContext->GetApplication(), &pConfig);
-        if (FAILED(hr))
+        // Initialze some global variables here
+        RETURN_IF_FAILED(InitializeGlobalConfiguration(pServer));
+        RETURN_IF_FAILED(REQUESTHANDLER_CONFIG::CreateRequestHandlerConfig(pServer, pHttpApplication, &pConfig));
+
+        auto config = std::unique_ptr<REQUESTHANDLER_CONFIG>(pConfig);
+
+        BOOL disableStartupPage = pConfig->QueryDisableStartUpErrorPage();
+
+        auto pApplication = std::make_unique<IN_PROCESS_APPLICATION>(pServer, std::move(config));
+        
+        if (FAILED(pApplication->LoadManagedApplication()))
         {
-            goto Finished;
+            // Set the currently running application to a fake application that returns startup exceptions.
+            *ppApplication = new StartupExceptionApplication(pServer, disableStartupPage);
         }
-
-        pApplication = new IN_PROCESS_APPLICATION(pServer, pConfig);
-
-        pConfig = NULL;
-
-        hr = pApplication->Initialize(pwzExeLocation);
-        if (FAILED(hr))
+        else
         {
-            goto Finished;
-        }
-
-        *ppApplication = pApplication;
-    }
-    catch (std::bad_alloc&)
-    {
-        hr = E_OUTOFMEMORY;
-    }
-
-Finished:
-    if (FAILED(hr))
-    {
-        if (pApplication != NULL)
-        {
-            delete pApplication;
-            pApplication = NULL;
-        }
-        if (pConfig != NULL)
-        {
-            delete pConfig;
-            pConfig = NULL;
+            *ppApplication = pApplication.release();
         }
     }
+    CATCH_RETURN();
 
-    return hr;
+    return S_OK;
 }

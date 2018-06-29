@@ -3,6 +3,8 @@
 #include <IPHlpApi.h>
 #include <VersionHelpers.h>
 
+DECLARE_DEBUG_PRINT_OBJECT("aspnetcorev2_outofprocess.dll");
+
 BOOL                g_fNsiApiNotSupported = FALSE;
 BOOL                g_fWebSocketStaticInitialize = FALSE;
 BOOL                g_fEnableReferenceCountTracing = FALSE;
@@ -12,8 +14,6 @@ BOOL                g_fOutOfProcessInitializeError = FALSE;
 BOOL                g_fWinHttpNonBlockingCallbackAvailable = FALSE;
 BOOL                g_fProcessDetach = FALSE;
 DWORD               g_OptionalWinHttpFlags = 0;
-DWORD               g_dwAspNetCoreDebugFlags = 0;
-DWORD               g_dwDebugFlags = 0;
 DWORD               g_dwTlsIndex = TLS_OUT_OF_INDEXES;
 SRWLOCK             g_srwLockRH;
 HINTERNET           g_hWinhttpSession = NULL;
@@ -21,7 +21,6 @@ IHttpServer *       g_pHttpServer = NULL;
 HINSTANCE           g_hWinHttpModule;
 HINSTANCE           g_hAspNetCoreModule;
 HANDLE              g_hEventLog = NULL;
-PCSTR               g_szDebugLabel = "ASPNET_CORE_MODULE_REQUEST_HANDLER";
 
 VOID
 InitializeGlobalConfiguration(
@@ -87,20 +86,9 @@ InitializeGlobalConfiguration(
             {
                 g_fEnableReferenceCountTracing = !!dwData;
             }
-
-            cbData = sizeof(dwData);
-            if ((RegQueryValueEx(hKey,
-                L"DebugFlags",
-                NULL,
-                &dwType,
-                (LPBYTE)&dwData,
-                &cbData) == NO_ERROR) &&
-                (dwType == REG_DWORD))
-            {
-                g_dwAspNetCoreDebugFlags = dwData;
-            }
-            RegCloseKey(hKey);
         }
+
+        DebugInitialize();
 
         dwResult = GetExtendedTcpTable(NULL,
             &dwSize,
@@ -226,6 +214,12 @@ EnsureOutOfProcessInitializtion()
             goto Finished;
         }
 
+        hr = ALLOC_CACHE_HANDLER::StaticInitialize();
+        if (FAILED(hr))
+        {
+            goto Finished;
+        }
+
         hr = FORWARDING_HANDLER::StaticInitialize(g_fEnableReferenceCountTracing);
         if (FAILED(hr))
         {
@@ -266,31 +260,29 @@ BOOL APIENTRY DllMain(HMODULE hModule,
         break;
     case DLL_PROCESS_DETACH:
         g_fProcessDetach = TRUE;
+        DebugStop();
     default:
         break;
     }
     return TRUE;
 }
 
-// TODO remove pHttpContext from the CreateApplication call.
 HRESULT
 __stdcall
 CreateApplication(
     _In_  IHttpServer        *pServer,
-    _In_  IHttpContext       *pHttpContext,
-    _In_  PCWSTR             pwzExeLocation,
+    _In_  IHttpApplication   *pHttpApplication,
     _Out_ IAPPLICATION      **ppApplication
 )
 {
     HRESULT      hr = S_OK;
     IAPPLICATION *pApplication = NULL;
     REQUESTHANDLER_CONFIG *pConfig = NULL;
-    UNREFERENCED_PARAMETER(pwzExeLocation);
 
     // Initialze some global variables here
     InitializeGlobalConfiguration(pServer);
 
-    hr = REQUESTHANDLER_CONFIG::CreateRequestHandlerConfig(pServer, pHttpContext->GetApplication(), &pConfig);
+    hr = REQUESTHANDLER_CONFIG::CreateRequestHandlerConfig(pServer, pHttpApplication, &pConfig);
     if (FAILED(hr))
     {
         return hr;

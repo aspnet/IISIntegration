@@ -1,10 +1,13 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
-#include <memory>
 #include "applicationmanager.h"
+
 #include "proxymodule.h"
 #include "utility.h"
+#include "resources.h"
+#include "SRWExclusiveLock.h"
+#include "exceptions.h"
 
 // The application manager is a singleton across ANCM.
 APPLICATION_MANAGER* APPLICATION_MANAGER::sm_pApplicationManager = NULL;
@@ -22,7 +25,6 @@ APPLICATION_MANAGER::GetOrCreateApplicationInfo(
 {
     HRESULT                 hr = S_OK;
     APPLICATION_INFO       *pApplicationInfo = NULL;
-    BOOL                    fExclusiveLock = FALSE;
     BOOL                    fMixedHostingModelError = FALSE;
     BOOL                    fDuplicatedInProcessApp = FALSE;
     PCWSTR                  pszApplicationId = NULL;
@@ -39,69 +41,51 @@ APPLICATION_MANAGER::GetOrCreateApplicationInfo(
     // The configuration path is unique for each application and is used for the
     // key in the applicationInfoHash.
     pszApplicationId = pHttpContext->GetApplication()->GetApplicationId();
-    
+
     // When accessing the m_pApplicationInfoHash, we need to acquire the application manager
     // lock to avoid races on setting state.
-    AcquireSRWLockShared(&m_srwLock);
-    if (g_fInShutdown)
     {
-        ReleaseSRWLockShared(&m_srwLock);
-        hr = HRESULT_FROM_WIN32(ERROR_SERVER_SHUTDOWN_IN_PROGRESS);
-        goto Finished;
+        SRWSharedLock lock(m_srwLock);
+        if (g_fInShutdown)
+        {
+            FINISHED(HRESULT_FROM_WIN32(ERROR_SERVER_SHUTDOWN_IN_PROGRESS));
+        }
+        m_pApplicationInfoHash->FindKey(pszApplicationId, ppApplicationInfo);
     }
-    m_pApplicationInfoHash->FindKey(pszApplicationId, ppApplicationInfo);
-    ReleaseSRWLockShared(&m_srwLock);
 
     if (*ppApplicationInfo == NULL)
     {
-
         pApplicationInfo = new APPLICATION_INFO();
-        if (pApplicationInfo == NULL)
-        {
-            hr = E_OUTOFMEMORY;
-            goto Finished;
-        }
 
-        hr = pApplicationInfo->Initialize(pServer, pHttpContext->GetApplication(), m_pFileWatcher);
-        if (FAILED(hr))
-        {
-            goto Finished;
-        }
+        FINISHED_IF_FAILED(pApplicationInfo->Initialize(pServer, pHttpContext->GetApplication(), m_pFileWatcher));
 
-        AcquireSRWLockExclusive(&m_srwLock);
-        fExclusiveLock = TRUE;
+        SRWExclusiveLock lock(m_srwLock);
+
         if (g_fInShutdown)
         {
             // Already in shuting down. No need to create the application
-            hr = HRESULT_FROM_WIN32(ERROR_SERVER_SHUTDOWN_IN_PROGRESS);
-            goto Finished;
+            FINISHED(HRESULT_FROM_WIN32(ERROR_SERVER_SHUTDOWN_IN_PROGRESS));
         }
         m_pApplicationInfoHash->FindKey(pszApplicationId, ppApplicationInfo);
 
         if (*ppApplicationInfo != NULL)
         {
             // someone else created the application
-            goto Finished;
-        }
-
-        hr = m_pApplicationInfoHash->InsertRecord(pApplicationInfo);
-        if (FAILED(hr))
-        {
-            goto Finished;
+            FINISHED(S_OK);
         }
 
         hostingModel = pApplicationInfo->QueryConfig()->QueryHostingModel();
 
-        if (m_pApplicationInfoHash->Count() == 1)
+        if (m_pApplicationInfoHash->Count() == 0)
         {
             m_hostingModel = hostingModel;
-            pApplicationInfo->UpdateAllowStartStatus(TRUE);
+            pApplicationInfo->MarkValid();
         }
         else
         {
             if (hostingModel == HOSTING_OUT_PROCESS &&  hostingModel == m_hostingModel)
             {
-                pApplicationInfo->UpdateAllowStartStatus(TRUE);
+                pApplicationInfo->MarkValid();
             }
             else
             {
@@ -116,16 +100,16 @@ APPLICATION_MANAGER::GetOrCreateApplicationInfo(
             }
         }
 
+        FINISHED_IF_FAILED(m_pApplicationInfoHash->InsertRecord(pApplicationInfo));
+
+
         *ppApplicationInfo = pApplicationInfo;
+        pApplicationInfo->StartMonitoringAppOffline();
+
         pApplicationInfo = NULL;
     }
 
 Finished:
-
-    if (fExclusiveLock)
-    {
-        ReleaseSRWLockExclusive(&m_srwLock);
-    }
 
     // log the error
     if (fDuplicatedInProcessApp)
@@ -135,7 +119,7 @@ Finished:
             ASPNETCORE_EVENT_DUPLICATED_INPROCESS_APP,
             ASPNETCORE_EVENT_DUPLICATED_INPROCESS_APP_MSG,
             pszApplicationId);
-        
+
     }
     else if (fMixedHostingModelError)
     {
@@ -215,8 +199,7 @@ APPLICATION_MANAGER::RecycleApplicationFromManager(
     DWORD                   dwPreviousCounter = 0;
     APPLICATION_INFO_HASH*  table = NULL;
     CONFIG_CHANGE_CONTEXT   context;
-    BOOL                    fKeepTable = FALSE;
-
+ 
     if (g_fInShutdown)
     {
         // We are already shutting down, ignore this event as a global configuration change event
@@ -224,59 +207,42 @@ APPLICATION_MANAGER::RecycleApplicationFromManager(
         return hr;
     }
 
-    AcquireSRWLockExclusive(&m_srwLock);
-    if (g_fInShutdown)
     {
-        ReleaseSRWLockExclusive(&m_srwLock);
-        return hr;
-    }
-
-    // Make a shallow copy of existing hashtable as we may need to remove nodes
-    // This will be used for finding differences in which applications are affected by a config change.
-    table = new APPLICATION_INFO_HASH();
-
-    // few application expected, small bucket size for hash table
-    if (FAILED(hr = table->Initialize(17 /*prime*/)))
-    {
-        goto Finished;
-    }
-
-    context.pstrPath = pszApplicationId;
-
-    // Keep track of the preview count of applications to know whether there are applications to delete
-    dwPreviousCounter = m_pApplicationInfoHash->Count();
-
-    // We don't want to hold the application manager lock for long time as it will block all incoming requests
-    // Don't call application shutdown inside the lock
-    m_pApplicationInfoHash->Apply(APPLICATION_INFO_HASH::ReferenceCopyToTable, static_cast<PVOID>(table));
-    DBG_ASSERT(dwPreviousCounter == table->Count());
-
-    // Removed the applications which are impacted by the configurtion change
-    m_pApplicationInfoHash->DeleteIf(FindConfigChangedApplication, (PVOID)&context);
-
-    if (dwPreviousCounter != m_pApplicationInfoHash->Count())
-    {
-        if (m_hostingModel == HOSTING_IN_PROCESS)
+        SRWExclusiveLock lock(m_srwLock);
+        if (g_fInShutdown)
         {
-            // When we are inprocess, we need to keep the application the
-            // application manager that is being deleted. This is because we will always need to recycle the worker
-            // process and any requests that hit this worker process must be rejected (while out of process can
-            // start a new dotnet process). We will immediately call Recycle after this call.
-            DBG_ASSERT(m_pApplicationInfoHash->Count() == 0);
-            delete m_pApplicationInfoHash;
+            return hr;
+        }
 
-            // We don't want to delete the table as m_pApplicationInfoHash = table
-            fKeepTable = TRUE;
-            m_pApplicationInfoHash = table;
+        // Make a shallow copy of existing hashtable as we may need to remove nodes
+        // This will be used for finding differences in which applications are affected by a config change.
+        table = new APPLICATION_INFO_HASH();
+
+        // few application expected, small bucket size for hash table
+        if (FAILED(hr = table->Initialize(17 /*prime*/)))
+        {
+            goto Finished;
+        }
+
+        context.pstrPath = pszApplicationId;
+
+        // Keep track of the preview count of applications to know whether there are applications to delete
+        dwPreviousCounter = m_pApplicationInfoHash->Count();
+
+        // We don't want to hold the application manager lock for long time as it will block all incoming requests
+        // Don't call application shutdown inside the lock
+        m_pApplicationInfoHash->Apply(APPLICATION_INFO_HASH::ReferenceCopyToTable, static_cast<PVOID>(table));
+        DBG_ASSERT(dwPreviousCounter == table->Count());
+
+        // Removed the applications which are impacted by the configurtion change
+        m_pApplicationInfoHash->DeleteIf(FindConfigChangedApplication, (PVOID)&context);
+
+        if (m_pApplicationInfoHash->Count() == 0 && m_hostingModel == HOSTING_OUT_PROCESS)
+        {
+            // reuse current process
+            m_hostingModel = HOSTING_UNKNOWN;
         }
     }
-
-    if (m_pApplicationInfoHash->Count() == 0)
-    {
-        m_hostingModel = HOSTING_UNKNOWN;
-    }
-
-    ReleaseSRWLockExclusive(&m_srwLock);
 
     // If we receive a request at this point.
     // OutOfProcess: we will create a new application with new configuration
@@ -314,7 +280,7 @@ APPLICATION_MANAGER::RecycleApplicationFromManager(
     }
 
 Finished:
-    if (table != NULL && !fKeepTable)
+    if (table != NULL)
     {
         table->Clear();
         delete table;
@@ -364,16 +330,15 @@ APPLICATION_MANAGER::ShutDown()
         }
 
         DBG_ASSERT(m_pApplicationInfoHash);
+
         // During shutdown we lock until we delete the application
-        AcquireSRWLockExclusive(&m_srwLock);
+        SRWExclusiveLock lock(m_srwLock);
 
         // Call shutdown on each application in the application manager
         m_pApplicationInfoHash->Apply(ShutdownApplication, NULL);
         m_pApplicationInfoHash->Clear();
         delete m_pApplicationInfoHash;
         m_pApplicationInfoHash = NULL;
-
-        ReleaseSRWLockExclusive(&m_srwLock);
     }
 }
 

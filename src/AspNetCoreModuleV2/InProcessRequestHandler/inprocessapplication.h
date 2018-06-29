@@ -4,28 +4,23 @@
 #pragma once
 
 #include "precomp.hxx"
+#include "InProcessApplicationBase.h"
 #include "inprocesshandler.h"
 #include "requesthandler_config.h"
-
-typedef INT(*hostfxr_main_fn) (CONST DWORD argc, CONST PCWSTR argv[]); // TODO these may need to be BSTRs
+#include "IOutputManager.h"
 
 typedef REQUEST_NOTIFICATION_STATUS(WINAPI * PFN_REQUEST_HANDLER) (IN_PROCESS_HANDLER* pInProcessHandler, void* pvRequestHandlerContext);
 typedef BOOL(WINAPI * PFN_SHUTDOWN_HANDLER) (void* pvShutdownHandlerContext);
 typedef REQUEST_NOTIFICATION_STATUS(WINAPI * PFN_MANAGED_CONTEXT_HANDLER)(void *pvManagedHttpContext, HRESULT hrCompletionStatus, DWORD cbCompletion);
 
-class IN_PROCESS_APPLICATION : public APPLICATION
+class IN_PROCESS_APPLICATION : public InProcessApplicationBase
 {
 public:
     IN_PROCESS_APPLICATION(
         IHttpServer* pHttpServer,
-        REQUESTHANDLER_CONFIG *pConfig);
+        std::unique_ptr<REQUESTHANDLER_CONFIG> pConfig);
 
     ~IN_PROCESS_APPLICATION();
-
-    HRESULT
-	Initialize(
-        PCWSTR pDotnetExeLocation
-	);
 
     __override
     VOID
@@ -41,17 +36,24 @@ public:
     );
 
     __override
-    VOID
-    Recycle(
-        VOID
-    );
-
-    __override
     HRESULT
     CreateHandler(
         _In_  IHttpContext       *pHttpContext,
         _Out_ IREQUEST_HANDLER   **pRequestHandler)
     override;
+
+    VOID
+    SetParameter(
+        _In_ LPCWSTR           pzName,
+        _In_ LPCWSTR           pzValue)
+    override
+    {
+        const auto exeLocationParameterName = L"InProcessExeLocation";
+        if (_wcsicmp(pzName, exeLocationParameterName) == 0)
+        {
+            m_struExeLocation.Copy(pzValue);
+        }
+    }
 
     // Executes the .NET Core process
     HRESULT
@@ -154,25 +156,13 @@ private:
     BOOL                            m_fRecycleCalled;
     BOOL                            m_fInitialized;
 
-    SRWLOCK                         m_srwLock;
 
-    // Thread for capturing startup stderr logs when logging is disabled
-    HANDLE                          m_hErrThread;
-    CHAR                            m_pzFileContents[4096] = { 0 };
-    DWORD                           m_dwStdErrReadTotal;
     static IN_PROCESS_APPLICATION*  s_Application;
 
     IOutputManager*                 m_pLoggerProvider;
-    REQUESTHANDLER_CONFIG*          m_pConfig;
+    std::unique_ptr<REQUESTHANDLER_CONFIG>          m_pConfig;
 
-    // Allows to override call to hostfxr_main with custome callback
-    // used in testing
-    static hostfxr_main_fn          s_fMainCallback;
 
-    VOID
-    SetStdOut(
-        VOID
-    );
 
     static
     VOID

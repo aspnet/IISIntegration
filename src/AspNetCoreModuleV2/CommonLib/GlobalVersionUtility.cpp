@@ -1,8 +1,10 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include "stdafx.h"
+#include <Windows.h>
 #include <experimental/filesystem>
+
+#include "GlobalVersionUtility.h"
 
 namespace fs = std::experimental::filesystem;
 
@@ -96,7 +98,7 @@ GlobalVersionUtility::RemoveFileNameFromFolderPath(std::wstring fileName)
     return path.parent_path();
 }
 
-std::wstring 
+std::wstring
 GlobalVersionUtility::GetModuleName(HMODULE hModuleName)
 {
     DWORD dwSize = MAX_PATH;
@@ -126,6 +128,6 @@ GlobalVersionUtility::GetModuleName(HMODULE hModuleName)
             fDone = TRUE;
         }
     }
-    
+
     return retVal;
 }

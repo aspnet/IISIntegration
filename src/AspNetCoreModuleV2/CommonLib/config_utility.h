@@ -3,7 +3,10 @@
 
 #pragma once
 
-#include "stdafx.h"
+#include <httpserv.h>
+#include "ahutil.h"
+#include "stringu.h"
+#include "exceptions.h"
 
 class ConfigUtility
 {
@@ -17,90 +20,43 @@ public:
     HRESULT
     FindHandlerVersion(IAppHostElement* pElement, STRU* strHandlerVersionValue)
     {
-        HRESULT hr = S_OK;
-        IAppHostElement                *pHandlerSettings = NULL;
-        IAppHostElementCollection      *pHandlerSettingsCollection = NULL;
-        ENUM_INDEX                      index;
-        IAppHostElement                *pHandlerVar = NULL;
+        HRESULT hr;
+        CComPtr<IAppHostElement>           pHandlerSettings = nullptr;
+        CComPtr<IAppHostElementCollection> pHandlerSettingsCollection = nullptr;
+        CComPtr<IAppHostElement>           pHandlerVar = nullptr;
+        ENUM_INDEX                         index {};
         STRU strHandlerName;
         STRU strHandlerValue;
 
-        hr = GetElementChildByName(pElement,
-            CS_ASPNETCORE_HANDLER_SETTINGS,
-            &pHandlerSettings);
-        if (FAILED(hr))
+        // backwards complatibility with systems not having schema for handlerSettings
+        if (FAILED_LOG(GetElementChildByName(pElement, CS_ASPNETCORE_HANDLER_SETTINGS, &pHandlerSettings)))
         {
-            goto Finished;
+            return S_OK;
         }
 
-        hr = pHandlerSettings->get_Collection(&pHandlerSettingsCollection);
-        if (FAILED(hr))
-        {
-            goto Finished;
-        }
+        RETURN_IF_FAILED(pHandlerSettings->get_Collection(&pHandlerSettingsCollection));
 
-        for (hr = FindFirstElement(pHandlerSettingsCollection, &index, &pHandlerVar);
-            SUCCEEDED(hr);
-            hr = FindNextElement(pHandlerSettingsCollection, &index, &pHandlerVar))
+        RETURN_IF_FAILED(hr = FindFirstElement(pHandlerSettingsCollection, &index, &pHandlerVar));
+
+        while (hr != S_FALSE)
         {
-            if (hr == S_FALSE)
+            RETURN_IF_FAILED(GetElementStringProperty(pHandlerVar, CS_ASPNETCORE_HANDLER_SETTINGS_NAME, &strHandlerName));
+            RETURN_IF_FAILED(GetElementStringProperty(pHandlerVar, CS_ASPNETCORE_HANDLER_SETTINGS_VALUE, &strHandlerValue));
+
+            if (strHandlerName.Equals(CS_ASPNETCORE_HANDLER_VERSION, TRUE))
             {
-                hr = S_OK;
+                RETURN_IF_FAILED(strHandlerVersionValue->Copy(strHandlerValue));
                 break;
-            }
-
-            hr = GetElementStringProperty(pHandlerVar,
-                CS_ASPNETCORE_HANDLER_SETTINGS_NAME,
-                &strHandlerName);
-
-            if (FAILED(hr))
-            {
-                goto Finished;
-            }
-
-            hr = GetElementStringProperty(pHandlerVar,
-                CS_ASPNETCORE_HANDLER_SETTINGS_VALUE,
-                &strHandlerValue);
-
-            if (FAILED(hr))
-            {
-                goto Finished;
-
-            }
-
-            if (strHandlerName.Equals(CS_ASPNETCORE_HANDLER_VERSION))
-            {
-                hr = strHandlerVersionValue->Copy(strHandlerValue);
-                goto Finished;
             }
 
             strHandlerName.Reset();
             strHandlerValue.Reset();
+            pHandlerVar.Release();
 
-            pHandlerVar->Release();
-            pHandlerVar = NULL;
-        }
-    Finished:
-
-        if (pHandlerVar != NULL)
-        {
-            pHandlerVar->Release();
-            pHandlerVar = NULL;
+            RETURN_IF_FAILED(hr = FindNextElement(pHandlerSettingsCollection, &index, &pHandlerVar));
         }
 
-        if (pHandlerSettingsCollection != NULL)
-        {
-            pHandlerSettingsCollection->Release();
-            pHandlerSettingsCollection = NULL;
-        }
-
-        if (pHandlerSettings != NULL)
-        {
-            pHandlerSettings->Release();
-            pHandlerSettings = NULL;
-        }
-
-        return hr;
+        return S_OK;
     }
 };
 

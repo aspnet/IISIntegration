@@ -8,71 +8,56 @@ using ::testing::NiceMock;
 
 namespace ConfigUtilityTests
 {
-    TEST(ConfigUtilityTest, HandlerVersionSet)
+    using ::testing::Test;
+
+    class ConfigUtilityTest : public Test
     {
-        IAppHostElement* retElement = NULL;
+    protected:
+        void Test(std::wstring key, std::wstring value, std::wstring expected)
+        {
+            IAppHostElement* retElement = NULL;
 
-        STRU handlerVersion;
+            STRU handlerVersion;
 
-        // NiceMock removes warnings about "uninteresting calls",
-        auto element = std::make_unique<NiceMock<MockElement>>();
-        auto innerElement = std::make_unique<NiceMock<MockElement>>();
-        auto collection = std::make_unique<NiceMock<MockCollection>>();
-        auto nameElement = std::make_unique<NiceMock<MockElement>>();
-        auto mockProperty = std::make_unique<NiceMock<MockProperty>>();
+            // NiceMock removes warnings about "uninteresting calls",
+            auto element = std::make_unique<NiceMock<MockElement>>();
+            auto innerElement = std::make_unique<NiceMock<MockElement>>();
+            auto collection = std::make_unique<NiceMock<MockCollection>>();
+            auto nameElement = std::make_unique<NiceMock<MockElement>>();
+            auto mockProperty = std::make_unique<NiceMock<MockProperty>>();
 
-        ON_CALL(*element, GetElementByName(_, _))
-            .WillByDefault(DoAll(testing::SetArgPointee<1>(innerElement.get()), testing::Return(S_OK)));
-        ON_CALL(*innerElement, get_Collection(_))
-            .WillByDefault(testing::DoAll(testing::SetArgPointee<0>(collection.get()), testing::Return(S_OK)));
-        ON_CALL(*collection, get_Count(_))
-            .WillByDefault(DoAll(testing::SetArgPointee<0>(1), testing::Return(S_OK)));
-        ON_CALL(*collection, get_Item(_, _))
-            .WillByDefault(DoAll(testing::SetArgPointee<1>(nameElement.get()), testing::Return(S_OK)));
-        ON_CALL(*nameElement, GetPropertyByName(_, _))
-            .WillByDefault(DoAll(testing::SetArgPointee<1>(mockProperty.get()), testing::Return(S_OK)));
-        EXPECT_CALL(*mockProperty, get_StringValue(_))
-            .WillOnce(DoAll(testing::SetArgPointee<0>(SysAllocString(L"handlerVersion")), testing::Return(S_OK)))
-            .WillOnce(DoAll(testing::SetArgPointee<0>(SysAllocString(L"value")), testing::Return(S_OK)));
+            ON_CALL(*element, GetElementByName(_, _))
+                .WillByDefault(DoAll(testing::SetArgPointee<1>(innerElement.get()), testing::Return(S_OK)));
+            ON_CALL(*innerElement, get_Collection(_))
+                .WillByDefault(testing::DoAll(testing::SetArgPointee<0>(collection.get()), testing::Return(S_OK)));
+            ON_CALL(*collection, get_Count(_))
+                .WillByDefault(DoAll(testing::SetArgPointee<0>(1), testing::Return(S_OK)));
+            ON_CALL(*collection, get_Item(_, _))
+                .WillByDefault(DoAll(testing::SetArgPointee<1>(nameElement.get()), testing::Return(S_OK)));
+            ON_CALL(*nameElement, GetPropertyByName(_, _))
+                .WillByDefault(DoAll(testing::SetArgPointee<1>(mockProperty.get()), testing::Return(S_OK)));
+            EXPECT_CALL(*mockProperty, get_StringValue(_))
+                .WillOnce(DoAll(testing::SetArgPointee<0>(SysAllocString(key.c_str())), testing::Return(S_OK)))
+                .WillOnce(DoAll(testing::SetArgPointee<0>(SysAllocString(value.c_str())), testing::Return(S_OK)));
 
-        HRESULT hr = ConfigUtility::FindHandlerVersion(element.get(), &handlerVersion);
+            HRESULT hr = ConfigUtility::FindHandlerVersion(element.get(), &handlerVersion);
 
-        EXPECT_STREQ(handlerVersion.QueryStr(), L"value");
+            EXPECT_EQ(hr, S_OK);
+            EXPECT_STREQ(handlerVersion.QueryStr(), expected.c_str());
+        }
+    };
+
+    TEST_F(ConfigUtilityTest, CheckHandlerVersionKeysAndValues)
+    {
+        Test(L"handlerVersion", L"value", L"value");
+        Test(L"handlerversion", L"value", L"value");
+        Test(L"HandlerversioN", L"value", L"value");
+        Test(L"randomvalue", L"value", L"");
+        Test(L"", L"value", L"");
+        Test(L"", L"", L"");
     }
 
-    TEST(ConfigUtilityTest, NoHandlerVersion)
-    {
-        IAppHostElement* retElement = NULL;
-
-        STRU handlerVersion;
-
-        // NiceMock removes warnings about "uninteresting calls",
-        auto element = std::make_unique<NiceMock<MockElement>>();
-        auto innerElement = std::make_unique<NiceMock<MockElement>>();
-        auto collection = std::make_unique<NiceMock<MockCollection>>();
-        auto nameElement = std::make_unique<NiceMock<MockElement>>();
-        auto mockProperty = std::make_unique<NiceMock<MockProperty>>();
-
-        ON_CALL(*element, GetElementByName(_, _))
-            .WillByDefault(DoAll(testing::SetArgPointee<1>(innerElement.get()), testing::Return(S_OK)));
-        ON_CALL(*innerElement, get_Collection(_))
-            .WillByDefault(testing::DoAll(testing::SetArgPointee<0>(collection.get()), testing::Return(S_OK)));
-        ON_CALL(*collection, get_Count(_))
-            .WillByDefault(DoAll(testing::SetArgPointee<0>(1), testing::Return(S_OK)));
-        ON_CALL(*collection, get_Item(_, _))
-            .WillByDefault(DoAll(testing::SetArgPointee<1>(nameElement.get()), testing::Return(S_OK)));
-        ON_CALL(*nameElement, GetPropertyByName(_, _))
-            .WillByDefault(DoAll(testing::SetArgPointee<1>(mockProperty.get()), testing::Return(S_OK)));
-        EXPECT_CALL(*mockProperty, get_StringValue(_))
-            .WillOnce(DoAll(testing::SetArgPointee<0>(SysAllocString(L"randomvalue")), testing::Return(S_OK)))
-            .WillOnce(DoAll(testing::SetArgPointee<0>(SysAllocString(L"value")), testing::Return(S_OK)));
-
-        HRESULT hr = ConfigUtility::FindHandlerVersion(element.get(), &handlerVersion);
-
-        EXPECT_STREQ(handlerVersion.QueryStr(), L"");
-    }
-
-    TEST(ConfigUtilityTest, MultipleElements)
+    TEST(ConfigUtilityTestSingle, MultipleElements)
     {
         IAppHostElement* retElement = NULL;
         STRU handlerVersion;
@@ -101,6 +86,21 @@ namespace ConfigUtilityTests
 
         HRESULT hr = ConfigUtility::FindHandlerVersion(element.get(), &handlerVersion);
 
+        EXPECT_EQ(hr, S_OK);
         EXPECT_STREQ(handlerVersion.QueryStr(), L"value2");
+    }
+
+    TEST(ConfigUtilityTestSingle, IgnoresFailedGetElement)
+    {
+        STRU handlerVersion;
+
+        auto element = std::make_unique<NiceMock<MockElement>>();
+        ON_CALL(*element, GetElementByName(_, _))
+            .WillByDefault(DoAll(testing::SetArgPointee<1>(nullptr), testing::Return(HRESULT_FROM_WIN32( ERROR_INVALID_INDEX ))));
+
+        HRESULT hr = ConfigUtility::FindHandlerVersion(element.get(), &handlerVersion);
+
+        EXPECT_EQ(hr, S_OK);
+        EXPECT_STREQ(handlerVersion.QueryStr(), L"");
     }
 }

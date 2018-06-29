@@ -3,7 +3,8 @@
 
 #pragma once
 
-#include "stdafx.h"
+#include "iapplication.h"
+#include "ntassert.h"
 
 class APPLICATION : public IAPPLICATION
 {
@@ -37,6 +38,16 @@ public:
         {
             delete this;
         }
+    }
+
+    VOID
+    SetParameter(
+        _In_ LPCWSTR           pzName,
+        _In_ LPCWSTR           pzValue)
+    override
+    {
+        UNREFERENCED_PARAMETER(pzName);
+        UNREFERENCED_PARAMETER(pzValue);
     }
 
 protected:

@@ -2,6 +2,12 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 #include "stdafx.h"
+#include "PipeOutputManager.h"
+#include "exceptions.h"
+#include "SRWExclusiveLock.h"
+
+#define LOG_IF_DUPFAIL(err) do { if (err == -1) { LOG_IF_FAILED(HRESULT_FROM_WIN32(_doserrno)); } } while (0, 0);
+#define LOG_IF_ERRNO(err) do { if (err != 0) { LOG_IF_FAILED(HRESULT_FROM_WIN32(_doserrno)); } } while (0, 0);
 
 PipeOutputManager::PipeOutputManager() :
     m_dwStdErrReadTotal(0),
@@ -10,6 +16,7 @@ PipeOutputManager::PipeOutputManager() :
     m_hErrThread(INVALID_HANDLE_VALUE),
     m_fDisposed(FALSE)
 {
+    InitializeSRWLock(&m_srwLock);
 }
 
 PipeOutputManager::~PipeOutputManager()
@@ -27,10 +34,42 @@ PipeOutputManager::StopOutputRedirection()
     {
         return;
     }
+    SRWExclusiveLock lock(m_srwLock);
+
+    if (m_fDisposed)
+    {
+        return;
+    }
     m_fDisposed = true;
 
     fflush(stdout);
     fflush(stderr);
+
+    // Restore the original stdout and stderr handles of the process,
+    // as the application has either finished startup or has exited.
+
+    // If stdout/stderr were not set, we need to set it to NUL:
+    // such that other calls to Console.WriteLine don't use an invalid handle
+    FILE *stream;
+
+    if (m_fdPreviousStdOut >= 0)
+    {
+        _dup2(m_fdPreviousStdOut, _fileno(stdout));
+        LOG_IF_DUPFAIL(_dup2(m_fdPreviousStdOut, _fileno(stdout)));
+    }
+    else
+    {
+        LOG_IF_ERRNO(freopen_s(&stream, "NUL:", "w", stdout));
+    }
+
+    if (m_fdPreviousStdErr >= 0)
+    {
+        LOG_IF_DUPFAIL(_dup2(m_fdPreviousStdErr, _fileno(stderr)));
+    }
+    else
+    {
+        LOG_IF_ERRNO(freopen_s(&stream, "NUL:", "w", stderr));
+    }
 
     if (m_hErrWritePipe != INVALID_HANDLE_VALUE)
     {
@@ -38,17 +77,20 @@ PipeOutputManager::StopOutputRedirection()
         m_hErrWritePipe = INVALID_HANDLE_VALUE;
     }
 
+    // GetExitCodeThread returns 0 on failure; thread status code is invalid.
     if (m_hErrThread != NULL &&
         m_hErrThread != INVALID_HANDLE_VALUE &&
-        GetExitCodeThread(m_hErrThread, &dwThreadStatus) != 0 &&
+        !LOG_LAST_ERROR_IF(GetExitCodeThread(m_hErrThread, &dwThreadStatus) == 0) &&
         dwThreadStatus == STILL_ACTIVE)
     {
-        // wait for gracefullshut down, i.e., the exit of the background thread or timeout
+        // wait for graceful shutdown, i.e., the exit of the background thread or timeout
         if (WaitForSingleObject(m_hErrThread, PIPE_OUTPUT_THREAD_TIMEOUT) != WAIT_OBJECT_0)
         {
             // if the thread is still running, we need kill it first before exit to avoid AV
-            if (GetExitCodeThread(m_hErrThread, &dwThreadStatus) != 0 && dwThreadStatus == STILL_ACTIVE)
+            if (!LOG_LAST_ERROR_IF(GetExitCodeThread(m_hErrThread, &dwThreadStatus) == 0) &&
+                dwThreadStatus == STILL_ACTIVE)
             {
+                LOG_WARN("Thread reading stdout/err hit timeout, forcibly closing thread.");
                 TerminateThread(m_hErrThread, STATUS_CONTROL_C_EXIT);
             }
         }
@@ -63,54 +105,32 @@ PipeOutputManager::StopOutputRedirection()
         m_hErrReadPipe = INVALID_HANDLE_VALUE;
     }
 
-    // Restore the original stdout and stderr handles of the process,
-    // as the application has either finished startup or has exited.
-    if (m_fdPreviousStdOut != -1)
-    {
-        _dup2(m_fdPreviousStdOut, _fileno(stdout));
-    }
-
-    if (m_fdPreviousStdErr != -1)
-    {
-        _dup2(m_fdPreviousStdErr, _fileno(stderr));
-    }
-
     if (GetStdOutContent(&straStdOutput))
     {
         printf(straStdOutput.QueryStr());
-        // Need to flush contents.
+        // Need to flush contents for the new stdout and stderr
         _flushall();
     }
 }
 
 HRESULT PipeOutputManager::Start()
 {
-    HRESULT hr = S_OK;
     SECURITY_ATTRIBUTES     saAttr = { 0 };
     HANDLE                  hStdErrReadPipe;
     HANDLE                  hStdErrWritePipe;
 
     m_fdPreviousStdOut = _dup(_fileno(stdout));
-    m_fdPreviousStdErr = _dup(_fileno(stderr));
+    LOG_IF_DUPFAIL(m_fdPreviousStdOut);
 
-    if (!CreatePipe(&hStdErrReadPipe, &hStdErrWritePipe, &saAttr, 0 /*nSize*/))
-    {
-        hr = HRESULT_FROM_WIN32(GetLastError());
-        goto Finished;
-    }
+    m_fdPreviousStdErr = _dup(_fileno(stderr));
+    LOG_IF_DUPFAIL(m_fdPreviousStdErr);
+
+    RETURN_LAST_ERROR_IF(!CreatePipe(&hStdErrReadPipe, &hStdErrWritePipe, &saAttr, 0 /*nSize*/));
 
     // TODO this still doesn't redirect calls in native, like wprintf
-    if (!SetStdHandle(STD_ERROR_HANDLE, hStdErrWritePipe))
-    {
-        hr = HRESULT_FROM_WIN32(GetLastError());
-        goto Finished;
-    }
+    RETURN_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, hStdErrWritePipe));
 
-    if (!SetStdHandle(STD_OUTPUT_HANDLE, hStdErrWritePipe))
-    {
-        hr = HRESULT_FROM_WIN32(GetLastError());
-        goto Finished;
-    }
+    RETURN_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, hStdErrWritePipe));
 
     m_hErrReadPipe = hStdErrReadPipe;
     m_hErrWritePipe = hStdErrWritePipe;
@@ -124,14 +144,9 @@ HRESULT PipeOutputManager::Start()
         0,          // default creation flags
         NULL);      // receive thread identifier
 
-    if (m_hErrThread == NULL)
-    {
-        hr = HRESULT_FROM_WIN32(GetLastError());
-        goto Finished;
-    }
+    RETURN_LAST_ERROR_IF_NULL(m_hErrThread);
 
-Finished:
-    return hr;
+    return S_OK;
 }
 
 VOID

@@ -2,21 +2,22 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #pragma once
-#include <experimental/filesystem>
+
+#include "fx_ver.h"
 
 class GlobalVersionUtility
 {
 public:
 
-    static 
-        std::wstring 
+    static
+        std::wstring
         GetGlobalRequestHandlerPath(PCWSTR pwzAspNetCoreFolderPath, PCWSTR pwzHandlerVersion, PCWSTR pwzHandlerName);
 
     static
         std::wstring
         FindHighestGlobalVersion(PCWSTR pwzAspNetCoreFolderPath);
 
-    static 
+    static
         std::wstring
         RemoveFileNameFromFolderPath(std::wstring fileName);
 

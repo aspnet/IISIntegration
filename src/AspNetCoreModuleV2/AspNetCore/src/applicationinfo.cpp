@@ -6,6 +6,11 @@
 #include "proxymodule.h"
 #include "hostfxr_utility.h"
 #include "utility.h"
+#include "debugutil.h"
+#include "resources.h"
+#include "SRWExclusiveLock.h"
+#include "GlobalVersionUtility.h"
+#include "exceptions.h"
 
 const PCWSTR APPLICATION_INFO::s_pwzAspnetcoreInProcessRequestHandlerName = L"aspnetcorev2_inprocess.dll";
 const PCWSTR APPLICATION_INFO::s_pwzAspnetcoreOutOfProcessRequestHandlerName = L"aspnetcorev2_outofprocess.dll";
@@ -61,32 +66,10 @@ APPLICATION_INFO::Initialize(
 
     // todo: make sure Initialize should be called only once
     m_pServer = pServer;
-    m_pConfiguration = new ASPNETCORE_SHIM_CONFIG();
-
-    if (m_pConfiguration == NULL)
-    {
-        hr = E_OUTOFMEMORY;
-        goto Finished;
-    }
-
-    hr = m_pConfiguration->Populate(m_pServer, pApplication);
-    if (FAILED(hr))
-    {
-        goto Finished;
-    }
-
-    hr = m_struInfoKey.Copy(pApplication->GetApplicationId());
-    if (FAILED(hr))
-    {
-        goto Finished;
-    }
-
-    m_pFileWatcherEntry = new FILE_WATCHER_ENTRY(pFileWatcher);
-    if (m_pFileWatcherEntry == NULL)
-    {
-        hr = E_OUTOFMEMORY;
-        goto Finished;
-    }
+    FINISHED_IF_NULL_ALLOC(m_pConfiguration = new ASPNETCORE_SHIM_CONFIG());
+    FINISHED_IF_FAILED(m_pConfiguration->Populate(m_pServer, pApplication));
+    FINISHED_IF_FAILED(m_struInfoKey.Copy(pApplication->GetApplicationId()));
+    FINISHED_IF_NULL_ALLOC(m_pFileWatcherEntry = new FILE_WATCHER_ENTRY(pFileWatcher));
 
     UpdateAppOfflineFileHandle();
 
@@ -97,12 +80,11 @@ Finished:
 HRESULT
 APPLICATION_INFO::StartMonitoringAppOffline()
 {
-    HRESULT hr = S_OK;
     if (m_pFileWatcherEntry != NULL)
     {
-        hr = m_pFileWatcherEntry->Create(m_pConfiguration->QueryApplicationPhysicalPath()->QueryStr(), L"app_offline.htm", this, NULL);
+        RETURN_IF_FAILED(m_pFileWatcherEntry->Create(m_pConfiguration->QueryApplicationPhysicalPath()->QueryStr(), L"app_offline.htm", this, NULL));
     }
-    return hr;
+    return S_OK;
 }
 
 //
@@ -191,24 +173,35 @@ APPLICATION_INFO::EnsureApplicationCreated(
 )
 {
     HRESULT             hr = S_OK;
-    BOOL                fLocked = FALSE;
     IAPPLICATION       *pApplication = NULL;
     STRU                struExeLocation;
-    STACK_STRU(struFileName, 300);  // >MAX_PATH
     STRU                struHostFxrDllLocation;
+    STACK_STRU(struFileName, 300);  // >MAX_PATH
 
     if (m_pApplication != NULL)
     {
-        goto Finished;
+        return S_OK;
     }
 
-    if (m_pApplication == NULL)
+    // one optimization for failure scenario is to reduce the lock scope
+    SRWExclusiveLock lock(m_srwLock);
+
+    if (m_fDoneAppCreation)
     {
-        AcquireSRWLockExclusive(&m_srwLock);
-        fLocked = TRUE;
+        // application is NULL and CreateApplication failed previously
+        FINISHED(E_APPLICATION_ACTIVATION_EXEC_FAILURE);
+    }
+    else
+    {
         if (m_pApplication != NULL)
         {
-            goto Finished;
+            // another thread created the applicaiton
+            FINISHED(S_OK);
+        }
+        else if (m_fDoneAppCreation)
+        {
+            // previous CreateApplication failed
+            FINISHED(E_APPLICATION_ACTIVATION_EXEC_FAILURE);
         }
 
         //
@@ -216,25 +209,21 @@ APPLICATION_INFO::EnsureApplicationCreated(
         //
         if (!m_fAppOfflineFound)
         {
-
             // Move the request handler check inside of the lock
             // such that only one request finds and loads it.
             // FindRequestHandlerAssembly obtains a global lock, but after releasing the lock,
             // there is a period where we could call
 
-            hr = FindRequestHandlerAssembly(struExeLocation);
-            if (FAILED(hr))
-            {
-                goto Finished;
-            }
+            m_fDoneAppCreation = TRUE;
+            FINISHED_IF_FAILED(FindRequestHandlerAssembly(struExeLocation));
 
             if (m_pfnAspNetCoreCreateApplication == NULL)
             {
-                hr = HRESULT_FROM_WIN32(ERROR_INVALID_FUNCTION);
-                goto Finished;
+                FINISHED(HRESULT_FROM_WIN32(ERROR_INVALID_FUNCTION));
             }
 
-            hr = m_pfnAspNetCoreCreateApplication(m_pServer, pHttpContext, struExeLocation.QueryStr(), &pApplication);
+            FINISHED_IF_FAILED(m_pfnAspNetCoreCreateApplication(m_pServer, pHttpContext->GetApplication(), &pApplication));
+            pApplication->SetParameter(L"InProcessExeLocation", struExeLocation.QueryStr());
 
             m_pApplication = pApplication;
         }
@@ -242,10 +231,17 @@ APPLICATION_INFO::EnsureApplicationCreated(
 
 Finished:
 
-    if (fLocked)
+    if (FAILED(hr))
     {
-        ReleaseSRWLockExclusive(&m_srwLock);
+        // Log the failure and update application info to not try again
+        UTILITY::LogEventF(g_hEventLog,
+            EVENTLOG_ERROR_TYPE,
+            ASPNETCORE_EVENT_ADD_APPLICATION_ERROR,
+            ASPNETCORE_EVENT_ADD_APPLICATION_ERROR_MSG,
+            pHttpContext->GetApplication()->GetApplicationId(),
+            hr);
     }
+
     return hr;
 }
 
@@ -253,27 +249,24 @@ HRESULT
 APPLICATION_INFO::FindRequestHandlerAssembly(STRU& location)
 {
     HRESULT             hr = S_OK;
-    BOOL                fLocked = FALSE;
     PCWSTR              pstrHandlerDllName;
     STACK_STRU(struFileName, 256);
 
     if (g_fAspnetcoreRHLoadedError)
     {
-        hr = E_APPLICATION_ACTIVATION_EXEC_FAILURE;
-        goto Finished;
+        FINISHED(E_APPLICATION_ACTIVATION_EXEC_FAILURE);
     }
     else if (!g_fAspnetcoreRHAssemblyLoaded)
     {
-        AcquireSRWLockExclusive(&g_srwLock);
-        fLocked = TRUE;
+        SRWExclusiveLock lock(g_srwLock);
+
         if (g_fAspnetcoreRHLoadedError)
         {
-            hr = E_APPLICATION_ACTIVATION_EXEC_FAILURE;
-            goto Finished;
+            FINISHED(E_APPLICATION_ACTIVATION_EXEC_FAILURE);
         }
         if (g_fAspnetcoreRHAssemblyLoaded)
         {
-            goto Finished;
+            FINISHED(S_OK);
         }
 
         if (m_pConfiguration->QueryHostingModel() == APP_HOSTING_MODEL::HOSTING_IN_PROCESS)
@@ -294,20 +287,17 @@ APPLICATION_INFO::FindRequestHandlerAssembly(STRU& location)
             {
                 std::unique_ptr<HOSTFXR_OPTIONS> options;
 
-                if (FAILED(hr = HOSTFXR_OPTIONS::Create(
+                FINISHED_IF_FAILED(HOSTFXR_OPTIONS::Create(
                     NULL,
                     m_pConfiguration->QueryProcessPath()->QueryStr(),
                     m_pConfiguration->QueryApplicationPhysicalPath()->QueryStr(),
                     m_pConfiguration->QueryArguments()->QueryStr(),
                     g_hEventLog,
-                    options)))
-                {
-                    goto Finished;
-                }
+                    options));
 
-                location.Copy(options->GetExeLocation());
+                FINISHED_IF_FAILED(location.Copy(options->GetExeLocation()));
 
-                if (FAILED(hr = FindNativeAssemblyFromHostfxr(options.get(), pstrHandlerDllName, &struFileName)))
+                if (FAILED_LOG(hr = FindNativeAssemblyFromHostfxr(options.get(), pstrHandlerDllName, &struFileName)))
                 {
                     UTILITY::LogEventF(g_hEventLog,
                             EVENTLOG_ERROR_TYPE,
@@ -315,12 +305,12 @@ APPLICATION_INFO::FindRequestHandlerAssembly(STRU& location)
                             ASPNETCORE_EVENT_INPROCESS_RH_MISSING_MSG,
                             struFileName.IsEmpty() ? s_pwzAspnetcoreInProcessRequestHandlerName : struFileName.QueryStr());
 
-                    goto Finished;
+                    FINISHED(hr);
                 }
             }
             else
             {
-                if (FAILED(hr = FindNativeAssemblyFromGlobalLocation(pstrHandlerDllName, &struFileName)))
+                if (FAILED_LOG(hr = FindNativeAssemblyFromGlobalLocation(pstrHandlerDllName, &struFileName)))
                 {
                     UTILITY::LogEventF(g_hEventLog,
                         EVENTLOG_ERROR_TYPE,
@@ -328,16 +318,17 @@ APPLICATION_INFO::FindRequestHandlerAssembly(STRU& location)
                         ASPNETCORE_EVENT_OUT_OF_PROCESS_RH_MISSING_MSG,
                         struFileName.IsEmpty() ? s_pwzAspnetcoreOutOfProcessRequestHandlerName : struFileName.QueryStr());
 
-                    goto Finished;
+                    FINISHED(hr);
                 }
             }
+
+            WLOG_INFOF(L"Loading request handler: %s", struFileName.QueryStr());
 
             g_hAspnetCoreRH = LoadLibraryW(struFileName.QueryStr());
 
             if (g_hAspnetCoreRH == NULL)
             {
-                hr = HRESULT_FROM_WIN32(GetLastError());
-                goto Finished;
+                FINISHED(HRESULT_FROM_WIN32(GetLastError()));
             }
         }
 
@@ -345,8 +336,7 @@ APPLICATION_INFO::FindRequestHandlerAssembly(STRU& location)
             GetProcAddress(g_hAspnetCoreRH, "CreateApplication");
         if (g_pfnAspNetCoreCreateApplication == NULL)
         {
-            hr = HRESULT_FROM_WIN32(GetLastError());
-            goto Finished;
+            FINISHED(HRESULT_FROM_WIN32(GetLastError()));
         }
 
         g_fAspnetcoreRHAssemblyLoaded = TRUE;
@@ -362,11 +352,6 @@ Finished:
     if (!g_fAspnetcoreRHLoadedError && FAILED(hr))
     {
         g_fAspnetcoreRHLoadedError = TRUE;
-    }
-
-    if (fLocked)
-    {
-        ReleaseSRWLockExclusive(&g_srwLock);
     }
     return hr;
 }
@@ -390,10 +375,7 @@ APPLICATION_INFO::FindNativeAssemblyFromGlobalLocation(
             pstrHandlerDllName
         );
 
-        if (FAILED(hr = struFilename->Copy(retval.c_str())))
-        {
-            return hr;
-        }
+        RETURN_IF_FAILED(struFilename->Copy(retval.c_str()));
     }
     catch (std::exception& e)
     {
@@ -406,7 +388,7 @@ APPLICATION_INFO::FindNativeAssemblyFromGlobalLocation(
                 ASPNETCORE_EVENT_OUT_OF_PROCESS_RH_MISSING,
                 struEvent.QueryStr());
         }
-       
+
         hr = E_FAIL;
     }
     catch (...)
@@ -443,14 +425,7 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
 
     DBG_ASSERT(struFileName != NULL);
 
-    hmHostFxrDll = LoadLibraryW(hostfxrOptions->GetHostFxrLocation());
-
-    if (hmHostFxrDll == NULL)
-    {
-        // Could not load hostfxr
-        hr = HRESULT_FROM_WIN32(GetLastError());
-        goto Finished;
-    }
+    FINISHED_LAST_ERROR_IF_NULL(hmHostFxrDll = LoadLibraryW(hostfxrOptions->GetHostFxrLocation()));
 
     hostfxr_get_native_search_directories_fn pFnHostFxrSearchDirectories = (hostfxr_get_native_search_directories_fn)
         GetProcAddress(hmHostFxrDll, "hostfxr_get_native_search_directories");
@@ -459,14 +434,10 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
     {
         // Host fxr version is incorrect (need a higher version).
         // TODO log error
-        hr = E_FAIL;
-        goto Finished;
+        FINISHED(E_FAIL);
     }
 
-    if (FAILED(hr = struNativeSearchPaths.Resize(dwBufferSize)))
-    {
-        goto Finished;
-    }
+    FINISHED_IF_FAILED(hr = struNativeSearchPaths.Resize(dwBufferSize));
 
     while (TRUE)
     {
@@ -486,23 +457,16 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
         {
             dwBufferSize = dwRequiredBufferSize + 1; // for null terminator
 
-            if (FAILED(hr = struNativeSearchPaths.Resize(dwBufferSize)))
-            {
-                goto Finished;
-            }
+            FINISHED_IF_FAILED(struNativeSearchPaths.Resize(dwBufferSize));
         }
         else
         {
-            hr = E_FAIL;
             // Log "Error finding native search directories from aspnetcore application.
-            goto Finished;
+            FINISHED(E_FAIL);
         }
     }
 
-    if (FAILED(hr = struNativeSearchPaths.SyncWithBuffer()))
-    {
-        goto Finished;
-    }
+    FINISHED_IF_FAILED(struNativeSearchPaths.SyncWithBuffer());
 
     fFound = FALSE;
 
@@ -510,30 +474,18 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
     // Split on semicolons, append aspnetcorerh.dll, and check if the file exists.
     while ((intIndex = struNativeSearchPaths.IndexOf(L";", intPrevIndex)) != -1)
     {
-        if (FAILED(hr = struNativeDllLocation.Copy(&struNativeSearchPaths.QueryStr()[intPrevIndex], intIndex - intPrevIndex)))
-        {
-            goto Finished;
-        }
+        FINISHED_IF_FAILED(struNativeDllLocation.Copy(&struNativeSearchPaths.QueryStr()[intPrevIndex], intIndex - intPrevIndex));
 
         if (!struNativeDllLocation.EndsWith(L"\\"))
         {
-            if (FAILED(hr = struNativeDllLocation.Append(L"\\")))
-            {
-                goto Finished;
-            }
+            FINISHED_IF_FAILED(struNativeDllLocation.Append(L"\\"));
         }
 
-        if (FAILED(hr = struNativeDllLocation.Append(libraryName)))
-        {
-            goto Finished;
-        }
+        FINISHED_IF_FAILED(struNativeDllLocation.Append(libraryName));
 
         if (UTILITY::CheckIfFileExists(struNativeDllLocation.QueryStr()))
         {
-            if (FAILED(hr = struFilename->Copy(struNativeDllLocation)))
-            {
-                goto Finished;
-            }
+            FINISHED_IF_FAILED(struFilename->Copy(struNativeDllLocation));
             fFound = TRUE;
             break;
         }
@@ -543,8 +495,7 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
 
     if (!fFound)
     {
-        hr = E_FAIL;
-        goto Finished;
+        FINISHED(E_FAIL);
     }
 
 Finished:
@@ -558,14 +509,13 @@ Finished:
 VOID
 APPLICATION_INFO::RecycleApplication()
 {
-    IAPPLICATION* pApplication = NULL;
+    IAPPLICATION* pApplication;
     HANDLE       hThread = INVALID_HANDLE_VALUE;
-    BOOL         fLockAcquired = FALSE;
 
     if (m_pApplication != NULL)
     {
-        AcquireSRWLockExclusive(&m_srwLock);
-        fLockAcquired = TRUE;
+        SRWExclusiveLock lock(m_srwLock);
+
         if (m_pApplication != NULL)
         {
             pApplication = m_pApplication;
@@ -604,7 +554,6 @@ APPLICATION_INFO::RecycleApplication()
                 // In process application failed to start for whatever reason, need to recycle the work process
                 m_pServer->RecycleProcess(L"AspNetCore InProcess Recycle Process on Demand");
             }
-
         }
 
         if (hThread == NULL)
@@ -619,11 +568,6 @@ APPLICATION_INFO::RecycleApplication()
         {
             // Closing a thread handle does not terminate the associated thread or remove the thread object.
             CloseHandle(hThread);
-        }
-
-        if (fLockAcquired)
-        {
-            ReleaseSRWLockExclusive(&m_srwLock);
         }
     }
 }
@@ -652,13 +596,12 @@ VOID
 APPLICATION_INFO::ShutDownApplication()
 {
     IAPPLICATION* pApplication = NULL;
-    BOOL         fLockAcquired = FALSE;
 
     // pApplication can be NULL due to app_offline
     if (m_pApplication != NULL)
     {
-        AcquireSRWLockExclusive(&m_srwLock);
-        fLockAcquired = TRUE;
+        SRWExclusiveLock lock(m_srwLock);
+
         if (m_pApplication != NULL)
         {
             pApplication = m_pApplication;
@@ -667,11 +610,6 @@ APPLICATION_INFO::ShutDownApplication()
             m_pApplication = NULL;
             pApplication->ShutDown();
             pApplication->DereferenceApplication();
-        }
-
-        if (fLockAcquired)
-        {
-            ReleaseSRWLockExclusive(&m_srwLock);
         }
     }
 }

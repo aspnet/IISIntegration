@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "IOutputManager.h"
+
 class PipeOutputManager : public IOutputManager
 {
     #define PIPE_OUTPUT_THREAD_TIMEOUT 2000
@@ -23,15 +25,17 @@ public:
     static
     VOID ReadStdErrHandle(LPVOID pContext);
 
-    VOID StopOutputRedirection();
 private:
+    VOID StopOutputRedirection();
+
     HANDLE                          m_hErrReadPipe;
     HANDLE                          m_hErrWritePipe;
     STRU                            m_struLogFilePath;
     HANDLE                          m_hErrThread;
     CHAR                            m_pzFileContents[MAX_PIPE_READ_SIZE] = { 0 };
-    BOOL                            m_fDisposed;
     DWORD                           m_dwStdErrReadTotal;
+    BOOL                            m_fDisposed;
+    SRWLOCK                         m_srwLock;
     int                             m_fdPreviousStdOut;
     int                             m_fdPreviousStdErr;
 };

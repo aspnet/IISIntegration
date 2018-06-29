@@ -1,14 +1,17 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
-#include "precomp.hxx"
-
 #include "applicationinfo.h"
 #include "applicationmanager.h"
 #include "proxymodule.h"
 #include "globalmodule.h"
 #include "acache.h"
 #include "utility.h"
+#include "debugutil.h"
+#include "resources.h"
+#include "exceptions.h"
+
+DECLARE_DEBUG_PRINT_OBJECT("aspnetcore.dll");
 
 HTTP_MODULE_ID      g_pModuleId = NULL;
 IHttpServer *       g_pHttpServer = NULL;
@@ -20,11 +23,8 @@ HMODULE             g_hAspnetCoreRH = NULL;
 BOOL                g_fAspnetcoreRHAssemblyLoaded = FALSE;
 BOOL                g_fAspnetcoreRHLoadedError = FALSE;
 BOOL                g_fInShutdown = FALSE;
-DWORD               g_dwAspNetCoreDebugFlags = 0;
 DWORD               g_dwActiveServerProcesses = 0;
 SRWLOCK             g_srwLock;
-DWORD               g_dwDebugFlags = 0;
-PCSTR               g_szDebugLabel = "ASPNET_CORE_MODULE";
 PFN_ASPNETCORE_CREATE_APPLICATION      g_pfnAspNetCoreCreateApplication;
 
 VOID
@@ -36,6 +36,8 @@ StaticCleanup()
         DeregisterEventSource(g_hEventLog);
         g_hEventLog = NULL;
     }
+
+    DebugStop();
 }
 
 BOOL WINAPI DllMain(HMODULE hModule,
@@ -50,6 +52,7 @@ BOOL WINAPI DllMain(HMODULE hModule,
     case DLL_PROCESS_ATTACH:
         g_hModule = hModule;
         DisableThreadLibraryCalls(hModule);
+        DebugInitialize();
         break;
     case DLL_PROCESS_DETACH:
         // IIS can cause dll detach to occur before we receive global notifications
@@ -70,7 +73,7 @@ RegisterModule(
 DWORD                           dwServerVersion,
 IHttpModuleRegistrationInfo *   pModuleInfo,
 IHttpServer *                   pHttpServer
-)
+) try
 /*++
 
 Routine description:
@@ -99,15 +102,6 @@ HRESULT
     APPLICATION_MANAGER *               pApplicationManager = NULL;
 
     UNREFERENCED_PARAMETER(dwServerVersion);
-
-#ifdef DEBUG
-    CREATE_DEBUG_PRINT_OBJECT("Asp.Net Core Module");
-    g_dwDebugFlags = DEBUG_FLAGS_ANY;
-#endif // DEBUG
-
-    CREATE_DEBUG_PRINT_OBJECT;
-
-    //LoadGlobalConfiguration();
 
     InitializeSRWLock(&g_srwLock);
 
@@ -147,18 +141,6 @@ HRESULT
             fDisableANCM = (dwData != 0);
         }
 
-        cbData = sizeof(dwData);
-        if ((RegQueryValueEx(hKey,
-            L"DebugFlags",
-            NULL,
-            &dwType,
-            (LPBYTE)&dwData,
-            &cbData) == NO_ERROR) &&
-            (dwType == REG_DWORD))
-        {
-            g_dwAspNetCoreDebugFlags = dwData;
-        }
-
         RegCloseKey(hKey);
     }
 
@@ -186,43 +168,28 @@ HRESULT
     //
     pFactory = new ASPNET_CORE_PROXY_MODULE_FACTORY;
 
-    hr = pModuleInfo->SetRequestNotifications(
+    FINISHED_IF_FAILED(pModuleInfo->SetRequestNotifications(
                                   pFactory,
                                   RQ_EXECUTE_REQUEST_HANDLER,
-                                  0);
-    if (FAILED(hr))
-    {
-        goto Finished;
-    }
+                                  0));
 
     pFactory = NULL;
     pApplicationManager = APPLICATION_MANAGER::GetInstance();
 
-    hr = pApplicationManager->Initialize();
-    if(FAILED(hr))
-     {
-        goto Finished;
-    }
+    FINISHED_IF_FAILED(pApplicationManager->Initialize());
+
     pGlobalModule = NULL;
 
     pGlobalModule = new ASPNET_CORE_GLOBAL_MODULE(pApplicationManager);
 
-    hr = pModuleInfo->SetGlobalNotifications(
-                              pGlobalModule,
-                              GL_CONFIGURATION_CHANGE | // Configuration change trigers IIS application stop
-                              GL_STOP_LISTENING);   // worker process stop or recycle
+    FINISHED_IF_FAILED(pModuleInfo->SetGlobalNotifications(
+                                     pGlobalModule,
+                                     GL_CONFIGURATION_CHANGE | // Configuration change trigers IIS application stop
+                                     GL_STOP_LISTENING));   // worker process stop or recycle
 
-    if (FAILED(hr))
-    {
-        goto Finished;
-    }
     pGlobalModule = NULL;
 
-    hr = ALLOC_CACHE_HANDLER::StaticInitialize();
-    if (FAILED(hr))
-    {
-        goto Finished;
-    }
+    FINISHED_IF_FAILED(ALLOC_CACHE_HANDLER::StaticInitialize());
 
 Finished:
     if (pGlobalModule != NULL)
@@ -239,4 +206,4 @@ Finished:
 
     return hr;
 }
-
+CATCH_RETURN()

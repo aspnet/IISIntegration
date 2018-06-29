@@ -1,7 +1,10 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
-#include "stdafx.h"
+#include "utility.h"
+
+#include <Shlwapi.h>
+#include "debugutil.h"
 
 // static
 HRESULT
@@ -569,10 +572,7 @@ UTILITY::LogEvent(
         );
     }
 
-    if (dwEventInfoType == EVENTLOG_ERROR_TYPE)
-    {
-        fwprintf(stderr, L"ERROR: %s\n", pstrMsg);
-    }
+    WDebugPrintf(dwEventInfoType == EVENTLOG_ERROR_TYPE ? ASPNETCORE_DEBUG_FLAG_ERROR : ASPNETCORE_DEBUG_FLAG_INFO, L"Event Log: %s", pstrMsg);
 }
 
 VOID

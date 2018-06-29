@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "gtest/internal/gtest-port.h"
+#include "FileOutputManager.h"
 
 class FileManagerWrapper
 {
@@ -31,16 +32,16 @@ namespace FileOutManagerStartupTests
         {
             PCWSTR expected = L"test";
 
-            std::wstring tempDirectory = Helpers::CreateRandomTempDirectory();
+            auto tempDirectory = TempDirectory();
             FileOutputManager* pManager = new FileOutputManager;
-            pManager->Initialize(fileNamePrefix.c_str(), tempDirectory.c_str());
+            pManager->Initialize(fileNamePrefix.c_str(), tempDirectory.path().c_str());
             {
                 FileManagerWrapper wrapper(pManager);
 
                 wprintf(expected, out);
             }
-          
-            for (auto & p : std::experimental::filesystem::directory_iterator(tempDirectory))
+
+            for (auto & p : std::experimental::filesystem::directory_iterator(tempDirectory.path()))
             {
                 std::wstring filename(p.path().filename());
                 ASSERT_EQ(filename.substr(0, fileNamePrefix.size()), fileNamePrefix);
@@ -49,8 +50,6 @@ namespace FileOutManagerStartupTests
                 ASSERT_EQ(content.length(), DWORD(4));
                 ASSERT_STREQ(content.c_str(), expected);
             }
-
-            Helpers::DeleteDirectory(tempDirectory);
         }
     };
 
@@ -74,10 +73,10 @@ namespace FileOutManagerOutputTests
     {
         PCSTR expected = "test";
 
-        std::wstring tempDirectory = Helpers::CreateRandomTempDirectory();
+        auto tempDirectory = TempDirectory();
 
         FileOutputManager* pManager = new FileOutputManager;
-        pManager->Initialize(L"", tempDirectory.c_str());
+        pManager->Initialize(L"", tempDirectory.path().c_str());
         {
             FileManagerWrapper wrapper(pManager);
 
@@ -87,18 +86,16 @@ namespace FileOutManagerOutputTests
 
             ASSERT_STREQ(straContent.QueryStr(), expected);
         }
-
-        Helpers::DeleteDirectory(tempDirectory);
     }
 
     TEST(FileOutManagerOutputTest, DISABLED_CheckFileOutput)
     {
         PCSTR expected = "test";
 
-        std::wstring tempDirectory = Helpers::CreateRandomTempDirectory();
+        auto tempDirectory = TempDirectory();
 
         FileOutputManager* pManager = new FileOutputManager;
-        pManager->Initialize(L"", tempDirectory.c_str());
+        pManager->Initialize(L"", tempDirectory.path().c_str());
         {
             FileManagerWrapper wrapper(pManager);
 
@@ -108,18 +105,16 @@ namespace FileOutManagerOutputTests
 
             ASSERT_STREQ(straContent.QueryStr(), expected);
         }
-
-        Helpers::DeleteDirectory(tempDirectory);
     }
 
     TEST(FileOutManagerOutputTest, DISABLED_CapAt4KB)
     {
         PCSTR expected = "test";
 
-        std::wstring tempDirectory = Helpers::CreateRandomTempDirectory();
+        auto tempDirectory = TempDirectory();
 
         FileOutputManager* pManager = new FileOutputManager;
-        pManager->Initialize(L"", tempDirectory.c_str());
+        pManager->Initialize(L"", tempDirectory.path().c_str());
         {
             FileManagerWrapper wrapper(pManager);
 
@@ -133,8 +128,6 @@ namespace FileOutManagerOutputTests
 
             ASSERT_EQ(straContent.QueryCCH(), 4096);
         }
-
-        Helpers::DeleteDirectory(tempDirectory);
     }
 }
 

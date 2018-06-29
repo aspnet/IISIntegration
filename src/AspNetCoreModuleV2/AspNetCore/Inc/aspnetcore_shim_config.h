@@ -3,8 +3,10 @@
 
 #pragma once
 
-#include "precomp.hxx"
-#include <map>
+#include <windows.h>
+#include <httpserv.h>
+
+#include "stringu.h"
 
 #define CS_ASPNETCORE_SECTION                            L"system.webServer/aspNetCore"
 #define CS_ASPNETCORE_PROCESS_EXE_PATH                   L"processPath"
@@ -22,66 +24,52 @@ class ASPNETCORE_SHIM_CONFIG
 {
 public:
     virtual
-    ~ASPNETCORE_SHIM_CONFIG();
+    ~ASPNETCORE_SHIM_CONFIG() = default;
 
     HRESULT
     Populate(
         IHttpServer         *pHttpServer,
-        IHttpApplication    *pHttpContext
+        IHttpApplication    *pHttpApplication
     );
 
     STRU*
-    QueryApplicationPhysicalPath(
-        VOID
-    )
+    QueryApplicationPhysicalPath()
     {
         return &m_struApplicationPhysicalPath;
     }
 
     STRU*
-    QueryApplicationPath(
-        VOID
-    )
+    QueryApplicationPath()
     {
         return &m_struApplication;
     }
 
     STRU*
-    QueryConfigPath(
-        VOID
-    )
+    QueryConfigPath()
     {
         return &m_struConfigPath;
     }
 
     STRU*
-    QueryProcessPath(
-        VOID
-    )
+    QueryProcessPath()
     {
         return &m_struProcessPath;
     }
 
     STRU*
-    QueryArguments(
-        VOID
-    )
+    QueryArguments()
     {
         return &m_struArguments;
     }
 
     APP_HOSTING_MODEL
-    QueryHostingModel(
-        VOID
-    )
+    QueryHostingModel()
     {
         return m_hostingModel;
     }
 
     STRU*
-    QueryHandlerVersion(
-        VOID
-    )
+    QueryHandlerVersion()
     {
         return &m_struHandlerVersion;
     }
