@@ -5,6 +5,7 @@
 #pragma once
 
 #include "stdafx.h"
+#include "iapplication.h"
 
 #define FILE_WATCHER_SHUTDOWN_KEY           (ULONG_PTR)(-1)
 #define FILE_WATCHER_ENTRY_BUFFER_SIZE      4096
