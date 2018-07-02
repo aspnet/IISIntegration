@@ -1,7 +1,7 @@
 #include "..\precomp.hxx"
 
 OUT_OF_PROCESS_APPLICATION::OUT_OF_PROCESS_APPLICATION(
-    REQUESTHANDLER_CONFIG  *pConfig) :
+    std::shared_ptr<REQUESTHANDLER_CONFIG> pConfig) :
     APPLICATION(pConfig),
     m_fWebSocketSupported(WEBSOCKET_STATUS::WEBSOCKET_UNKNOWN)
 {
@@ -17,11 +17,6 @@ OUT_OF_PROCESS_APPLICATION::~OUT_OF_PROCESS_APPLICATION()
         m_pProcessManager->Shutdown();
         m_pProcessManager->DereferenceProcessManager();
         m_pProcessManager = NULL;
-    }
-
-    if (m_pConfig != NULL)
-    {
-        m_pConfig->DereferenceConfig();
     }
 }
 
@@ -55,13 +50,7 @@ OUT_OF_PROCESS_APPLICATION::GetProcess(
     _Out_   SERVER_PROCESS       **ppServerProcess
 )
 {
-    return m_pProcessManager->GetProcess(m_pConfig, QueryWebsocketStatus(), ppServerProcess);
-}
-
-REQUESTHANDLER_CONFIG*
-OUT_OF_PROCESS_APPLICATION::QueryConfig() const
-{
-    return m_pConfig;
+    return m_pProcessManager->GetProcess(m_pConfig.get(), QueryWebsocketStatus(), ppServerProcess);
 }
 
 __override

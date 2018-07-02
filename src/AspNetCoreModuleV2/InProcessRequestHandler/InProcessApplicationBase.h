@@ -13,7 +13,7 @@ class InProcessApplicationBase : public APPLICATION
 {
 public:
 
-    InProcessApplicationBase(IHttpServer* pHttpServer, REQUESTHANDLER_CONFIG* pConfig);
+    InProcessApplicationBase(IHttpServer* pHttpServer, std::shared_ptr<REQUESTHANDLER_CONFIG> pConfig);
 
     ~InProcessApplicationBase() = default;
 

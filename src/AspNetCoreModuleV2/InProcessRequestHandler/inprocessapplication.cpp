@@ -19,7 +19,7 @@ IN_PROCESS_APPLICATION*  IN_PROCESS_APPLICATION::s_Application = NULL;
 
 IN_PROCESS_APPLICATION::IN_PROCESS_APPLICATION(
     IHttpServer *pHttpServer,
-    std::unique_ptr<REQUESTHANDLER_CONFIG> pConfig,
+    std::shared_ptr<REQUESTHANDLER_CONFIG> pConfig,
     APPLICATION_PARAMETER *pParameters,
     DWORD                  nParameters) :
     InProcessApplicationBase(pHttpServer, pConfig),

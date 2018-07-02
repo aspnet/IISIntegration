@@ -7,7 +7,7 @@
 hostfxr_main_fn InProcessApplicationBase::s_fMainCallback = NULL;
 
 InProcessApplicationBase::InProcessApplicationBase(
-    IHttpServer *pHttpServer, REQUESTHANDLER_CONFIG* pConfig)
+    IHttpServer *pHttpServer, std::shared_ptr<REQUESTHANDLER_CONFIG> pConfig)
     : APPLICATION(pConfig),
       m_srwLock(),
       m_fRecycleCalled(FALSE),

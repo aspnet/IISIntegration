@@ -18,7 +18,6 @@ class APPLICATION : public IAPPLICATION
 {
 
 public:
-
     APPLICATION_STATUS
     QueryStatus() override
     {
@@ -34,7 +33,6 @@ public:
 
     virtual ~APPLICATION() override
     {
-
         if (m_pFileWatcherEntry != NULL)
         {
             m_pFileWatcherEntry->DereferenceFileWatcherEntry();

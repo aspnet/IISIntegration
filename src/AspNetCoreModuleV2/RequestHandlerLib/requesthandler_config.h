@@ -55,6 +55,9 @@ class REQUESTHANDLER_CONFIG
 {
 public:
 
+
+    ~REQUESTHANDLER_CONFIG();
+
     static
     HRESULT
     CreateRequestHandlerConfig(
@@ -207,25 +210,6 @@ public:
         return &m_struConfigPath;
     }
 
-    VOID
-    ReferenceConfig()
-    {
-        InterlockedIncrement(&m_cRefs);
-    }
-
-    VOID
-    DereferenceConfig()
-    {
-        DBG_ASSERT(m_cRefs != 0);
-
-        LONG cRefs = 0;
-        if ((cRefs = InterlockedDecrement(&m_cRefs)) == 0)
-        {
-            delete this;
-        }
-    }
-
-
 protected:
 
     //
@@ -234,7 +218,6 @@ protected:
     REQUESTHANDLER_CONFIG() :
         m_fStdoutLogEnabled(FALSE),
         m_pEnvironmentVariables(NULL),
-        m_cRefs(1),
         m_hostingModel(HOSTING_UNKNOWN),
         m_ppStrArguments(NULL)
     {
@@ -245,8 +228,6 @@ protected:
         IHttpServer      *pHttpServer,
         IHttpApplication *pHttpApplication
     );
-
-    mutable LONG           m_cRefs;
 
     DWORD                  m_dwRequestTimeoutInMS;
     DWORD                  m_dwStartupTimeLimitInMS;
@@ -272,7 +253,4 @@ protected:
     PWSTR*                 m_ppStrArguments;
     DWORD                  m_dwArgc;
 
-private:
-
-    ~REQUESTHANDLER_CONFIG();
 };

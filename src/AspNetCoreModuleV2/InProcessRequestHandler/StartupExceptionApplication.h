@@ -11,7 +11,7 @@
 class StartupExceptionApplication : public InProcessApplicationBase
 {
 public:
-    StartupExceptionApplication(IHttpServer* pServer, REQUESTHANDLER_CONFIG* pConfig, BOOL disableLogs)
+    StartupExceptionApplication(IHttpServer* pServer, std::shared_ptr<REQUESTHANDLER_CONFIG> pConfig, BOOL disableLogs)
         : m_disableLogs(disableLogs),
         m_pHttpServer(pServer),
         InProcessApplicationBase(pServer, pConfig)

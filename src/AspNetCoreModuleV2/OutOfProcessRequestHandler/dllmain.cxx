@@ -315,13 +315,15 @@ CreateApplication(
         return hr;
     }
 
+    std::shared_ptr<REQUESTHANDLER_CONFIG> pSharedConfig(pConfig);
+
     hr = EnsureOutOfProcessInitializtion();
     if (FAILED(hr))
     {
         goto Finished;
     }
 
-    pApplication = new OUT_OF_PROCESS_APPLICATION(pConfig);
+    pApplication = new OUT_OF_PROCESS_APPLICATION(pSharedConfig);
     if (pApplication == NULL)
     {
         hr = HRESULT_FROM_WIN32(ERROR_OUTOFMEMORY);
@@ -350,9 +352,6 @@ Finished:
     {
         delete pApplication;
     }
-    if (pConfig != NULL)
-    {
-        pConfig->DereferenceConfig();
-    }
+
     return hr;
 }

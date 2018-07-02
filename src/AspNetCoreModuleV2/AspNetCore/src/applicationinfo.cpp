@@ -12,6 +12,7 @@
 #include "SRWExclusiveLock.h"
 #include "GlobalVersionUtility.h"
 #include "exceptions.h"
+#include "HandleWrapper.h"
 
 const PCWSTR APPLICATION_INFO::s_pwzAspnetcoreInProcessRequestHandlerName = L"aspnetcorev2_inprocess.dll";
 const PCWSTR APPLICATION_INFO::s_pwzAspnetcoreOutOfProcessRequestHandlerName = L"aspnetcorev2_outofprocess.dll";
@@ -52,8 +53,6 @@ APPLICATION_INFO::Initialize(
     FINISHED_IF_FAILED(m_pConfiguration->Populate(m_pServer, pApplication));
     FINISHED_IF_FAILED(m_struInfoKey.Copy(pApplication->GetApplicationId()));
 
-    //UpdateAppOfflineFileHandle();
-
 Finished:
     return hr;
 }
@@ -85,12 +84,10 @@ BOOL APPLICATION_INFO::LoadAppOffline(LPWSTR strFilePath)
 {
     BOOL            fResult = TRUE;
     LARGE_INTEGER   li = { 0 };
-    CHAR           *pszBuff = NULL;
-    HANDLE         handle = INVALID_HANDLE_VALUE;
 
     DBG_ASSERT(strFilePath);
 
-    handle = CreateFile(strFilePath,
+    HandleWrapper<InvalidHandleTraits> handle = CreateFile(strFilePath,
                         GENERIC_READ,
                         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                         NULL,
@@ -121,30 +118,18 @@ BOOL APPLICATION_INFO::LoadAppOffline(LPWSTR strFilePath)
         goto Finished;
     }
 
-    DWORD bytesRead = 0;
-
     if (li.LowPart > 0)
     {
-        pszBuff = new CHAR[li.LowPart + 1];
+        DWORD bytesRead = 0;
+        std::unique_ptr<char[]> pszBuff(new CHAR[li.LowPart + 1]);
 
-        if (ReadFile(handle, pszBuff, li.LowPart, &bytesRead, NULL))
+        if (ReadFile(handle, pszBuff.get(), li.LowPart, &bytesRead, NULL))
         {
-            m_strAppOfflineContent.Copy(pszBuff, bytesRead);
+            LOG_IF_FAILED(m_strAppOfflineContent.Copy(pszBuff.get(), bytesRead));
         }
     }
 
 Finished:
-    if (handle != INVALID_HANDLE_VALUE)
-    {
-        CloseHandle(handle);
-        handle = INVALID_HANDLE_VALUE;
-    }
-
-    if (pszBuff != NULL)
-    {
-        delete[] pszBuff;
-        pszBuff = NULL;
-    }
 
     return fResult;
 }

@@ -18,7 +18,7 @@ class IN_PROCESS_APPLICATION : public InProcessApplicationBase
 public:
     IN_PROCESS_APPLICATION(
         IHttpServer* pHttpServer,
-        std::unique_ptr<REQUESTHANDLER_CONFIG> pConfig,
+        std::shared_ptr<REQUESTHANDLER_CONFIG> pConfig);
         APPLICATION_PARAMETER *pParameters,
         DWORD                  nParameters);
 

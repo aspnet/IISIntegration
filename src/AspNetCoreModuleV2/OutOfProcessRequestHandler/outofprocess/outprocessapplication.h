@@ -14,7 +14,7 @@ class OUT_OF_PROCESS_APPLICATION : public APPLICATION
 
 public:
     OUT_OF_PROCESS_APPLICATION(
-        REQUESTHANDLER_CONFIG  *pConfig);
+        std::shared_ptr<REQUESTHANDLER_CONFIG> pConfig);
 
     __override
     ~OUT_OF_PROCESS_APPLICATION() override;
@@ -43,10 +43,6 @@ public:
         _In_  IHttpContext       *pHttpContext,
         _Out_ IREQUEST_HANDLER   **pRequestHandler)
     override;
-
-    REQUESTHANDLER_CONFIG*
-    QueryConfig()
-    const;
 
     BOOL
     QueryWebsocketStatus()
