@@ -39,12 +39,12 @@
     <MicrosoftNetHttpHeadersPackageVersion>2.2.0-preview1-34530</MicrosoftNetHttpHeadersPackageVersion>
     <MicrosoftNETTestSdkPackageVersion>15.6.1</MicrosoftNETTestSdkPackageVersion>
     <NETStandardLibrary20PackageVersion>2.0.3</NETStandardLibrary20PackageVersion>
-    <SystemBuffersPackageVersion>4.6.0-preview1-26605-01</SystemBuffersPackageVersion>
+    <SystemBuffersPackageVersion>4.6.0-preview1-26617-01</SystemBuffersPackageVersion>
     <SystemIOPipelinesPackageVersion>4.5.0</SystemIOPipelinesPackageVersion>
-    <SystemMemoryPackageVersion>4.6.0-preview1-26605-01</SystemMemoryPackageVersion>
-    <SystemNetWebSocketsWebSocketProtocolPackageVersion>4.6.0-preview1-26605-01</SystemNetWebSocketsWebSocketProtocolPackageVersion>
-    <SystemNumericsVectorsPackageVersion>4.6.0-preview1-26605-01</SystemNumericsVectorsPackageVersion>
-    <SystemRuntimeCompilerServicesUnsafePackageVersion>4.6.0-preview1-26605-01</SystemRuntimeCompilerServicesUnsafePackageVersion>
+    <SystemMemoryPackageVersion>4.6.0-preview1-26617-01</SystemMemoryPackageVersion>
+    <SystemNetWebSocketsWebSocketProtocolPackageVersion>4.6.0-preview1-26617-01</SystemNetWebSocketsWebSocketProtocolPackageVersion>
+    <SystemNumericsVectorsPackageVersion>4.6.0-preview1-26617-01</SystemNumericsVectorsPackageVersion>
+    <SystemRuntimeCompilerServicesUnsafePackageVersion>4.6.0-preview1-26617-01</SystemRuntimeCompilerServicesUnsafePackageVersion>
     <SystemSecurityPrincipalWindowsPackageVersion>4.5.0</SystemSecurityPrincipalWindowsPackageVersion>
     <Tooling_NewtonsoftJsonPackageVersion>9.0.1</Tooling_NewtonsoftJsonPackageVersion>
     <XunitPackageVersion>2.3.1</XunitPackageVersion>
