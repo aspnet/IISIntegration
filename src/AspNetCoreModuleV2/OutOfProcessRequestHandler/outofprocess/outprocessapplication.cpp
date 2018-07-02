@@ -47,16 +47,6 @@ OUT_OF_PROCESS_APPLICATION::Initialize(
         }
     }
 
-    if (m_pFileWatcherEntry == NULL)
-    {
-        m_pFileWatcherEntry = new  FILE_WATCHER_ENTRY(g_pFileWatcher);
-        if (m_pFileWatcherEntry == NULL)
-        {
-            hr = E_OUTOFMEMORY;
-            goto Finished;
-        }
-    }
-
 Finished:
     return hr;
 }

@@ -30,7 +30,6 @@ public:
         m_pFileWatcherEntry(NULL)
     {
         m_pConfig = pConfig;
-        m_pConfiguration = pConfig;
     }
 
     virtual ~APPLICATION() override
@@ -100,13 +99,6 @@ public:
                 ASPNETCORE_EVENT_MONITOR_APPOFFLINE_ERROR_MSG,
                 m_pConfig->QueryConfigPath()->QueryStr(),
                 hr);
-        if (m_pFileWatcherEntry != NULL)
-        {
-
-            hr = m_pFileWatcherEntry->Create(m_pConfiguration->QueryApplicationPhysicalPath()->QueryStr(), L"app_offline.htm", this, NULL);
-
-            hr = m_pFileWatcherEntry->Create(m_pConfig->QueryApplicationPhysicalPath()->QueryStr(), L"app_offline.htm", this, NULL);
-
         }
 
         return hr;

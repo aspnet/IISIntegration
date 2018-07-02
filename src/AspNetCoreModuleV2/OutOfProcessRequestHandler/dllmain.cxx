@@ -258,6 +258,16 @@ Finished:
     return hr;
 }
 
+VOID
+CleanUp()
+{
+    if (g_pFileWatcher != NULL)
+    {
+        delete g_pFileWatcher;
+    }
+    DebugStop();
+}
+
 BOOL APIENTRY DllMain(HMODULE hModule,
     DWORD  ul_reason_for_call,
     LPVOID lpReserved
@@ -273,7 +283,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
         break;
     case DLL_PROCESS_DETACH:
         g_fProcessDetach = TRUE;
-        DebugStop();
+        CleanUp();
     default:
         break;
     }

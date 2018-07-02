@@ -112,7 +112,6 @@ public:
     }
 
 private:
-    IHttpServer* const      m_pHttpServer;
 
     // Thread executing the .NET Core process
     HANDLE                          m_hThread;
@@ -146,9 +145,6 @@ private:
     static IN_PROCESS_APPLICATION*  s_Application;
 
     IOutputManager*                 m_pLoggerProvider;
-    //std::unique_ptr<REQUESTHANDLER_CONFIG>          m_pConfig;
-
-    static const LPCSTR             s_exeLocationParameterName;
 
     static
     VOID

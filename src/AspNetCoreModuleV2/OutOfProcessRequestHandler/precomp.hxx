@@ -121,4 +121,3 @@ extern SRWLOCK    g_srwLockRH;
 extern HINTERNET  g_hWinhttpSession;
 extern DWORD      g_dwTlsIndex;
 extern HANDLE     g_hEventLog;
-extern FILE_WATCHER *g_pFileWatcher;

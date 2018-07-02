@@ -24,6 +24,7 @@ IHttpServer *       g_pHttpServer = NULL;
 HINSTANCE           g_hWinHttpModule;
 HINSTANCE           g_hAspNetCoreModule;
 HANDLE              g_hEventLog = NULL;
+FILE_WATCHER*       g_pFileWatcher = NULL;
 
 HRESULT
 InitializeGlobalConfiguration(
@@ -39,7 +40,15 @@ InitializeGlobalConfiguration(
             g_pHttpServer = pServer;
             RETURN_IF_FAILED(ALLOC_CACHE_HANDLER::StaticInitialize());
             RETURN_IF_FAILED(IN_PROCESS_HANDLER::StaticInitialize());
-
+            if (g_pFileWatcher == NULL)
+            {
+                try
+                {
+                    g_pFileWatcher = new FILE_WATCHER;
+                    g_pFileWatcher->Create();
+                }
+                CATCH_RETURN();
+            }
             if (pServer->IsCommandLineLaunch())
             {
                 g_hEventLog = RegisterEventSource(NULL, ASPNETCORE_IISEXPRESS_EVENT_PROVIDER);
@@ -57,6 +66,16 @@ InitializeGlobalConfiguration(
     return S_OK;
 }
 
+VOID
+CleanUp()
+{
+    if (g_pFileWatcher!= NULL)
+    {
+        delete g_pFileWatcher;
+    }
+    DebugStop();
+}
+
 BOOL APIENTRY DllMain(HMODULE hModule,
     DWORD  ul_reason_for_call,
     LPVOID lpReserved
@@ -72,7 +91,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
         break;
     case DLL_PROCESS_DETACH:
         g_fProcessDetach = TRUE;
-        DebugStop();
+        CleanUp();
     default:
         break;
     }
@@ -97,20 +116,24 @@ CreateApplication(
         RETURN_IF_FAILED(InitializeGlobalConfiguration(pServer));
         RETURN_IF_FAILED(REQUESTHANDLER_CONFIG::CreateRequestHandlerConfig(pServer, pHttpApplication, &pConfig));
 
-        auto config = std::unique_ptr<REQUESTHANDLER_CONFIG>(pConfig);
+        BOOL disableStartupPage = pConfig->QueryDisableStartUpErrorPage();
 
-        const bool disableStartupPage = pConfig->QueryDisableStartUpErrorPage();
+        auto pApplication = std::make_unique<IN_PROCESS_APPLICATION>(pServer, pConfig);
+        
+        if (FAILED(pApplication->LoadManagedApplication()))
 
-
-        auto pApplication = std::make_unique<IN_PROCESS_APPLICATION>(pServer, std::move(config), pParameters, nParameters);
-
-        if (FAILED_LOG(pApplication->LoadManagedApplication()))
         {
             // Set the currently running application to a fake application that returns startup exceptions.
-            *ppApplication = new StartupExceptionApplication(pServer, config.release(), disableStartupPage);
+            auto pErrorApplication = std::make_unique <StartupExceptionApplication>(pServer, pConfig, disableStartupPage);
+
+            // needs to increase the reference counter as the object is shared by pApplication and pErrorApplication
+            pConfig->ReferenceConfig();
+            RETURN_IF_FAILED(pErrorApplication->StartMonitoringAppOffline());
+            *ppApplication = pErrorApplication.release();
         }
         else
         {
+            RETURN_IF_FAILED(pApplication->StartMonitoringAppOffline());
             *ppApplication = pApplication.release();
         }
     }

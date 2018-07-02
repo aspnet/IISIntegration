@@ -54,8 +54,6 @@ enum APP_HOSTING_MODEL
 class REQUESTHANDLER_CONFIG
 {
 public:
-    virtual
-    ~REQUESTHANDLER_CONFIG();
 
     static
     HRESULT
@@ -209,6 +207,25 @@ public:
         return &m_struConfigPath;
     }
 
+    VOID
+    ReferenceConfig()
+    {
+        InterlockedIncrement(&m_cRefs);
+    }
+
+    VOID
+    DereferenceConfig()
+    {
+        DBG_ASSERT(m_cRefs != 0);
+
+        LONG cRefs = 0;
+        if ((cRefs = InterlockedDecrement(&m_cRefs)) == 0)
+        {
+            delete this;
+        }
+    }
+
+
 protected:
 
     //
@@ -254,4 +271,8 @@ protected:
     STRU                   m_struHostFxrLocation;
     PWSTR*                 m_ppStrArguments;
     DWORD                  m_dwArgc;
+
+private:
+
+    ~REQUESTHANDLER_CONFIG();
 };

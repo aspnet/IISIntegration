@@ -22,14 +22,13 @@ IN_PROCESS_APPLICATION::IN_PROCESS_APPLICATION(
     std::unique_ptr<REQUESTHANDLER_CONFIG> pConfig,
     APPLICATION_PARAMETER *pParameters,
     DWORD                  nParameters) :
+    InProcessApplicationBase(pHttpServer, pConfig),
     InProcessApplicationBase(pHttpServer),
     m_pHttpServer(pHttpServer),
     m_ProcessExitCode(0),
     m_fBlockCallbacksIntoManaged(FALSE),
     m_fShutdownCalledFromNative(FALSE),
-    m_fShutdownCalledFromManaged(FALSE),
-    m_fInitialized(FALSE),
-    InProcessApplicationBase(pHttpServer, pConfig)
+    m_fShutdownCalledFromManaged(FALSE)
 {
     // is it guaranteed that we have already checked app offline at this point?
     // If so, I don't think there is much to do here.
