@@ -352,7 +352,7 @@ Finished:
     }
     if (pConfig != NULL)
     {
-        delete pConfig;
+        pConfig->DereferenceConfig();
     }
     return hr;
 }

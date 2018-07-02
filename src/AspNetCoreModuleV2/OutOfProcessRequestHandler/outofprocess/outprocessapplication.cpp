@@ -21,8 +21,7 @@ OUT_OF_PROCESS_APPLICATION::~OUT_OF_PROCESS_APPLICATION()
 
     if (m_pConfig != NULL)
     {
-        delete m_pConfig;
-        m_pConfig = NULL;
+        m_pConfig->DereferenceConfig();
     }
 }
 
