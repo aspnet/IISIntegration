@@ -1,0 +1,32 @@
+// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Server.IntegrationTesting;
+using Microsoft.AspNetCore.Testing.xunit;
+using Xunit;
+
+namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
+{
+    [Collection(IISTestSiteCollection.Name)]
+    [SkipIISTest]
+    public class FeatureCollectionTest
+    {
+        private readonly IISTestSiteFixture _fixture;
+
+        public FeatureCollectionTest(IISTestSiteFixture fixture)
+        {
+            _fixture = fixture;
+        }
+
+        [ConditionalTheory]
+        [InlineData("FeatureCollectionSetRequestFeatures")]
+        [InlineData("FeatureCollectionSetResponseFeatures")]
+        [InlineData("FeatureCollectionSetConnectionFeatures")]
+        public async Task FeatureCollectionTest_SetHttpContextFeatures(string path)
+        {
+            Assert.Equal("Success", await _fixture.Client.GetStringAsync(path + "/path" + "?query"));
+        }
+    }
+}
