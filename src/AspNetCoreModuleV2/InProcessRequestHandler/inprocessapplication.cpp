@@ -352,8 +352,7 @@ IN_PROCESS_APPLICATION::LoadManagedApplication
         {
             hr =  LoggingHelpers::CreateLoggingProvider(
                 m_pConfig->QueryStdoutLogEnabled(),
-                //!GetConsoleWindow(),
-                FALSE,
+                !GetConsoleWindow(),
                 m_pConfig->QueryStdoutLogFile()->QueryStr(),
                 m_pConfig->QueryApplicationPhysicalPath()->QueryStr(),
                 &m_pLoggerProvider);

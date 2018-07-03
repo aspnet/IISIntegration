@@ -108,7 +108,7 @@ ASPNET_CORE_PROXY_MODULE::OnExecuteRequestHandler(
         }
 
         // app_offline check to avoid loading aspnetcorerh.dll unnecessarily
-        if (m_pApplicationInfo->AppOfflineFound())
+        if (m_pApplicationInfo->CheckIfAppOfflinePresent())
         {
             m_pApplicationInfo->ServeAppOffline(pHttpContext->GetResponse());
             retVal = RQ_NOTIFICATION_FINISH_REQUEST;
@@ -130,7 +130,6 @@ ASPNET_CORE_PROXY_MODULE::OnExecuteRequestHandler(
         if (pApplication->QueryStatus() == APPLICATION_STATUS::OFFLINE)
         {
             pApplicationManager->RecycleApplicationFromManager(m_pApplicationInfo->QueryConfig()->QueryConfigPath()->QueryStr());
-            // todo: add appoffline
         }
         else if (pApplication->QueryStatus() != APPLICATION_STATUS::RUNNING &&
                  pApplication->QueryStatus() != APPLICATION_STATUS::STARTING)

@@ -58,7 +58,7 @@ Finished:
 }
 
 BOOL
-APPLICATION_INFO::AppOfflineFound()
+APPLICATION_INFO::CheckIfAppOfflinePresent()
 {
     ULONGLONG  ulCurrentTime = GetTickCount64();
     //
@@ -82,7 +82,6 @@ APPLICATION_INFO::AppOfflineFound()
 // Load appoffline content
 BOOL APPLICATION_INFO::LoadAppOffline(LPWSTR strFilePath)
 {
-    BOOL            fResult = TRUE;
     LARGE_INTEGER   li = { 0 };
 
     DBG_ASSERT(strFilePath);
@@ -99,23 +98,23 @@ BOOL APPLICATION_INFO::LoadAppOffline(LPWSTR strFilePath)
     {
         if (HRESULT_FROM_WIN32(GetLastError()) == ERROR_FILE_NOT_FOUND)
         {
-            fResult = FALSE;
+            return FALSE;
         }
 
         // If file is currenlty locked exclusively by other processes, we might get INVALID_HANDLE_VALUE even though the file exists. In that case, we should return TRUE here.
-        goto Finished;
+        return TRUE;
     }
 
     if (!GetFileSizeEx(handle, &li))
     {
-        goto Finished;
+        return TRUE;
     }
 
     if (li.HighPart != 0)
     {
         // > 4gb file size not supported
         // todo: log a warning at event log
-        goto Finished;
+        return TRUE;
     }
 
     if (li.LowPart > 0)
@@ -129,9 +128,7 @@ BOOL APPLICATION_INFO::LoadAppOffline(LPWSTR strFilePath)
         }
     }
 
-Finished:
-
-    return fResult;
+    return TRUE;
 }
 
 //

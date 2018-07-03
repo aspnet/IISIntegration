@@ -77,7 +77,7 @@ public:
     }
 
     BOOL
-    AppOfflineFound();
+    CheckIfAppOfflinePresent();
 
     BOOL
     IsValid()
