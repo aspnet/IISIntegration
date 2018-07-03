@@ -4,6 +4,7 @@
 #pragma once
 
 #include "stdafx.h"
+#include "iapplication.h"
 #include "exceptions.h"
 #include "requesthandler_config.h"
 #include "filewatcher.h"
@@ -55,16 +56,6 @@ public:
         {
             delete this;
         }
-    }
-
-    VOID
-    SetParameter(
-        _In_ LPCWSTR           pzName,
-        _In_ LPCWSTR           pzValue)
-    override
-    {
-        UNREFERENCED_PARAMETER(pzName);
-        UNREFERENCED_PARAMETER(pzValue);
     }
 
     HRESULT

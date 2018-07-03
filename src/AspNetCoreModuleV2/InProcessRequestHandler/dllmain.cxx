@@ -120,10 +120,9 @@ CreateApplication(
 
         std::shared_ptr<REQUESTHANDLER_CONFIG> pSharedConfig(pConfig);
 
-        auto pApplication = std::make_unique<IN_PROCESS_APPLICATION>(pServer, pSharedConfig);
+        auto pApplication = std::make_unique<IN_PROCESS_APPLICATION>(pServer, pSharedConfig, pParameters, nParameters);
         
         if (FAILED(pApplication->LoadManagedApplication()))
-
         {
             // Set the currently running application to a fake application that returns startup exceptions.
             auto pErrorApplication = std::make_unique <StartupExceptionApplication>(pServer, pSharedConfig, disableStartupPage);

@@ -23,7 +23,6 @@ IN_PROCESS_APPLICATION::IN_PROCESS_APPLICATION(
     APPLICATION_PARAMETER *pParameters,
     DWORD                  nParameters) :
     InProcessApplicationBase(pHttpServer, pConfig),
-    InProcessApplicationBase(pHttpServer),
     m_pHttpServer(pHttpServer),
     m_ProcessExitCode(0),
     m_fBlockCallbacksIntoManaged(FALSE),
@@ -353,7 +352,8 @@ IN_PROCESS_APPLICATION::LoadManagedApplication
         {
             hr =  LoggingHelpers::CreateLoggingProvider(
                 m_pConfig->QueryStdoutLogEnabled(),
-                !GetConsoleWindow(),
+                //!GetConsoleWindow(),
+                FALSE,
                 m_pConfig->QueryStdoutLogFile()->QueryStr(),
                 m_pConfig->QueryApplicationPhysicalPath()->QueryStr(),
                 &m_pLoggerProvider);

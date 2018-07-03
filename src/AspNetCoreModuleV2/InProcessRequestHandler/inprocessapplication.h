@@ -18,7 +18,7 @@ class IN_PROCESS_APPLICATION : public InProcessApplicationBase
 public:
     IN_PROCESS_APPLICATION(
         IHttpServer* pHttpServer,
-        std::shared_ptr<REQUESTHANDLER_CONFIG> pConfig);
+        std::shared_ptr<REQUESTHANDLER_CONFIG> pConfig,
         APPLICATION_PARAMETER *pParameters,
         DWORD                  nParameters);
 
@@ -113,6 +113,8 @@ public:
 
 private:
 
+    IHttpServer * const      m_pHttpServer;
+
     // Thread executing the .NET Core process
     HANDLE                          m_hThread;
 
@@ -145,6 +147,8 @@ private:
     static IN_PROCESS_APPLICATION*  s_Application;
 
     IOutputManager*                 m_pLoggerProvider;
+
+    static const LPCSTR             s_exeLocationParameterName;
 
     static
     VOID
