@@ -64,7 +64,7 @@ APPLICATION_INFO::CheckIfAppOfflinePresent()
     //
     // we only care about app offline presented. If not, it means the application has started
     // and is monitoring  the app offline file
-    // we cache the file exist check for 1 minute
+    // we cache the file exist check result for 1 second
     //
     if (m_fAppOfflineFound && ulCurrentTime - m_ulLastCheckTime > 1000)
     {
