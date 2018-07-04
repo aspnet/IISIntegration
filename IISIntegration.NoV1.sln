@@ -49,7 +49,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{7E80C58E
 		build\testsite.props = build\testsite.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.AspNetCore.Server.IISExpressDeploy.FunctionalTests", "test\Microsoft.AspNetCore.Server.IISExpressDeploy.FunctionalTests\Microsoft.AspNetCore.Server.IISExpressDeploy.FunctionalTests.csproj", "{4E3E1F5C-CD52-4CC0-A35F-D1FA1685D2FA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IISExpress.FunctionalTests", "test\IISExpress.FunctionalTests\IISExpress.FunctionalTests.csproj", "{4E3E1F5C-CD52-4CC0-A35F-D1FA1685D2FA}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7F87406C-A3C8-4139-A68D-E4C344294A67} = {7F87406C-A3C8-4139-A68D-E4C344294A67}
 	EndProjectSection
@@ -109,7 +109,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gtest", "test\gtest\gtest.v
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RequestHandlerLib", "src\AspNetCoreModuleV2\RequestHandlerLib\RequestHandlerLib.vcxproj", "{1533E271-F61B-441B-8B74-59FB61DF0552}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.AspNetCore.Server.IISDeploy.FunctionalTests", "test\Microsoft.AspNetCore.Server.IISDeploy.FunctionalTests\Microsoft.AspNetCore.Server.IISDeploy.FunctionalTests.csproj", "{D182103F-8405-4647-B158-C36F598657EF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IIS.FunctionalTests", "test\IIS.FunctionalTests\IIS.FunctionalTests.csproj", "{D182103F-8405-4647-B158-C36F598657EF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

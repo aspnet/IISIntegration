@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Microsoft.AspNetCore.Server.IIS.FunctionalTests\**\*.cs" />
+    <Compile Include="..\Common.FunctionalTests\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
