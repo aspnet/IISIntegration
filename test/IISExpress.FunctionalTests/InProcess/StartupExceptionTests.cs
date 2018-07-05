@@ -5,6 +5,7 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Server.IIS.FunctionalTests.Utilities;
+using Microsoft.AspNetCore.Testing.xunit;
 using Xunit;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
@@ -13,7 +14,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
     public class StartupExceptionTests : IISFunctionalTestBase
     {
         // TODO FileNotFound here.
-        [Theory]
+        [ConditionalTheory]
         [InlineData("CheckLogFile")]
         [InlineData("CheckErrLogFile")]
         public async Task CheckStdoutWithRandomNumber(string path)
@@ -34,7 +35,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             Assert.Contains(TestSink.Writes, context => context.Message.Contains($"Random number: {randomNumberString}"));
         }
 
-        [Theory]
+        [ConditionalTheory]
         [InlineData("CheckLargeStdErrWrites")]
         [InlineData("CheckLargeStdOutWrites")]
         [InlineData("CheckOversizedStdErrWrites")]
@@ -57,7 +58,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             Assert.Contains(TestSink.Writes, context => context.Message.Contains(new string('a', 4096)));
         }
 
-        [Fact]
+        [ConditionalFact]
         public async Task Gets500_30_ErrorPage()
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite");
