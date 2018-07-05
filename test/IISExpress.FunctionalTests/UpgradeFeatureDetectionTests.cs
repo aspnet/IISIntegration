@@ -59,7 +59,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
         private async Task UpgradeFeatureDetectionDeployer(bool disableWebSocket, string sitePath, string expected, HostingModel hostingModel)
         {
-            var deploymentParameters = new DeploymentParameters(sitePath, ServerType.IISExpress, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64)
+            var deploymentParameters = new DeploymentParameters(sitePath, DeployerSelector.ServerType, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64)
             {
                 TargetFramework = Tfm.NetCoreApp22,
                 ApplicationType = ApplicationType.Portable,

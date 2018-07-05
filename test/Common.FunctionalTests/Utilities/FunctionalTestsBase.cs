@@ -11,6 +11,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
     public class FunctionalTestsBase : LoggedTest
     {
         private const string DebugEnvironmentVariable = "ASPNETCORE_MODULE_DEBUG";
+        private const string LogFile = "";
 
         public FunctionalTestsBase(ITestOutputHelper output = null) : base(output)
         {
@@ -25,8 +26,16 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
                 parameters.EnvironmentVariables[DebugEnvironmentVariable] = "4";
             }
 
-            // Currently hosting throws if the Servertype = IIS.
-            _deployer = DeployerSelector.GetDeployer(parameters, LoggerFactory);
+            if (parameters.ServerType == ServerType.IIS)
+            {
+                // Currently hosting throws if the Servertype = IIS.
+                parameters.EnvironmentVariables[DebugEnvironmentVariable] = "";
+                _deployer = new IISDeployer(parameters, LoggerFactory);
+            }
+            else if (parameters.ServerType == ServerType.IISExpress)
+            {
+                _deployer = new IISExpressDeployer(parameters, LoggerFactory);
+            }
 
             var result = await _deployer.DeployAsync();
 

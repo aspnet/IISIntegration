@@ -17,7 +17,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         }
 
         public static TestMatrix TestVariants
-            => TestMatrix.ForServers(ServerType.IISExpress)
+            => TestMatrix.ForServers(DeployerSelector.ServerType)
                 .WithTfms(Tfm.NetCoreApp22, Tfm.Net461)
                 .WithAllApplicationTypes()
                 .WithAllAncmVersions();

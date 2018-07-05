@@ -142,7 +142,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
         private DeploymentParameters GetGlobalVersionBaseDeploymentParameters()
         {
-            return new DeploymentParameters(Helpers.GetOutOfProcessTestSitesPath(), ServerType.IISExpress, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64)
+            return new DeploymentParameters(Helpers.GetOutOfProcessTestSitesPath(), DeployerSelector.ServerType, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64)
             {
                 TargetFramework = Tfm.NetCoreApp22,
                 ApplicationType = ApplicationType.Portable,

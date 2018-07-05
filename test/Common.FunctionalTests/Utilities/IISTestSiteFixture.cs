@@ -20,7 +20,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             var logging = AssemblyTestLog.ForAssembly(typeof(IISTestSiteFixture).Assembly);
 
             var deploymentParameters = new DeploymentParameters(Helpers.GetInProcessTestSitesPath(),
-                ServerType.IISExpress,
+                DeployerSelector.ServerType,
                 RuntimeFlavor.CoreClr,
                 RuntimeArchitecture.x64)
             {

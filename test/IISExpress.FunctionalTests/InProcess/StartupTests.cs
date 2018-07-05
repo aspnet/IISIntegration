@@ -98,7 +98,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         }
 
         public static TestMatrix TestVariants
-            => TestMatrix.ForServers(ServerType.IISExpress)
+            => TestMatrix.ForServers(DeployerSelector.ServerType)
                 .WithTfms(Tfm.NetCoreApp22)
                 .WithAllApplicationTypes()
                 .WithAncmV2InProcess();
@@ -136,7 +136,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         // Defaults to inprocess specific deployment parameters
         public static DeploymentParameters GetBaseDeploymentParameters(string site = "InProcessWebSite")
         {
-            return new DeploymentParameters(Helpers.GetTestWebSitePath(site), ServerType.IISExpress, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64)
+            return new DeploymentParameters(Helpers.GetTestWebSitePath(site), DeployerSelector.ServerType, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64)
             {
                 TargetFramework = Tfm.NetCoreApp22,
                 ApplicationType = ApplicationType.Portable,
