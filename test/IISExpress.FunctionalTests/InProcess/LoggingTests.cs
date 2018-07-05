@@ -13,7 +13,6 @@ using Xunit;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
-
     public class LoggingTests : IISFunctionalTestBase
     {
         [ConditionalTheory]

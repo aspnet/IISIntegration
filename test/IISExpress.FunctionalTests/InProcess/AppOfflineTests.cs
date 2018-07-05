@@ -16,7 +16,6 @@ using Xunit;
 
 namespace Microsoft.AspNetCore.Server.IIS.FunctionalTests.Inprocess
 {
-
     public class AppOfflineTests : IISFunctionalTestBase
     {
         // TODO these will differ between IIS and IISExpress
