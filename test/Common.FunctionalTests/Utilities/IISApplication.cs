@@ -26,7 +26,6 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
         private readonly ILogger _logger;
         private readonly string _ancmVersion;
         private readonly string _ancmDllName;
-        private readonly object _syncLock = new object();
         private readonly string _apphostConfigBackupPath;
         private static readonly string _apphostConfigPath = Path.Combine(
                                                                 Environment.SystemDirectory,
@@ -179,17 +178,12 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
 
         private void AddTemporaryAppHostConfig()
         {
-            RetryHelper.RetryOperation(
-                () => File.Move(_apphostConfigPath, _apphostConfigBackupPath),
-                e => _logger.LogError($"Failed to backup apphost.config: {e.Message}"),
-                retryCount: 3,
-                retryDelayMilliseconds: 100);
+            RetryFileOperation(() => File.Move(_apphostConfigPath, _apphostConfigBackupPath),
+                e => _logger.LogError($"Failed to backup apphost.config: {e.Message}"));
 
-            RetryHelper.RetryOperation(
+            RetryFileOperation(
                 () => File.Copy("IIS.config", _apphostConfigPath),
-                e => _logger.LogError($"Failed to copy IIS.config to apphost.config: {e.Message}"),
-                retryCount: 3,
-                retryDelayMilliseconds: 100);
+                e => _logger.LogError($"Failed to copy IIS.config to apphost.config: {e.Message}"));
 
             _logger.LogInformation($"Backed up {_apphostConfigPath} to {_apphostConfigBackupPath}");
         }
@@ -198,20 +192,24 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
         {
             if (File.Exists(_apphostConfigPath))
             {
-                RetryHelper.RetryOperation(
+                RetryFileOperation(
                     () => File.Delete(_apphostConfigPath),
-                    e => _logger.LogWarning($"Failed to delete file : {e.Message}"),
-                    retryCount: 3,
-                    retryDelayMilliseconds: 100);
+                    e => _logger.LogWarning($"Failed to delete file : {e.Message}"));
             }
 
-            RetryHelper.RetryOperation(
+            RetryFileOperation(
                 () => File.Move(_apphostConfigBackupPath, _apphostConfigPath),
-                e => _logger.LogError($"Failed to backup apphost.config: {e.Message}"),
-                retryCount: 3,
-                retryDelayMilliseconds: 100);
+                e => _logger.LogError($"Failed to backup apphost.config: {e.Message}"));
 
             _logger.LogInformation($"Restored {_apphostConfigPath}.");
+        }
+
+        private void RetryFileOperation(Action retryBlock, Action<Exception> exceptionBlock)
+        {
+            RetryHelper.RetryOperation(retryBlock,
+                exceptionBlock,
+                retryCount: 3,
+                retryDelayMilliseconds: 100);
         }
 
         private ApplicationPool ConfigureAppPool(string contentRoot)
