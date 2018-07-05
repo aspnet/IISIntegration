@@ -12,7 +12,7 @@ using Xunit.Abstractions;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
-    [RequiresIIS]
+
     public class UpgradeFeatureDetectionTests : IISFunctionalTestBase
     {
         private readonly string _isWebsocketsSupported = Environment.OSVersion.Version >= new Version(6, 2) ? "Enabled" : "Disabled";

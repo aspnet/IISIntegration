@@ -10,7 +10,6 @@ using Xunit;
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     [Collection(IISTestSiteCollection.Name)]
-    [RequiresIIS]
     public class FeatureCollectionTest
     {
         private readonly IISTestSiteFixture _fixture;

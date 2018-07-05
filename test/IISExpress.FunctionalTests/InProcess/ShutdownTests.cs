@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
-    [RequiresIIS]
+
     public class ShutdownTests : IISFunctionalTestBase
     {
 
