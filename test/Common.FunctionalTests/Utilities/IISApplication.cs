@@ -205,7 +205,12 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
                     retryDelayMilliseconds: 100);
             }
 
-            File.Move(_apphostConfigBackupPath, _apphostConfigPath);
+            RetryHelper.RetryOperation(
+                () => File.Move(_apphostConfigBackupPath, _apphostConfigPath),
+                e => _logger.LogError($"Failed to backup apphost.config: {e.Message}"),
+                retryCount: 3,
+                retryDelayMilliseconds: 100);
+
             _logger.LogInformation($"Restored {_apphostConfigPath}.");
         }
 
