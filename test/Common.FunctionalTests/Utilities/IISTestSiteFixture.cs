@@ -30,7 +30,16 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 PublishApplicationBeforeDeployment = true,
             };
 
-            _deployer = ApplicationDeployerFactory.Create(deploymentParameters, logging.CreateLoggerFactory(null, nameof(IISTestSiteFixture)));
+            if (deploymentParameters.ServerType == ServerType.IIS)
+            {
+                // Currently hosting throws if the Servertype = IIS.
+                _deployer = new IISDeployer(deploymentParameters, logging.CreateLoggerFactory(null, nameof(IISTestSiteFixture)));
+            }
+            else if (deploymentParameters.ServerType == ServerType.IISExpress)
+            {
+                _deployer = new IISExpressDeployer(deploymentParameters, logging.CreateLoggerFactory(null, nameof(IISTestSiteFixture)));
+            }
+
             DeploymentResult = _deployer.DeployAsync().Result;
             Client = DeploymentResult.HttpClient;
             BaseUri = DeploymentResult.ApplicationBaseUri;

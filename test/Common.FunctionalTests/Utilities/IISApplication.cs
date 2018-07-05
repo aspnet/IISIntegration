@@ -19,8 +19,8 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
     /// </summary>
     internal class IISApplication
     {
-        private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(2);
-        private static readonly TimeSpan _retryDelay = TimeSpan.FromMilliseconds(100);
+        private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(5);
+        private static readonly TimeSpan _retryDelay = TimeSpan.FromMilliseconds(200);
         private readonly ServerManager _serverManager = new ServerManager();
         private readonly DeploymentParameters _deploymentParameters;
         private readonly ILogger _logger;
