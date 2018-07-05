@@ -200,7 +200,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
             {
                 RetryHelper.RetryOperation(
                     () => File.Delete(_apphostConfigPath),
-                    e => _logger.LogWarning($"Failed to delete directory : {e.Message}"),
+                    e => _logger.LogWarning($"Failed to delete file : {e.Message}"),
                     retryCount: 3,
                     retryDelayMilliseconds: 100);
             }
