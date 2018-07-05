@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
+    [SkipIISTest]
     public class NtlmAuthenticationTests : IISFunctionalTestBase
     {
         public NtlmAuthenticationTests(ITestOutputHelper output) : base(output)

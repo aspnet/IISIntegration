@@ -177,8 +177,17 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
 
         private void AddTemporaryAppHostConfig()
         {
-            File.Move(_apphostConfigPath, _apphostConfigBackupPath);
-            File.Copy("IIS.config", _apphostConfigPath);
+            RetryHelper.RetryOperation(
+                () => File.Move(_apphostConfigPath, _apphostConfigBackupPath),
+                e => _logger.LogError($"Failed to backup apphost.config: {e.Message}"),
+                retryCount: 3,
+                retryDelayMilliseconds: 100);
+
+            RetryHelper.RetryOperation(
+                () => File.Copy("IIS.config", _apphostConfigPath),
+                e => _logger.LogError($"Failed to copy IIS.config to apphost.config: {e.Message}"),
+                retryCount: 3,
+                retryDelayMilliseconds: 100);
 
             _logger.LogInformation($"Backed up {_apphostConfigPath} to {_apphostConfigBackupPath}");
         }
