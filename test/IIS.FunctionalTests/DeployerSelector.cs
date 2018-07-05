@@ -8,6 +8,8 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     public static class DeployerSelector
     {
+        public static ServerType ServerType => ServerType.IIS;
+
         public static ApplicationDeployer GetDeployer(DeploymentParameters deploymentParameters, ILoggerFactory loggerFactory)
         {
             return new IISDeployer(deploymentParameters, loggerFactory);

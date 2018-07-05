@@ -9,6 +9,8 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     public static class DeployerSelector
     {
+        public static ServerType ServerType => ServerType.IISExpress;
+
         public static ApplicationDeployer GetDeployer(DeploymentParameters deploymentParameters, ILoggerFactory loggerFactory)
         {
             return new IISExpressDeployer(deploymentParameters, loggerFactory);
