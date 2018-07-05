@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\..\test\Microsoft.AspNetCore.Server.IIS.FunctionalTests\AppHostConfig\*.config" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\test\Common.FunctionalTests\AppHostConfig\*.config" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(OS)' == 'Windows_NT'">

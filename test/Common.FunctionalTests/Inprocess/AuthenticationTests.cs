@@ -11,6 +11,7 @@ using Xunit;
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     [Collection(IISTestSiteCollection.Name)]
+    [SkipIISTest]
     public class AuthenticationTests
     {
         private readonly IISTestSiteFixture _fixture;

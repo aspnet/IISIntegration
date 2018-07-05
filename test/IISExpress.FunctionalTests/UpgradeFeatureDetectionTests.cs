@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Server.IIS.FunctionalTests.Utilities;
@@ -21,7 +20,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         }
 
         [Fact]
-        public Task UpgradeFeatureDetectionDisabled_InProcess_IISExpress()
+        public Task UpgradeFeatureDetectionDisabled_InProcess()
         {
             // fails due to not modifying the apphost.config file.
             return UpgradeFeatureDetectionDeployer(
@@ -31,7 +30,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         }
 
         [Fact]
-        public Task UpgradeFeatureDetectionEnabled_InProcess_IISExpress()
+        public Task UpgradeFeatureDetectionEnabled_InProcess()
         {
             return UpgradeFeatureDetectionDeployer(
                 disableWebSocket: false,
@@ -40,7 +39,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         }
 
         [Fact]
-        public Task UpgradeFeatureDetectionDisabled_OutOfProcess_IISExpress()
+        public Task UpgradeFeatureDetectionDisabled_OutOfProcess()
         {
             return UpgradeFeatureDetectionDeployer(
                 disableWebSocket: true,
@@ -49,7 +48,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         }
 
         [Fact]
-        public Task UpgradeFeatureDetectionEnabled_OutOfProcess_IISExpress()
+        public Task UpgradeFeatureDetectionEnabled_OutOfProcess()
         {
             return UpgradeFeatureDetectionDeployer(
                 disableWebSocket: false,
