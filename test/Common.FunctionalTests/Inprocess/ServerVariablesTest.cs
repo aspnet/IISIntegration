@@ -9,7 +9,7 @@ using Xunit;
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     [Collection(IISTestSiteCollection.Name)]
-    [SkipIISTestCondition]
+    [RequiresIIS]
     public class ServerVariablesTest
     {
         private readonly IISTestSiteFixture _fixture;

@@ -10,7 +10,7 @@ using Xunit.Abstractions;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
-    [SkipIISTestCondition]
+    [RequiresIIS]
     public class HelloWorldTests : IISFunctionalTestBase
     {
         public HelloWorldTests(ITestOutputHelper output = null) : base(output)

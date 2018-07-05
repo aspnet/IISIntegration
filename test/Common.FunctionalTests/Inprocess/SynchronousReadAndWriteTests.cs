@@ -13,7 +13,7 @@ using Xunit;
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     [Collection(IISTestSiteCollection.Name)]
-    [SkipIISTestCondition]
+    [RequiresIIS]
     public class SynchronousReadAndWriteTests
     {
         private readonly IISTestSiteFixture _fixture;

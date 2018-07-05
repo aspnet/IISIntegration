@@ -13,7 +13,7 @@ using Xunit;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
-   [SkipIISTestCondition]
+   [RequiresIIS]
     public class LoggingTests : IISFunctionalTestBase
     {
         [ConditionalTheory]

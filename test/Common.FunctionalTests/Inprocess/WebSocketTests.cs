@@ -14,7 +14,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     [Collection(IISTestSiteCollection.Name)]
     [OSSkipCondition(OperatingSystems.Windows, WindowsVersions.Win7, SkipReason = "No supported on this platform")]
-    [SkipIISTestCondition]
+    [RequiresIIS]
     public class WebSocketsTests
     {
         private readonly string _webSocketUri;

@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Testing.xunit;
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Method)]
-    public sealed class SkipIISTestConditionAttribute : Attribute, ITestCondition
+    public sealed class RequiresIISAttribute : Attribute, ITestCondition
     {
         public bool IsMet => IISExpressAncmSchema.SupportsInProcessHosting;
 

@@ -15,7 +15,7 @@ using Xunit.Abstractions;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
-    [SkipIISTestCondition]
+    [RequiresIIS]
     public class StartupTests : IISFunctionalTestBase
     {
         private readonly string _dotnetLocation = DotNetMuxer.MuxerPathOrDefault();

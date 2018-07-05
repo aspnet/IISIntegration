@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Testing.xunit;
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Method)]
-    public sealed class SkipIISTestConditionAttribute : Attribute, ITestCondition
+    public sealed class RequiresIISAttribute : Attribute, ITestCondition
     {
         private static readonly bool _isMet;
         public static readonly string _skipReason;
@@ -20,7 +20,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         public bool IsMet => _isMet;
         public string SkipReason => _skipReason;
 
-        static SkipIISTestConditionAttribute()
+        static RequiresIISAttribute()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
