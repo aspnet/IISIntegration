@@ -13,7 +13,6 @@ using Xunit;
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     [Collection(IISTestSiteCollection.Name)]
-
     public class ResponseHeaders
     {
         private readonly IISTestSiteFixture _fixture;
