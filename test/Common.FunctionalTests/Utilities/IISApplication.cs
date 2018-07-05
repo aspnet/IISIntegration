@@ -25,6 +25,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
         private readonly DeploymentParameters _deploymentParameters;
         private readonly ILogger _logger;
         private readonly string _ancmVersion;
+        private readonly string _ancmDllName;
         private readonly object _syncLock = new object();
         private readonly string _apphostConfigBackupPath;
         private static readonly string _apphostConfigPath = Path.Combine(
@@ -38,6 +39,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
             _deploymentParameters = deploymentParameters;
             _logger = logger;
             _ancmVersion = deploymentParameters.AncmVersion.ToString();
+            _ancmDllName = deploymentParameters.AncmVersion == AncmVersion.AspNetCoreModuleV2 ? "aspnetcorev2.dll" : "aspnetcore.dll";
             WebSiteName = CreateTestSiteName();
             AppPoolName = $"{WebSiteName}Pool";
             _apphostConfigBackupPath = Path.Combine(
@@ -315,11 +317,11 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
 
         private string GetAncmLocation(string dllRoot)
         {
-            var arch = _deploymentParameters.RuntimeArchitecture == RuntimeArchitecture.x64 ? @"x64\aspnetcorev2.dll" : @"x86\aspnetcorev2.dll";
+            var arch = _deploymentParameters.RuntimeArchitecture == RuntimeArchitecture.x64 ? $@"x64\{_ancmDllName}" : $@"x86\{_ancmDllName}";
             var ancmFile = Path.Combine(dllRoot, arch);
             if (!File.Exists(Environment.ExpandEnvironmentVariables(ancmFile)))
             {
-                ancmFile = Path.Combine(dllRoot, "aspnetcorev2.dll");
+                ancmFile = Path.Combine(dllRoot, _ancmDllName);
                 if (!File.Exists(Environment.ExpandEnvironmentVariables(ancmFile)))
                 {
                     throw new FileNotFoundException("AspNetCoreModule could not be found.", ancmFile);

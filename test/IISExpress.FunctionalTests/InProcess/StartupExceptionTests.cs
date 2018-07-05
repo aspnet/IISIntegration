@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
+    [SkipIISTestCondition]
     public class StartupExceptionTests : IISFunctionalTestBase
     {
         // TODO FileNotFound here.

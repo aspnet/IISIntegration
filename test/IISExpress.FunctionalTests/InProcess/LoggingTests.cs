@@ -7,14 +7,16 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Server.IIS.FunctionalTests.Utilities;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
+using Microsoft.AspNetCore.Testing.xunit;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
+   [SkipIISTestCondition]
     public class LoggingTests : IISFunctionalTestBase
     {
-        [Theory]
+        [ConditionalTheory]
         [InlineData("CheckErrLogFile")]
         [InlineData("CheckLogFile")]
         public async Task CheckStdoutLogging(string path)
@@ -66,7 +68,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             }
         }
 
-        [Fact]
+        [ConditionalFact]
         public async Task StartupMessagesAreLoggedIntoDebugLogFile()
         {
             var tempFile = Path.GetTempFileName();

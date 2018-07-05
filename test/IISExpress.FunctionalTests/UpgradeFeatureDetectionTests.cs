@@ -6,11 +6,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Server.IIS.FunctionalTests.Utilities;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
+using Microsoft.AspNetCore.Testing.xunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
+    [SkipIISTestCondition]
     public class UpgradeFeatureDetectionTests : IISFunctionalTestBase
     {
         private readonly string _isWebsocketsSupported = Environment.OSVersion.Version >= new Version(6, 2) ? "Enabled" : "Disabled";
@@ -19,7 +21,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         {
         }
 
-        [Fact]
+        [ConditionalFact]
         public Task UpgradeFeatureDetectionDisabled_InProcess()
         {
             // fails due to not modifying the apphost.config file.
@@ -29,7 +31,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 "Disabled", HostingModel.InProcess);
         }
 
-        [Fact]
+        [ConditionalFact]
         public Task UpgradeFeatureDetectionEnabled_InProcess()
         {
             return UpgradeFeatureDetectionDeployer(
@@ -38,7 +40,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 _isWebsocketsSupported, HostingModel.InProcess);
         }
 
-        [Fact]
+        [ConditionalFact]
         public Task UpgradeFeatureDetectionDisabled_OutOfProcess()
         {
             return UpgradeFeatureDetectionDeployer(
@@ -47,7 +49,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 "Disabled", HostingModel.OutOfProcess);
         }
 
-        [Fact]
+        [ConditionalFact]
         public Task UpgradeFeatureDetectionEnabled_OutOfProcess()
         {
             return UpgradeFeatureDetectionDeployer(

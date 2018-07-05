@@ -3,14 +3,13 @@
 
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Server.IIS.FunctionalTests.Utilities;
-using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.AspNetCore.Testing.xunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
-    [SkipIISTest]
+    [SkipIISTestCondition]
     public class ShutdownTests : IISFunctionalTestBase
     {
 

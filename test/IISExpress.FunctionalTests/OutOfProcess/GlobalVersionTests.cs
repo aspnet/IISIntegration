@@ -13,6 +13,7 @@ using Xunit.Abstractions;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
+    [SkipIISTestCondition]
     public class GlobalVersionTests : IISFunctionalTestBase
     {
         private const string _aspNetCoreDll = "aspnetcorev2_outofprocess.dll";

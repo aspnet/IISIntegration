@@ -10,7 +10,7 @@ using Xunit;
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     [Collection(IISTestSiteCollection.Name)]
-    [SkipIISTest]
+    [SkipIISTestCondition]
     public class FeatureCollectionTest
     {
         private readonly IISTestSiteFixture _fixture;
