@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\Microsoft.AspNetCore.Server.IIS.FunctionalTests\AppHostConfig\*.config" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\Common.FunctionalTests\AppHostConfig\*.config" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,11 +43,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="AppHostConfig\TestServer.config" />
+    <None Remove="AppHostConfig\HostableWebCore.config" />
   </ItemGroup>
   
   <ItemGroup>
-    <Content Update="AppHostConfig\TestServer.config">
+    <Content Update="AppHostConfig\HostableWebCore.config">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>

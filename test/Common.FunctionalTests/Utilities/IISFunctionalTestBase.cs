@@ -18,7 +18,7 @@ namespace Microsoft.AspNetCore.Server.IIS.FunctionalTests.Utilities
 
         protected string GetServerConfig(Action<XElement> transform)
         {
-            var doc = XDocument.Load("Http.config");
+            var doc = XDocument.Load("IISExpress.config");
             transform?.Invoke(doc.Root);
             return doc.ToString();
         }

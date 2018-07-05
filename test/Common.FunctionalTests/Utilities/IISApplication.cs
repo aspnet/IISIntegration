@@ -177,7 +177,9 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
 
         private void AddTemporaryAppHostConfig()
         {
-            File.Copy(_apphostConfigPath, _apphostConfigBackupPath);
+            File.Move(_apphostConfigPath, _apphostConfigBackupPath);
+            File.Copy("IIS.config", _apphostConfigPath);
+
             _logger.LogInformation($"Backed up {_apphostConfigPath} to {_apphostConfigBackupPath}");
         }
 

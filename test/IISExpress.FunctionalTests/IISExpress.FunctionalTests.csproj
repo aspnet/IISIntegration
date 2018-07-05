@@ -43,11 +43,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="AppHostConfig\TestServer.config" />
+    <None Remove="AppHostConfig\HostableWebCore.config" />
   </ItemGroup>
   
   <ItemGroup>
-    <Content Update="AppHostConfig\TestServer.config">
+    <Content Update="AppHostConfig\HostableWebCore.config">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>

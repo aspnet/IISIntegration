@@ -27,7 +27,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
         private static readonly SemaphoreSlim WebCoreLock = new SemaphoreSlim(1, 1);
 
-        // Currently this is hardcoded in TestServer.config
+        // Currently this is hardcoded in HostableWebCore.config
         private static readonly int BasePort = 50691;
         private static readonly Uri BaseUri = new Uri("http://localhost:" + BasePort);
 
@@ -74,7 +74,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             LoadLibrary(AspNetCoreModuleDll);
 
             set_main_handler(Main);
-            var startResult = WebCoreActivate(Path.GetFullPath("TestServer.config"), null, "Instance");
+            var startResult = WebCoreActivate(Path.GetFullPath("HostableWebCore.config"), null, "Instance");
             if (startResult != 0)
             {
                 throw new InvalidOperationException($"Error while running WebCoreActivate: {startResult}");

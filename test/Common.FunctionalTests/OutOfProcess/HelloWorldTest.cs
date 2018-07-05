@@ -53,7 +53,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             response = await deploymentResult.HttpClient.GetAsync("/Auth");
             responseText = await response.Content.ReadAsStringAsync();
 
-            // We adapted the Http.config file to be used for inprocess too. We specify WindowsAuth is enabled
+            // We adapted the IISExpress.config file to be used for inprocess too. We specify WindowsAuth is enabled
             // We now expect that windows auth is enabled rather than disabled.
             Assert.True("backcompat;Windows".Equals(responseText) || "latest;Windows".Equals(responseText), "Auth");
         }
