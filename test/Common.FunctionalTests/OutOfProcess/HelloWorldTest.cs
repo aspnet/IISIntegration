@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Server.IIS.FunctionalTests.Utilities;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
@@ -30,6 +31,9 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             {
                 ApplicationPath = Helpers.GetOutOfProcessTestSitesPath(),
             };
+            // The default in hosting sets windows auth to true.
+            // Set it to the IISExpress.config file
+            deploymentParameters.ServerConfigTemplateContent = File.ReadAllText("IISExpress.config");
 
             var deploymentResult = await DeployAsync(deploymentParameters);
 
@@ -53,8 +57,6 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             response = await deploymentResult.HttpClient.GetAsync("/Auth");
             responseText = await response.Content.ReadAsStringAsync();
 
-            // We adapted the IISExpress.config file to be used for inprocess too. We specify WindowsAuth is enabled
-            // We now expect that windows auth is enabled rather than disabled.
             Assert.True("backcompat;Windows".Equals(responseText) || "latest;null".Equals(responseText), "Auth");
         }
     }

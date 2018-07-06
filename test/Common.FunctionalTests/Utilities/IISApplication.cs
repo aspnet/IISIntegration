@@ -211,7 +211,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
         {
             RetryHelper.RetryOperation(retryBlock,
                 exceptionBlock,
-                retryCount: 3,
+                retryCount: 10,
                 retryDelayMilliseconds: 100);
         }
 

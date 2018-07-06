@@ -14,6 +14,10 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     public class NtlmAuthenticationTests : IISFunctionalTestBase
     {
+        // Test only runs on IISExpress today as our CI machines do not have
+        // Windows auth installed globally.
+        // TODO either enable windows auth on our CI or use containers to test this
+        // behavior
         public NtlmAuthenticationTests(ITestOutputHelper output) : base(output)
         {
         }
