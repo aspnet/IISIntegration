@@ -179,13 +179,15 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
         private void AddTemporaryAppHostConfig()
         {
             RetryFileOperation(() => File.Move(_apphostConfigPath, _apphostConfigBackupPath),
-                e => _logger.LogError($"Failed to backup apphost.config: {e.Message}"));
+                e => _logger.LogWarning($"Failed to backup apphost.config: {e.Message}"));
+
+            _logger.LogInformation($"Backed up {_apphostConfigPath} to {_apphostConfigBackupPath}");
 
             RetryFileOperation(
                 () => File.Copy("IIS.config", _apphostConfigPath),
-                e => _logger.LogError($"Failed to copy IIS.config to apphost.config: {e.Message}"));
+                e => _logger.LogWarning($"Failed to copy IIS.config to apphost.config: {e.Message}"));
 
-            _logger.LogInformation($"Backed up {_apphostConfigPath} to {_apphostConfigBackupPath}");
+            _logger.LogInformation($"Copied contents of IIS.config to {_apphostConfigPath}");
         }
 
         private void RestoreAppHostConfig()
@@ -234,6 +236,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
                 {
                     AddEnvironmentVariableToAppPool(envCollection, tuple.Key, tuple.Value);
                 }
+                AddEnvironmentVariableToAppPool(envCollection, "ASPNETCORE_MODULE_DEBUG_FILE", $"{WebSiteName}.txt");
             }
             catch (COMException comException)
             {
