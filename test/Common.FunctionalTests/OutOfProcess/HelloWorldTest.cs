@@ -55,7 +55,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
             // We adapted the IISExpress.config file to be used for inprocess too. We specify WindowsAuth is enabled
             // We now expect that windows auth is enabled rather than disabled.
-            Assert.True("backcompat;Windows".Equals(responseText) || "latest;Windows".Equals(responseText), "Auth");
+            Assert.True("backcompat;Windows".Equals(responseText) || "latest;null".Equals(responseText), "Auth");
         }
     }
 }

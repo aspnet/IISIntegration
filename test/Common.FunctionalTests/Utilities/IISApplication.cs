@@ -57,12 +57,13 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
             // Backup currently deployed apphost.config file
             using (_logger.BeginScope("StartIIS"))
             {
-                AddTemporaryAppHostConfig();
                 var port = uri.Port;
                 if (port == 0)
                 {
                     throw new NotSupportedException("Cannot set port 0 for IIS.");
                 }
+                AddTemporaryAppHostConfig();
+
 
                 ConfigureAppPool(contentRoot);
 
@@ -216,14 +217,22 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
 
         private ApplicationPool ConfigureAppPool(string contentRoot)
         {
-            var pool = _serverManager.ApplicationPools.Add(AppPoolName);
-            pool.ProcessModel.IdentityType = ProcessModelIdentityType.LocalSystem;
-            pool.ManagedRuntimeVersion = string.Empty;
+            try
+            {
+                var pool = _serverManager.ApplicationPools.Add(AppPoolName);
+                pool.ProcessModel.IdentityType = ProcessModelIdentityType.LocalSystem;
+                pool.ManagedRuntimeVersion = string.Empty;
 
-            AddEnvironmentVariables(contentRoot, pool);
+                AddEnvironmentVariables(contentRoot, pool);
 
-            _logger.LogInformation($"Configured AppPool {AppPoolName}");
-            return pool;
+                _logger.LogInformation($"Configured AppPool {AppPoolName}");
+                return pool;
+            }
+            catch (COMException comException)
+            {
+                _logger.LogError(File.ReadAllText(_apphostConfigPath));
+                throw comException;
+            }
         }
 
         private void AddEnvironmentVariables(string contentRoot, ApplicationPool pool)
