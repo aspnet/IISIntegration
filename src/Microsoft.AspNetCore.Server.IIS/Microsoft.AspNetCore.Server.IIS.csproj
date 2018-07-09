@@ -12,15 +12,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.HttpSys.Sources" PrivateAssets="All" Version="$(MicrosoftAspNetCoreHttpSysSourcesPackageVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.HttpSys.Sources" PrivateAssets="All" Version="$(MicrosoftAspNetCoreHttpSysSources21PackageVersion)" />
     <PackageReference Include="Microsoft.Extensions.Buffers.Sources" Version="$(MicrosoftExtensionsBuffersSourcesPackageVersion)" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Extensions.Buffers.MemoryPool.Sources" Version="$(MicrosoftExtensionsBuffersMemoryPoolSourcesPackageVersion)" PrivateAssets="All" />
 
-    <PackageReference Include="System.IO.Pipelines" Version="$(SystemIOPipelinesPackageVersion)" />
-    <PackageReference Include="System.Security.Principal.Windows" Version="$(SystemSecurityPrincipalWindowsPackageVersion)" />
+    <PackageReference Include="System.IO.Pipelines" Version="$(SystemIOPipelines21PackageVersion)" />
+    <PackageReference Include="System.Security.Principal.Windows" Version="$(SystemSecurityPrincipalWindows21PackageVersion)" />
 
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.Core" Version="$(MicrosoftAspNetCoreAuthenticationCorePackageVersion)" />
-    <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="$(MicrosoftAspNetCoreHostingAbstractionsPackageVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Core" Version="$(MicrosoftAspNetCoreAuthenticationCore21PackageVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="$(MicrosoftAspNetCoreHostingAbstractions21PackageVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="$(PackNativeAssets) == 'true'">
