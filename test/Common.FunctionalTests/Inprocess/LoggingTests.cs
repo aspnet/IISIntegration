@@ -100,31 +100,45 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         }
 
         [ConditionalTheory]
-        [InlineData("CheckErrLogFile", true)]
-        [InlineData("CheckLogFile", true)]
-        [InlineData("CheckErrLogFile", false)]
-        [InlineData("CheckLogFile", false)]
-        public async Task CheckStdoutLoggingToPipeWithFirstWrite(string path, bool firstWrite)
+        [InlineData("CheckErrLogFile")]
+        [InlineData("CheckLogFile")]
+        public async Task CheckStdoutLoggingToPipe_DoesNotCrashProcess(string path)
+        {
+            var deploymentParameters = Helpers.GetBaseDeploymentParameters(publish: true);
+            var deploymentResult = await DeployAsync(deploymentParameters);
+
+            await Helpers.AssertStarts(deploymentResult, path);
+
+            StopServer();
+
+            if (deploymentParameters.ServerType == ServerType.IISExpress)
+            {
+                Assert.Contains(TestSink.Writes, context => context.Message.Contains("TEST MESSAGE"));
+            }
+        }
+
+        [ConditionalTheory]
+        [InlineData("CheckErrLogFile")]
+        [InlineData("CheckLogFile")]
+        public async Task CheckStdoutLoggingToPipeWithFirstWrite(string path)
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters(publish: true);
 
             var deploymentResult = await DeployAsync(deploymentParameters);
             var firstWriteString = path + path;
 
-            if (firstWrite)
-            {
-                Helpers.ModifyEnvironmentVariableCollectionInWebConfig(deploymentResult, "ASPNETCORE_INPROCESS_INITIAL_WRITE", firstWriteString);
-            }
+            Helpers.ModifyEnvironmentVariableCollectionInWebConfig(deploymentResult, "ASPNETCORE_INPROCESS_INITIAL_WRITE", firstWriteString);
 
             await Helpers.AssertStarts(deploymentResult, path);
 
             StopServer();
 
-            if (firstWrite)
+            if (deploymentParameters.ServerType == ServerType.IISExpress)
             {
+                // We can't read stdout logs from IIS as they aren't redirected.
                 Assert.Contains(TestSink.Writes, context => context.Message.Contains(firstWriteString));
+                Assert.Contains(TestSink.Writes, context => context.Message.Contains("TEST MESSAGE"));
             }
-            Assert.Contains(TestSink.Writes, context => context.Message.Contains("TEST MESSAGE"));
         }
 
         [ConditionalFact]
