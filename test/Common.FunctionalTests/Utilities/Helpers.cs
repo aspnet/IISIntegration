@@ -2,11 +2,15 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.AspNetCore.Testing;
+using Xunit;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
@@ -52,6 +56,62 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             config.Save(webConfigFile);
         }
 
+        public static void AddDebugLogToWebConfig(string contentRoot, string filename)
+        {
+            var path = Path.Combine(contentRoot, "web.config");
+            var webconfig = XDocument.Load(path);
+            var xElement = webconfig.Descendants("aspNetCore").Single();
+
+            var element = xElement.Descendants("handlerSettings").SingleOrDefault();
+            if (element == null)
+            {
+                element = new XElement("handlerSettings");
+                xElement.Add(element);
+            }
+
+            CreateOrSetElement(element, "debugLevel", "4", "handlerSetting");
+
+            CreateOrSetElement(element, "debugFile", Path.Combine(contentRoot, filename), "handlerSetting");
+
+            webconfig.Save(path);
+        }
+
+        public static void AddEnvironmentVariablesToWebConfig(string contentRoot, IDictionary<string, string> environmentVariables)
+        {
+            var path = Path.Combine(contentRoot, "web.config");
+            var webconfig = XDocument.Load(path);
+            var xElement = webconfig.Descendants("aspNetCore").Single();
+
+            var element = xElement.Descendants("environmentVariables").SingleOrDefault();
+            if (element == null)
+            {
+                element = new XElement("environmentVariables");
+                xElement.Add(element);
+            }
+
+            foreach (var envVar in environmentVariables)
+            {
+                CreateOrSetElement(element, envVar.Key, envVar.Value, "environmentVariable");
+            }
+
+            webconfig.Save(path);
+        }
+
+        public static void CreateOrSetElement(XElement rootElement, string name, string value, string elementName)
+        {
+            if (rootElement.Descendants()
+                .Attributes()
+                .Where(attribute => attribute.Value == name)
+                .Any())
+            {
+                return;
+            }
+            var element = new XElement(elementName);
+            element.SetAttributeValue("name", name);
+            element.SetAttributeValue("value", value);
+            rootElement.Add(element);
+        }
+
         // Defaults to inprocess specific deployment parameters
         public static DeploymentParameters GetBaseDeploymentParameters(string site = null, HostingModel hostingModel = HostingModel.InProcess, bool publish = false)
         {
@@ -60,7 +120,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 site = hostingModel == HostingModel.InProcess ? "InProcessWebSite" : "OutOfProcessWebSite";
             }
 
-            return new DeploymentParameters(Helpers.GetTestWebSitePath(site), DeployerSelector.ServerType, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64)
+            return new DeploymentParameters(GetTestWebSitePath(site), DeployerSelector.ServerType, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64)
             {
                 TargetFramework = Tfm.NetCoreApp21,
                 ApplicationType = ApplicationType.Portable,
@@ -72,5 +132,14 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
         private static string GetWebConfigFile(IISDeploymentResult deploymentResult)
             => Path.Combine(deploymentResult.DeploymentResult.ContentRoot, "web.config");
+
+        public static async Task AssertStarts(IISDeploymentResult deploymentResult, string path = "/HelloWorld")
+        {
+            var response = await deploymentResult.RetryingHttpClient.GetAsync(path);
+
+            var responseText = await response.Content.ReadAsStringAsync();
+
+            Assert.Equal("Hello World", responseText);
+        }
     }
 }

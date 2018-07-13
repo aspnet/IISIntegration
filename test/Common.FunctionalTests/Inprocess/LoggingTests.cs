@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Server.IIS.FunctionalTests.Utilities;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
+using Microsoft.AspNetCore.Server.IntegrationTesting.IIS;
 using Microsoft.AspNetCore.Testing.xunit;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -68,6 +69,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         }
 
         [ConditionalFact]
+        [RequiresIIS(IISCapability.PoolEnvironmentVariables)]
         public async Task StartupMessagesAreLoggedIntoDebugLogFile()
         {
             var tempFile = Path.GetTempFileName();
@@ -77,6 +79,9 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 deploymentParameters.EnvironmentVariables["ASPNETCORE_MODULE_DEBUG_FILE"] = tempFile;
 
                 var deploymentResult = await DeployAsync(deploymentParameters);
+
+                Helpers.AddDebugLogToWebConfig(deploymentResult.DeploymentResult.ContentRoot, tempFile);
+
                 var response = await deploymentResult.RetryingHttpClient.GetAsync("/");
 
                 StopServer();
@@ -91,5 +96,36 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             }
         }
 
+        [ConditionalFact]
+        [RequiresIIS(IISCapability.PoolEnvironmentVariables)]
+        public async Task StartupMessagesLogFileSwitchedWhenLogFilePresentInWebConfig()
+        {
+            var firstTempFile = Path.GetTempFileName();
+            var secondTempFile = Path.GetTempFileName();
+
+            try
+            {
+                var deploymentParameters = Helpers.GetBaseDeploymentParameters(publish: true);
+                deploymentParameters.EnvironmentVariables["ASPNETCORE_MODULE_DEBUG_FILE"] = firstTempFile;
+
+                var deploymentResult = await DeployAsync(deploymentParameters);
+                WebConfigHelpers.AddDebugLogToWebConfig(deploymentParameters.PublishedApplicationRootPath, secondTempFile);
+
+                var response = await deploymentResult.RetryingHttpClient.GetAsync("/");
+
+                StopServer();
+                var logContents = File.ReadAllText(firstTempFile);
+                Assert.Contains("Switching debug log files to", logContents);
+
+                var secondLogContents = File.ReadAllText(secondTempFile);
+                Assert.Contains("[aspnetcorev2.dll]", logContents);
+                Assert.Contains("[aspnetcorev2_inprocess.dll]", logContents);
+            }
+            finally
+            {
+                File.Delete(firstTempFile);
+                File.Delete(secondTempFile);
+            }
+        }
     }
 }
