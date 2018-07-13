@@ -25,7 +25,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 RuntimeFlavor.CoreClr,
                 RuntimeArchitecture.x64)
             {
-                TargetFramework = Tfm.NetCoreApp22,
+                TargetFramework = Tfm.NetCoreApp21,
                 AncmVersion = AncmVersion.AspNetCoreModuleV2,
                 HostingModel = HostingModel.InProcess,
                 PublishApplicationBeforeDeployment = true,
