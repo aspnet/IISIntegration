@@ -23,15 +23,14 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters();
             deploymentParameters.PublishApplicationBeforeDeployment = true;
+            deploymentParameters.ModifyAspNetCoreSectionInWebConfig("stdoutLogEnabled", "true");
+            deploymentParameters.ModifyAspNetCoreSectionInWebConfig("stdoutLogFile", Path.Combine(pathToLogs, "std"));
 
             var deploymentResult = await DeployAsync(deploymentParameters);
             var pathToLogs = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
             try
             {
-                Helpers.ModifyAspNetCoreSectionInWebConfig(deploymentResult, "stdoutLogEnabled", "true");
-                Helpers.ModifyAspNetCoreSectionInWebConfig(deploymentResult, "stdoutLogFile", Path.Combine(pathToLogs, "std"));
-
                 await Helpers.AssertStarts(deploymentResult, path);
 
                 StopServer();
@@ -80,10 +79,9 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             {
                 var deploymentParameters = Helpers.GetBaseDeploymentParameters(publish: true);
                 deploymentParameters.EnvironmentVariables["ASPNETCORE_MODULE_DEBUG_FILE"] = tempFile;
+                deploymentParameters.AddDebugLogToWebConfig(tempFile);
 
                 var deploymentResult = await DeployAsync(deploymentParameters);
-
-                Helpers.AddDebugLogToWebConfig(deploymentResult.DeploymentResult.ContentRoot, tempFile);
 
                 var response = await deploymentResult.RetryingHttpClient.GetAsync("/");
 
@@ -152,9 +150,9 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             {
                 var deploymentParameters = Helpers.GetBaseDeploymentParameters(publish: true);
                 deploymentParameters.EnvironmentVariables["ASPNETCORE_MODULE_DEBUG_FILE"] = firstTempFile;
+                deploymentParameters.AddDebugLogToWebConfig(secondTempFile);
 
                 var deploymentResult = await DeployAsync(deploymentParameters);
-                WebConfigHelpers.AddDebugLogToWebConfig(deploymentParameters.PublishedApplicationRootPath, secondTempFile);
 
                 var response = await deploymentResult.RetryingHttpClient.GetAsync("/");
 

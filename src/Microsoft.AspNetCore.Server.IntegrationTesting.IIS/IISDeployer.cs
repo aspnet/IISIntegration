@@ -22,7 +22,16 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         public IISDeployer(DeploymentParameters deploymentParameters, ILoggerFactory loggerFactory)
             : base(deploymentParameters, loggerFactory)
         {
+            IISDeploymentParameters = (IISDeploymentParameters)deploymentParameters;
         }
+
+        public IISDeployer(IISDeploymentParameters deploymentParameters, ILoggerFactory loggerFactory)
+            : base(deploymentParameters, loggerFactory)
+        {
+            IISDeploymentParameters = deploymentParameters;
+        }
+
+        public IISDeploymentParameters IISDeploymentParameters { get; }
 
         public override void Dispose()
         {
@@ -48,24 +57,25 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                 StartTimer();
 
                 var contentRoot = string.Empty;
-                if (string.IsNullOrEmpty(DeploymentParameters.ServerConfigTemplateContent))
+                if (string.IsNullOrEmpty(IISDeploymentParameters.ServerConfigTemplateContent))
                 {
-                    DeploymentParameters.ServerConfigTemplateContent = File.ReadAllText("IIS.config");
+                    IISDeploymentParameters.ServerConfigTemplateContent = File.ReadAllText("IIS.config");
                 }
 
-                _application = new IISApplication(DeploymentParameters, Logger);
+                _application = new IISApplication(IISDeploymentParameters, Logger);
 
                 // For now, only support using published output
-                DeploymentParameters.PublishApplicationBeforeDeployment = true;
-                if (DeploymentParameters.PublishApplicationBeforeDeployment)
+                IISDeploymentParameters.PublishApplicationBeforeDeployment = true;
+                IISDeploymentParameters.AddDebugLogToWebConfig(Path.Combine(contentRoot, $"{_application.WebSiteName}.txt"));
+
+                if (IISDeploymentParameters.PublishApplicationBeforeDeployment)
                 {
                     DotnetPublish();
-                    contentRoot = DeploymentParameters.PublishedApplicationRootPath;
+                    contentRoot = IISDeploymentParameters.PublishedApplicationRootPath;
+                    IISDeploymentParameters.RunWebConfigActions();
                 }
 
-                WebConfigHelpers.AddDebugLogToWebConfig(contentRoot, Path.Combine(contentRoot, $"{_application.WebSiteName}.txt"));
-
-                var uri = TestUriHelper.BuildTestUri(ServerType.IIS, DeploymentParameters.ApplicationBaseUriHint);
+                var uri = TestUriHelper.BuildTestUri(ServerType.IIS, IISDeploymentParameters.ApplicationBaseUriHint);
                 // To prevent modifying the IIS setup concurrently.
                 await _application.StartIIS(uri, contentRoot);
 
@@ -74,7 +84,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
 
                 return new DeploymentResult(
                     LoggerFactory,
-                    DeploymentParameters,
+                    IISDeploymentParameters,
                     applicationBaseUri: uri.ToString(),
                     contentRoot: contentRoot,
                     hostShutdownToken: _hostShutdownToken.Token
@@ -86,7 +96,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         {
             var arr = new string[0];
 
-            RetryHelper.RetryOperation(() => arr = File.ReadAllLines(Path.Combine(DeploymentParameters.PublishedApplicationRootPath, file)),
+            RetryHelper.RetryOperation(() => arr = File.ReadAllLines(Path.Combine(IISDeploymentParameters.PublishedApplicationRootPath, file)),
                             (ex) => Logger.LogWarning("Could not read log file"),
                             5,
                             200);

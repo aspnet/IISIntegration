@@ -33,7 +33,16 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         public IISExpressDeployer(DeploymentParameters deploymentParameters, ILoggerFactory loggerFactory)
             : base(deploymentParameters, loggerFactory)
         {
+            IISDeploymentParameters = (IISDeploymentParameters)deploymentParameters;
         }
+
+        public IISExpressDeployer(IISDeploymentParameters deploymentParameters, ILoggerFactory loggerFactory)
+            : base(deploymentParameters, loggerFactory)
+        {
+            IISDeploymentParameters = deploymentParameters;
+        }
+
+        public IISDeploymentParameters IISDeploymentParameters { get; }
 
         public override async Task<DeploymentResult> DeployAsync()
         {
@@ -277,6 +286,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                 ModifyHandlerSectionInWebConfig(key: "modules", value: DeploymentParameters.AncmVersion.ToString());
                 ModifyDotNetExePathInWebConfig();
                 serverConfig = RemoveRedundantElements(serverConfig);
+                IISDeploymentParameters.RunWebConfigActions();
             }
             else
             {
@@ -284,6 +294,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                 serverConfig = ReplacePlaceholder(serverConfig, "[HostingModel]", DeploymentParameters.HostingModel.ToString());
                 serverConfig = ReplacePlaceholder(serverConfig, "[AspNetCoreModule]", DeploymentParameters.AncmVersion.ToString());
             }
+            serverConfig = IISDeploymentParameters.RunServerConfigActions(serverConfig);
 
             DeploymentParameters.ServerConfigLocation = Path.GetTempFileName();
             Logger.LogDebug("Saving Config to {configPath}", DeploymentParameters.ServerConfigLocation);

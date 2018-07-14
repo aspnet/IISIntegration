@@ -32,8 +32,9 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 ["ASPNETCORE_INPROCESS_RANDOM_VALUE"] = randomNumberString
             };
 
+            deploymentParameters.AddEnvironmentVariablesToWebConfig(environmentVariablesInWebConfig);
+
             var deploymentResult = await DeployAsync(deploymentParameters);
-            Helpers.AddEnvironmentVariablesToWebConfig(deploymentResult.DeploymentResult.ContentRoot, environmentVariablesInWebConfig);
 
             var response = await deploymentResult.RetryingHttpClient.GetAsync(path);
 
@@ -57,10 +58,9 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             {
                 ["ASPNETCORE_INPROCESS_STARTUP_VALUE"] = path
             };
+            deploymentParameters.AddEnvironmentVariablesToWebConfig(environmentVariablesInWebConfig);
 
             var deploymentResult = await DeployAsync(deploymentParameters);
-
-            Helpers.AddEnvironmentVariablesToWebConfig(deploymentResult.DeploymentResult.ContentRoot, environmentVariablesInWebConfig);
 
             var response = await deploymentResult.RetryingHttpClient.GetAsync(path);
 

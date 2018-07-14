@@ -16,36 +16,5 @@ namespace Microsoft.AspNetCore.Server.IIS.FunctionalTests.Utilities
         public IISFunctionalTestBase(ITestOutputHelper output = null) : base(output)
         {
         }
-
-        protected string GetServerConfig(Action<XElement> transform)
-        {
-            var doc = XDocument.Load(DeployerSelector.ServerType == ServerType.IIS ? "IIS.config" : "IISExpress.config");
-            transform?.Invoke(doc.Root);
-            return doc.ToString();
-        }
-
-        protected string GetHttpsServerConfig()
-        {
-            return GetServerConfig(
-                element => {
-                    element.Descendants("binding")
-                        .Single()
-                        .SetAttributeValue("protocol", "https");
-
-                    element.Descendants("access")
-                        .Single()
-                        .SetAttributeValue("sslFlags", "Ssl, SslNegotiateCert");
-                });
-        }
-
-        protected string GetWindowsAuthConfig()
-        {
-            return GetServerConfig(
-                element => {
-                    element.Descendants("windowsAuthentication")
-                        .Single()
-                        .SetAttributeValue("enabled", "true");
-                });
-        }
     }
 }

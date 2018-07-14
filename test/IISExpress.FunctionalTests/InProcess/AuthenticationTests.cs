@@ -17,7 +17,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         public async Task Authentication_InProcess()
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters(publish: true);
-            deploymentParameters.ServerConfigTemplateContent = GetWindowsAuthConfig();
+            deploymentParameters.AddWindowsAuthToServerConfig();
 
             var deploymentResult = await DeployAsync(deploymentParameters);
 
