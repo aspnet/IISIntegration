@@ -62,10 +62,11 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters(publish: true);
 
+            deploymentParameters.ModifyAspNetCoreSectionInWebConfig("stdoutLogEnabled", "true");
+            deploymentParameters.ModifyAspNetCoreSectionInWebConfig("stdoutLogFile", Path.Combine("Q:", "std"));
+
             var deploymentResult = await DeployAsync(deploymentParameters);
 
-            Helpers.ModifyAspNetCoreSectionInWebConfig(deploymentResult, "stdoutLogEnabled", "true");
-            Helpers.ModifyAspNetCoreSectionInWebConfig(deploymentResult, "stdoutLogFile", Path.Combine("Q:", "std"));
 
             await Helpers.AssertStarts(deploymentResult, "HelloWorld");
         }

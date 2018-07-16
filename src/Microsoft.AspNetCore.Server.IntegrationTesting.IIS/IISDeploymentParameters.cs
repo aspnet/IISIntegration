@@ -120,7 +120,6 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
 
                 CreateOrSetElement(element, "debugLevel", "4", "handlerSetting");
 
-                // TODO check if this property is set before or after the lambda.
                 CreateOrSetElement(element, "debugFile", Path.Combine(PublishedApplicationRootPath, filename), "handlerSetting");
             });
         }
