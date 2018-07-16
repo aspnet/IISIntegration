@@ -124,6 +124,21 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
             });
         }
 
+        public void AddEnvironmentVariablesToWebConfig(string key, string value)
+        {
+            _webConfigActionList.Add(xElement =>
+            {
+                var element = xElement.Descendants("environmentVariables").SingleOrDefault();
+                if (element == null)
+                {
+                    element = new XElement("environmentVariables");
+                    xElement.Add(element);
+                }
+
+                CreateOrSetElement(element, key, value, "environmentVariable");
+            });
+        }
+
         public void AddEnvironmentVariablesToWebConfig(IDictionary<string, string> environmentVariables)
         {
             _webConfigActionList.Add(xElement =>

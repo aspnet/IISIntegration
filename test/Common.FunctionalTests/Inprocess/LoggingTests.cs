@@ -21,13 +21,14 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         [InlineData("CheckLogFile")]
         public async Task CheckStdoutLoggingToFile(string path)
         {
-            var deploymentParameters = Helpers.GetBaseDeploymentParameters();
-            deploymentParameters.PublishApplicationBeforeDeployment = true;
+            var deploymentParameters = Helpers.GetBaseDeploymentParameters(publish: true);
+
             deploymentParameters.ModifyAspNetCoreSectionInWebConfig("stdoutLogEnabled", "true");
+
+            var pathToLogs = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             deploymentParameters.ModifyAspNetCoreSectionInWebConfig("stdoutLogFile", Path.Combine(pathToLogs, "std"));
 
             var deploymentResult = await DeployAsync(deploymentParameters);
-            var pathToLogs = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
             try
             {
@@ -122,11 +123,12 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         public async Task CheckStdoutLoggingToPipeWithFirstWrite(string path)
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters(publish: true);
-
-            var deploymentResult = await DeployAsync(deploymentParameters);
             var firstWriteString = path + path;
 
-            Helpers.ModifyEnvironmentVariableCollectionInWebConfig(deploymentResult, "ASPNETCORE_INPROCESS_INITIAL_WRITE", firstWriteString);
+            deploymentParameters.AddEnvironmentVariablesToWebConfig("ASPNETCORE_INPROCESS_INITIAL_WRITE", firstWriteString);
+
+            var deploymentResult = await DeployAsync(deploymentParameters);
+
 
             await Helpers.AssertStarts(deploymentResult, path);
 
