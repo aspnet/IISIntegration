@@ -13,52 +13,8 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
     {
         public static void AddDebugLogToWebConfig(this IISDeploymentParameters parameters, string filename)
         {
-            parameters.WebConfigActionList.Add(xElement =>
-            {
-                var element = xElement.Descendants("handlerSettings").SingleOrDefault();
-                if (element == null)
-                {
-                    element = new XElement("handlerSettings");
-                    xElement.Add(element);
-                }
-
-                CreateOrSetElement(element, "debugLevel", "4", "handlerSetting");
-
-                CreateOrSetElement(element, "debugFile", Path.Combine(parameters.PublishedApplicationRootPath, filename), "handlerSetting");
-            });
-        }
-
-        public static void AddEnvironmentVariablesToWebConfig(this IISDeploymentParameters parameters, string key, string value)
-        {
-            parameters.WebConfigActionList.Add(xElement =>
-            {
-                var element = xElement.Descendants("environmentVariables").SingleOrDefault();
-                if (element == null)
-                {
-                    element = new XElement("environmentVariables");
-                    xElement.Add(element);
-                }
-
-                CreateOrSetElement(element, key, value, "environmentVariable");
-            });
-        }
-
-        public static void AddEnvironmentVariablesToWebConfig(this IISDeploymentParameters parameters, IDictionary<string, string> environmentVariables)
-        {
-            parameters.WebConfigActionList.Add(xElement =>
-            {
-                var element = xElement.Descendants("environmentVariables").SingleOrDefault();
-                if (element == null)
-                {
-                    element = new XElement("environmentVariables");
-                    xElement.Add(element);
-                }
-
-                foreach (var envVar in environmentVariables)
-                {
-                    CreateOrSetElement(element, envVar.Key, envVar.Value, "environmentVariable");
-                }
-            });
+            parameters.HandlerSettings["debugLevel"] = "4";
+            parameters.HandlerSettings["debugFile"] = filename;
         }
 
         public static void AddServerConfigAction(this IISDeploymentParameters parameters, Action<XElement> action)
@@ -95,7 +51,6 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
             });
         }
 
-
         public static void AddHttpsToServerConfig(this IISDeploymentParameters parameters)
         {
             parameters.ServerConfigActionList.Add(
@@ -120,21 +75,6 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                         .Single()
                         .SetAttributeValue("enabled", "true");
                 });
-        }
-
-        private static void CreateOrSetElement(XElement rootElement, string name, string value, string elementName)
-        {
-            if (rootElement.Descendants()
-                .Attributes()
-                .Where(attribute => attribute.Value == name)
-                .Any())
-            {
-                return;
-            }
-            var element = new XElement(elementName);
-            element.SetAttributeValue("name", name);
-            element.SetAttributeValue("value", value);
-            rootElement.Add(element);
         }
     }
 }

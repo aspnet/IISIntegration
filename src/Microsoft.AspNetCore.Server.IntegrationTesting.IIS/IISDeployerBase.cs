@@ -17,6 +17,10 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         public IISDeployerBase(DeploymentParameters deploymentParameters, ILoggerFactory loggerFactory)
             : base(deploymentParameters, loggerFactory)
         {
+            if (deploymentParameters is IISDeploymentParameters)
+            {
+                IISDeploymentParameters = (IISDeploymentParameters)deploymentParameters;
+            }
         }
 
         public IISDeployerBase(IISDeploymentParameters deploymentParameters, ILoggerFactory loggerFactory)
@@ -24,8 +28,14 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         {
             IISDeploymentParameters = deploymentParameters;
         }
+
         public void RunWebConfigActions()
         {
+            if (IISDeploymentParameters == null)
+            {
+                return;
+            }
+
             if (!DeploymentParameters.PublishApplicationBeforeDeployment)
             {
                 throw new InvalidOperationException("Cannot modify web.config file if no published output.");
@@ -44,6 +54,11 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
 
         public string RunServerConfigActions(string serverConfig)
         {
+            if (IISDeploymentParameters == null)
+            {
+                return serverConfig;
+            }
+
             var element = XDocument.Parse(serverConfig);
             foreach (var action in IISDeploymentParameters.ServerConfigActionList)
             {

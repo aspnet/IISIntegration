@@ -125,10 +125,9 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             var deploymentParameters = Helpers.GetBaseDeploymentParameters(publish: true);
             var firstWriteString = path + path;
 
-            deploymentParameters.AddEnvironmentVariablesToWebConfig("ASPNETCORE_INPROCESS_INITIAL_WRITE", firstWriteString);
+            deploymentParameters.WebConfigBasedEnvironmentVariables["ASPNETCORE_INPROCESS_INITIAL_WRITE"] = firstWriteString;
 
             var deploymentResult = await DeployAsync(deploymentParameters);
-
 
             await Helpers.AssertStarts(deploymentResult, path);
 

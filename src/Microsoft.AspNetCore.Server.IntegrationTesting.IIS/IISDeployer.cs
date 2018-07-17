@@ -51,34 +51,34 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                 StartTimer();
 
                 var contentRoot = string.Empty;
-                if (string.IsNullOrEmpty(IISDeploymentParameters.ServerConfigTemplateContent))
+                if (string.IsNullOrEmpty(DeploymentParameters.ServerConfigTemplateContent))
                 {
-                    IISDeploymentParameters.ServerConfigTemplateContent = File.ReadAllText("IIS.config");
+                    DeploymentParameters.ServerConfigTemplateContent = File.ReadAllText("IIS.config");
                 }
 
-                _application = new IISApplication(IISDeploymentParameters, Logger);
+                _application = new IISApplication(IISDeploymentParameters ?? DeploymentParameters, Logger);
 
                 // For now, only support using published output
-                IISDeploymentParameters.PublishApplicationBeforeDeployment = true;
-                IISDeploymentParameters.AddDebugLogToWebConfig(Path.Combine(contentRoot, $"{_application.WebSiteName}.txt"));
+                DeploymentParameters.PublishApplicationBeforeDeployment = true;
 
-                if (IISDeploymentParameters.PublishApplicationBeforeDeployment)
+                if (DeploymentParameters.PublishApplicationBeforeDeployment)
                 {
                     DotnetPublish();
-                    contentRoot = IISDeploymentParameters.PublishedApplicationRootPath;
+                    contentRoot = DeploymentParameters.PublishedApplicationRootPath;
+                    IISDeploymentParameters?.AddDebugLogToWebConfig(Path.Combine(contentRoot, $"{_application.WebSiteName}.txt"));
                     RunWebConfigActions();
                 }
 
-                var uri = TestUriHelper.BuildTestUri(ServerType.IIS, IISDeploymentParameters.ApplicationBaseUriHint);
+                var uri = TestUriHelper.BuildTestUri(ServerType.IIS, DeploymentParameters.ApplicationBaseUriHint);
                 // To prevent modifying the IIS setup concurrently.
                 await _application.StartIIS(uri, contentRoot);
 
                 // Warm up time for IIS setup.
-                Logger.LogInformation("Successfully finished IIS application directory setup.");
+                Logger.LogInformation("Successfully finished IIS application directory seWebConfigBasedEnvironmentVariablestup.");
 
                 return new DeploymentResult(
                     LoggerFactory,
-                    IISDeploymentParameters,
+                    IISDeploymentParameters ?? DeploymentParameters,
                     applicationBaseUri: uri.ToString(),
                     contentRoot: contentRoot,
                     hostShutdownToken: _hostShutdownToken.Token
@@ -90,7 +90,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         {
             var arr = new string[0];
 
-            RetryHelper.RetryOperation(() => arr = File.ReadAllLines(Path.Combine(IISDeploymentParameters.PublishedApplicationRootPath, file)),
+            RetryHelper.RetryOperation(() => arr = File.ReadAllLines(Path.Combine(DeploymentParameters.PublishedApplicationRootPath, file)),
                             (ex) => Logger.LogWarning("Could not read log file"),
                             5,
                             200);
