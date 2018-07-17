@@ -12,13 +12,13 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
     {
         public IISDeploymentParameters() : base()
         {
-            WebConfigActionList = new List<Action<XElement>>() { AddWebConfigEnvironmentVariables(), AddHandlerSettings() };
+            WebConfigActionList = CreateDefaultWebConfigActionList();
         }
 
         public IISDeploymentParameters(TestVariant variant)
             : base(variant)
         {
-            WebConfigActionList = new List<Action<XElement>>() { AddWebConfigEnvironmentVariables(), AddHandlerSettings() };
+            WebConfigActionList = CreateDefaultWebConfigActionList();
         }
 
         public IISDeploymentParameters(
@@ -28,7 +28,12 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
            RuntimeArchitecture runtimeArchitecture)
             : base(applicationPath, serverType, runtimeFlavor, runtimeArchitecture)
         {
-            WebConfigActionList = new List<Action<XElement>>() { AddWebConfigEnvironmentVariables(), AddHandlerSettings() };
+            WebConfigActionList = CreateDefaultWebConfigActionList();
+        }
+
+        private IList<Action<XElement>> CreateDefaultWebConfigActionList()
+        {
+            return new List<Action<XElement>>() { AddWebConfigEnvironmentVariables(), AddHandlerSettings() };
         }
 
         public IList<Action<XElement>> WebConfigActionList { get; }

@@ -74,7 +74,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                 await _application.StartIIS(uri, contentRoot);
 
                 // Warm up time for IIS setup.
-                Logger.LogInformation("Successfully finished IIS application directory seWebConfigBasedEnvironmentVariablestup.");
+                Logger.LogInformation("Successfully finished IIS application directory setup.");
 
                 return new DeploymentResult(
                     LoggerFactory,

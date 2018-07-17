@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
 {
-    public class IISDeployerBase : ApplicationDeployer
+    public abstract class IISDeployerBase : ApplicationDeployer
     {
         public IISDeploymentParameters IISDeploymentParameters { get; }
 
@@ -65,16 +65,6 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                 action.Invoke(element.Element("configuration"));
             }
             return element.ToString();
-        }
-
-        public override Task<DeploymentResult> DeployAsync()
-        {
-            throw new NotImplementedException("Derived classes must override DeployAsync");
-        }
-
-        public override void Dispose()
-        {
-            throw new NotImplementedException("Derived classes must override Dispose");
         }
     }
 }

@@ -39,18 +39,6 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
             });
         }
 
-        public static void ModifyHandlerSectionInWebConfig(this IISDeploymentParameters parameters, string handlerVersionValue)
-        {
-            parameters.WebConfigActionList.Add((element) =>
-            {
-                var handlerVersionElement = new XElement("handlerSetting");
-                handlerVersionElement.SetAttributeValue("name", "handlerVersion");
-                handlerVersionElement.SetAttributeValue("value", handlerVersionValue);
-
-                element.Add(new XElement("handlerSettings", handlerVersionElement));
-            });
-        }
-
         public static void AddHttpsToServerConfig(this IISDeploymentParameters parameters)
         {
             parameters.ServerConfigActionList.Add(

@@ -51,7 +51,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         public async Task GlobalVersion_NewVersionNumber_Fails(string version)
         {
             var deploymentParameters = GetGlobalVersionBaseDeploymentParameters();
-            deploymentParameters.ModifyHandlerSectionInWebConfig(version);
+            deploymentParameters.HandlerSettings["handlerVersion"] = version;
 
             var deploymentResult = await DeployAsync(deploymentParameters);
 
@@ -66,7 +66,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         {
             var deploymentParameters = GetGlobalVersionBaseDeploymentParameters();
             deploymentParameters.AdditionalPublishParameters = $"{_outOfProcessVersionVariable}{version}";
-            deploymentParameters.ModifyHandlerSectionInWebConfig(version);
+            deploymentParameters.HandlerSettings["handlerVersion"] = version;
 
             var deploymentResult = await DeployAsync(deploymentParameters);
 
