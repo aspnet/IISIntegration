@@ -2,10 +2,8 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Microsoft.AspNetCore.Server.IntegrationTesting.Common;
 using Microsoft.Extensions.Logging;
 
@@ -14,7 +12,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
     /// <summary>
     /// Deployer for IIS.
     /// </summary>
-    public partial class IISDeployer : ApplicationDeployer
+    public partial class IISDeployer : IISDeployerBase
     {
         private IISApplication _application;
         private CancellationTokenSource _hostShutdownToken = new CancellationTokenSource();
@@ -22,16 +20,12 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         public IISDeployer(DeploymentParameters deploymentParameters, ILoggerFactory loggerFactory)
             : base(deploymentParameters, loggerFactory)
         {
-            IISDeploymentParameters = (IISDeploymentParameters)deploymentParameters;
         }
 
         public IISDeployer(IISDeploymentParameters deploymentParameters, ILoggerFactory loggerFactory)
             : base(deploymentParameters, loggerFactory)
         {
-            IISDeploymentParameters = deploymentParameters;
         }
-
-        public IISDeploymentParameters IISDeploymentParameters { get; }
 
         public override void Dispose()
         {
@@ -72,7 +66,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                 {
                     DotnetPublish();
                     contentRoot = IISDeploymentParameters.PublishedApplicationRootPath;
-                    IISDeploymentParameters.RunWebConfigActions();
+                    RunWebConfigActions();
                 }
 
                 var uri = TestUriHelper.BuildTestUri(ServerType.IIS, IISDeploymentParameters.ApplicationBaseUriHint);
