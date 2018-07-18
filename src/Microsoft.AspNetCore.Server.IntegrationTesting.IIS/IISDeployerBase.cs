@@ -14,15 +14,6 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
     {
         public IISDeploymentParameters IISDeploymentParameters { get; }
 
-        public IISDeployerBase(DeploymentParameters deploymentParameters, ILoggerFactory loggerFactory)
-            : base(deploymentParameters, loggerFactory)
-        {
-            if (deploymentParameters is IISDeploymentParameters)
-            {
-                IISDeploymentParameters = (IISDeploymentParameters)deploymentParameters;
-            }
-        }
-
         public IISDeployerBase(IISDeploymentParameters deploymentParameters, ILoggerFactory loggerFactory)
             : base(deploymentParameters, loggerFactory)
         {

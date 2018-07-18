@@ -31,7 +31,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         private Process _hostProcess;
 
         public IISExpressDeployer(DeploymentParameters deploymentParameters, ILoggerFactory loggerFactory)
-            : base(deploymentParameters, loggerFactory)
+            : base(new IISDeploymentParameters(deploymentParameters), loggerFactory)
         {
         }
 

@@ -18,7 +18,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         private CancellationTokenSource _hostShutdownToken = new CancellationTokenSource();
 
         public IISDeployer(DeploymentParameters deploymentParameters, ILoggerFactory loggerFactory)
-            : base(deploymentParameters, loggerFactory)
+            : base(new IISDeploymentParameters(deploymentParameters), loggerFactory)
         {
         }
 

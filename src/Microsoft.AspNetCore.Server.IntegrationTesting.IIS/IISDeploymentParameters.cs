@@ -33,9 +33,34 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
 
         public IISDeploymentParameters(DeploymentParameters parameters)
         {
-            foreach (var propertyInfo in typeof(IISDeploymentParameters).GetProperties())
+            foreach (var propertyInfo in typeof(DeploymentParameters).GetProperties())
             {
-                propertyInfo.SetValue(this, propertyInfo.GetValue(parameters));
+                if (propertyInfo.CanWrite)
+                {
+                    propertyInfo.SetValue(this, propertyInfo.GetValue(parameters));
+                }
+            }
+
+            foreach (var kvp in parameters.EnvironmentVariables)
+            {
+                // 
+                EnvironmentVariables[kvp.Key] = kvp.Value;
+            }
+
+            foreach (var kvp in parameters.PublishEnvironmentVariables)
+            {
+                PublishEnvironmentVariables[kvp.Key] = kvp.Value;
+            }
+
+            WebConfigActionList = CreateDefaultWebConfigActionList();
+
+            if (parameters is IISDeploymentParameters)
+            {
+                var tempParameters = (IISDeploymentParameters)parameters;
+                WebConfigActionList = tempParameters.WebConfigActionList;
+                ServerConfigActionList = tempParameters.ServerConfigActionList;
+                WebConfigBasedEnvironmentVariables = tempParameters.WebConfigBasedEnvironmentVariables;
+                HandlerSettings = tempParameters.HandlerSettings;
             }
         }
 
