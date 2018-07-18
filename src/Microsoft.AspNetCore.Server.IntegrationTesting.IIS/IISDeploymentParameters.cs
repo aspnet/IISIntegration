@@ -31,6 +31,19 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
             WebConfigActionList = CreateDefaultWebConfigActionList();
         }
 
+        public IISDeploymentParameters(DeploymentParameters parameters)
+        {
+            foreach (var propertyInfo in typeof(IISDeploymentParameters).GetProperties())
+            {
+                propertyInfo.SetValue(this, propertyInfo.GetValue(parameters));
+            }
+        }
+
+        private void CopyAllProperties()
+        {
+            throw new NotImplementedException();
+        }
+
         private IList<Action<XElement>> CreateDefaultWebConfigActionList()
         {
             return new List<Action<XElement>>() { AddWebConfigEnvironmentVariables(), AddHandlerSettings() };
