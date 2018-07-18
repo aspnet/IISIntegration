@@ -32,26 +32,8 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         }
 
         public IISDeploymentParameters(DeploymentParameters parameters)
+            : base(parameters)
         {
-            foreach (var propertyInfo in typeof(DeploymentParameters).GetProperties())
-            {
-                if (propertyInfo.CanWrite)
-                {
-                    propertyInfo.SetValue(this, propertyInfo.GetValue(parameters));
-                }
-            }
-
-            foreach (var kvp in parameters.EnvironmentVariables)
-            {
-                // 
-                EnvironmentVariables[kvp.Key] = kvp.Value;
-            }
-
-            foreach (var kvp in parameters.PublishEnvironmentVariables)
-            {
-                PublishEnvironmentVariables[kvp.Key] = kvp.Value;
-            }
-
             WebConfigActionList = CreateDefaultWebConfigActionList();
 
             if (parameters is IISDeploymentParameters)
