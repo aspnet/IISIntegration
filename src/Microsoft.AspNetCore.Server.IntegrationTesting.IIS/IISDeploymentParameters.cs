@@ -39,11 +39,6 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
             }
         }
 
-        private void CopyAllProperties()
-        {
-            throw new NotImplementedException();
-        }
-
         private IList<Action<XElement>> CreateDefaultWebConfigActionList()
         {
             return new List<Action<XElement>>() { AddWebConfigEnvironmentVariables(), AddHandlerSettings() };
@@ -70,7 +65,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                 if (element == null)
                 {
                     element = new XElement("environmentVariables");
-                    xElement.Add(element);
+                    xElement.Descendants("aspNetCore").SingleOrDefault().Add(element);
                 }
 
                 foreach (var envVar in WebConfigBasedEnvironmentVariables)
@@ -93,7 +88,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                 if (element == null)
                 {
                     element = new XElement("handlerSettings");
-                    xElement.Add(element);
+                    xElement.Descendants("aspNetCore").SingleOrDefault().Add(element);
                 }
 
                 foreach (var handlerSetting in HandlerSettings)

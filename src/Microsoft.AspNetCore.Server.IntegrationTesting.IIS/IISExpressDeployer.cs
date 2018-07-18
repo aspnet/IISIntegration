@@ -52,25 +52,25 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                 // For a published app both point to the publish directory.
                 var dllRoot = CheckIfPublishIsRequired();
                 var contentRoot = string.Empty;
-                if (DeploymentParameters.PublishApplicationBeforeDeployment)
+                if (IISDeploymentParameters.PublishApplicationBeforeDeployment)
                 {
                     DotnetPublish();
-                    contentRoot = DeploymentParameters.PublishedApplicationRootPath;
+                    contentRoot = IISDeploymentParameters.PublishedApplicationRootPath;
                     dllRoot = contentRoot;
                 }
                 else
                 {
                     // Core+Standalone always publishes. This must be Clr+Standalone or Core+Portable.
                     // Update processPath and arguments for our current scenario
-                    contentRoot = DeploymentParameters.ApplicationPath;
+                    contentRoot = IISDeploymentParameters.ApplicationPath;
 
-                    var executableExtension = DeploymentParameters.ApplicationType == ApplicationType.Portable ? ".dll" : ".exe";
-                    var entryPoint = Path.Combine(dllRoot, DeploymentParameters.ApplicationName + executableExtension);
+                    var executableExtension = IISDeploymentParameters.ApplicationType == ApplicationType.Portable ? ".dll" : ".exe";
+                    var entryPoint = Path.Combine(dllRoot, IISDeploymentParameters.ApplicationName + executableExtension);
 
                     var executableName = string.Empty;
                     var executableArgs = string.Empty;
 
-                    if (DeploymentParameters.RuntimeFlavor == RuntimeFlavor.CoreClr && DeploymentParameters.ApplicationType == ApplicationType.Portable)
+                    if (IISDeploymentParameters.RuntimeFlavor == RuntimeFlavor.CoreClr && IISDeploymentParameters.ApplicationType == ApplicationType.Portable)
                     {
                         executableName = GetDotNetExeForArchitecture();
                         executableArgs = entryPoint;
@@ -81,15 +81,15 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                     }
 
                     Logger.LogInformation("Executing: {exe} {args}", executableName, executableArgs);
-                    DeploymentParameters.EnvironmentVariables["LAUNCHER_PATH"] = executableName;
-                    DeploymentParameters.EnvironmentVariables["LAUNCHER_ARGS"] = executableArgs;
+                    IISDeploymentParameters.EnvironmentVariables["LAUNCHER_PATH"] = executableName;
+                    IISDeploymentParameters.EnvironmentVariables["LAUNCHER_ARGS"] = executableArgs;
 
                     // CurrentDirectory will point to bin/{config}/{tfm}, but the config and static files aren't copied, point to the app base instead.
-                    Logger.LogInformation("ContentRoot: {path}", DeploymentParameters.ApplicationPath);
-                    DeploymentParameters.EnvironmentVariables["ASPNETCORE_CONTENTROOT"] = DeploymentParameters.ApplicationPath;
+                    Logger.LogInformation("ContentRoot: {path}", IISDeploymentParameters.ApplicationPath);
+                    IISDeploymentParameters.EnvironmentVariables["ASPNETCORE_CONTENTROOT"] = IISDeploymentParameters.ApplicationPath;
                 }
 
-                var testUri = TestUriHelper.BuildTestUri(ServerType.IISExpress, DeploymentParameters.ApplicationBaseUriHint);
+                var testUri = TestUriHelper.BuildTestUri(ServerType.IISExpress, IISDeploymentParameters.ApplicationBaseUriHint);
 
                 // Launch the host process.
                 var (actualUri, hostExitToken) = await StartIISExpressAsync(testUri, contentRoot, dllRoot);
@@ -99,7 +99,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                 // Right now this works only for urls like http://localhost:5001/. Does not work for http://localhost:5001/subpath.
                 return new DeploymentResult(
                     LoggerFactory,
-                    DeploymentParameters,
+                    IISDeploymentParameters,
                     applicationBaseUri: actualUri.ToString(),
                     contentRoot: contentRoot,
                     hostShutdownToken: hostExitToken);
@@ -108,35 +108,35 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
 
         private string CheckIfPublishIsRequired()
         {
-            var targetFramework = DeploymentParameters.TargetFramework;
+            var targetFramework = IISDeploymentParameters.TargetFramework;
 
             // IISIntegration uses this layout
-            var dllRoot = Path.Combine(DeploymentParameters.ApplicationPath, "bin", DeploymentParameters.RuntimeArchitecture.ToString(),
-                DeploymentParameters.Configuration, targetFramework);
+            var dllRoot = Path.Combine(IISDeploymentParameters.ApplicationPath, "bin", IISDeploymentParameters.RuntimeArchitecture.ToString(),
+                IISDeploymentParameters.Configuration, targetFramework);
 
             if (!Directory.Exists(dllRoot))
             {
                 // Most repos use this layout
-                dllRoot = Path.Combine(DeploymentParameters.ApplicationPath, "bin", DeploymentParameters.Configuration, targetFramework);
+                dllRoot = Path.Combine(IISDeploymentParameters.ApplicationPath, "bin", IISDeploymentParameters.Configuration, targetFramework);
 
                 if (!Directory.Exists(dllRoot))
                 {
                     // The bits we need weren't pre-compiled, compile on publish
-                    DeploymentParameters.PublishApplicationBeforeDeployment = true;
+                    IISDeploymentParameters.PublishApplicationBeforeDeployment = true;
                 }
-                else if (DeploymentParameters.RuntimeFlavor == RuntimeFlavor.Clr
-                    && DeploymentParameters.RuntimeArchitecture == RuntimeArchitecture.x86)
+                else if (IISDeploymentParameters.RuntimeFlavor == RuntimeFlavor.Clr
+                    && IISDeploymentParameters.RuntimeArchitecture == RuntimeArchitecture.x86)
                 {
                     // x64 is the default. Publish to rebuild for the right bitness
-                    DeploymentParameters.PublishApplicationBeforeDeployment = true;
+                    IISDeploymentParameters.PublishApplicationBeforeDeployment = true;
                 }
             }
 
-            if (DeploymentParameters.RuntimeFlavor == RuntimeFlavor.CoreClr
-                    && DeploymentParameters.ApplicationType == ApplicationType.Standalone)
+            if (IISDeploymentParameters.RuntimeFlavor == RuntimeFlavor.CoreClr
+                    && IISDeploymentParameters.ApplicationType == ApplicationType.Standalone)
             {
                 // Publish is always required to get the correct standalone files in the output directory
-                DeploymentParameters.PublishApplicationBeforeDeployment = true;
+                IISDeploymentParameters.PublishApplicationBeforeDeployment = true;
             }
 
             return dllRoot;
@@ -155,9 +155,9 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                 Logger.LogInformation("Attempting to start IIS Express on port: {port}", port);
                 PrepareConfig(contentRoot, dllRoot, port);
 
-                var parameters = string.IsNullOrEmpty(DeploymentParameters.ServerConfigLocation) ?
+                var parameters = string.IsNullOrEmpty(IISDeploymentParameters.ServerConfigLocation) ?
                                 string.Format("/port:{0} /path:\"{1}\" /trace:error /systray:false", uri.Port, contentRoot) :
-                                string.Format("/site:{0} /config:{1} /trace:error /systray:false", DeploymentParameters.SiteName, DeploymentParameters.ServerConfigLocation);
+                                string.Format("/site:{0} /config:{1} /trace:error /systray:false", IISDeploymentParameters.SiteName, IISDeploymentParameters.ServerConfigLocation);
 
                 var iisExpressPath = GetIISExpressPath();
 
@@ -175,7 +175,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                         RedirectStandardOutput = true
                     };
 
-                    AddEnvironmentVariablesToProcess(startInfo, DeploymentParameters.EnvironmentVariables);
+                    AddEnvironmentVariablesToProcess(startInfo, IISDeploymentParameters.EnvironmentVariables);
 
                     Uri url = null;
                     var started = new TaskCompletionSource<bool>();
@@ -255,16 +255,16 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         private void PrepareConfig(string contentRoot, string dllRoot, int port)
         {
             // Config is required. If not present then fall back to one we carry with us.
-            if (string.IsNullOrEmpty(DeploymentParameters.ServerConfigTemplateContent))
+            if (string.IsNullOrEmpty(IISDeploymentParameters.ServerConfigTemplateContent))
             {
                 using (var stream = GetType().Assembly.GetManifestResourceStream("Microsoft.AspNetCore.Server.IntegrationTesting.IIS.Http.config"))
                 using (var reader = new StreamReader(stream))
                 {
-                    DeploymentParameters.ServerConfigTemplateContent = reader.ReadToEnd();
+                    IISDeploymentParameters.ServerConfigTemplateContent = reader.ReadToEnd();
                 }
             }
 
-            var serverConfig = DeploymentParameters.ServerConfigTemplateContent;
+            var serverConfig = IISDeploymentParameters.ServerConfigTemplateContent;
 
             // Pass on the applicationhost.config to iis express. With this don't need to pass in the /path /port switches as they are in the applicationHost.config
             // We take a copy of the original specified applicationHost.Config to prevent modifying the one in the repo.
@@ -274,12 +274,12 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
             serverConfig = ReplacePlaceholder(serverConfig, "[PORT]", port.ToString(CultureInfo.InvariantCulture));
             serverConfig = ReplacePlaceholder(serverConfig, "[ApplicationPhysicalPath]", contentRoot);
 
-            if (DeploymentParameters.PublishApplicationBeforeDeployment)
+            if (IISDeploymentParameters.PublishApplicationBeforeDeployment)
             {
                 // For published apps, prefer the content in the web.config, but update it.
-                ModifyAspNetCoreSectionInWebConfig(key: "hostingModel",
-                    value: DeploymentParameters.HostingModel == HostingModel.InProcess ? "inprocess" : "");
-                ModifyHandlerSectionInWebConfig(key: "modules", value: DeploymentParameters.AncmVersion.ToString());
+                IISDeploymentParameters.ModifyAspNetCoreSectionInWebConfig(key: "hostingModel",
+                    value: IISDeploymentParameters.HostingModel == HostingModel.InProcess ? "inprocess" : "");
+                IISDeploymentParameters.ModifyHandlerSectionInWebConfig(key: "modules", value: IISDeploymentParameters.AncmVersion.ToString());
                 ModifyDotNetExePathInWebConfig();
                 serverConfig = RemoveRedundantElements(serverConfig);
                 RunWebConfigActions();
@@ -287,15 +287,15 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
             else
             {
                 // The elements normally in the web.config are in the applicationhost.config for unpublished apps.
-                serverConfig = ReplacePlaceholder(serverConfig, "[HostingModel]", DeploymentParameters.HostingModel.ToString());
-                serverConfig = ReplacePlaceholder(serverConfig, "[AspNetCoreModule]", DeploymentParameters.AncmVersion.ToString());
+                serverConfig = ReplacePlaceholder(serverConfig, "[HostingModel]", IISDeploymentParameters.HostingModel.ToString());
+                serverConfig = ReplacePlaceholder(serverConfig, "[AspNetCoreModule]", IISDeploymentParameters.AncmVersion.ToString());
             }
             serverConfig = RunServerConfigActions(serverConfig);
 
-            DeploymentParameters.ServerConfigLocation = Path.GetTempFileName();
-            Logger.LogDebug("Saving Config to {configPath}", DeploymentParameters.ServerConfigLocation);
+            IISDeploymentParameters.ServerConfigLocation = Path.GetTempFileName();
+            Logger.LogDebug("Saving Config to {configPath}", IISDeploymentParameters.ServerConfigLocation);
 
-            File.WriteAllText(DeploymentParameters.ServerConfigLocation, serverConfig);
+            File.WriteAllText(IISDeploymentParameters.ServerConfigLocation, serverConfig);
         }
 
         private string ReplacePlaceholder(string content, string field, string value)
@@ -312,7 +312,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         {
             if (serverConfig.Contains(replaceFlag))
             {
-                var arch = DeploymentParameters.RuntimeArchitecture == RuntimeArchitecture.x64 ? $@"x64\{dllName}" : $@"x86\{dllName}";
+                var arch = IISDeploymentParameters.RuntimeArchitecture == RuntimeArchitecture.x64 ? $@"x64\{dllName}" : $@"x86\{dllName}";
                 var ancmFile = Path.Combine(dllRoot, arch);
                 if (!File.Exists(Environment.ExpandEnvironmentVariables(ancmFile)))
                 {
@@ -332,7 +332,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         private string GetIISExpressPath()
         {
             var programFiles = "Program Files";
-            if (DotNetCommands.IsRunningX86OnX64(DeploymentParameters.RuntimeArchitecture))
+            if (DotNetCommands.IsRunningX86OnX64(IISDeploymentParameters.RuntimeArchitecture))
             {
                 programFiles = "Program Files (x86)";
             }
@@ -354,23 +354,23 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
             {
                 ShutDownIfAnyHostProcess(_hostProcess);
 
-                if (!string.IsNullOrEmpty(DeploymentParameters.ServerConfigLocation)
-                    && File.Exists(DeploymentParameters.ServerConfigLocation))
+                if (!string.IsNullOrEmpty(IISDeploymentParameters.ServerConfigLocation)
+                    && File.Exists(IISDeploymentParameters.ServerConfigLocation))
                 {
                     // Delete the temp applicationHostConfig that we created.
-                    Logger.LogDebug("Deleting applicationHost.config file from {configLocation}", DeploymentParameters.ServerConfigLocation);
+                    Logger.LogDebug("Deleting applicationHost.config file from {configLocation}", IISDeploymentParameters.ServerConfigLocation);
                     try
                     {
-                        File.Delete(DeploymentParameters.ServerConfigLocation);
+                        File.Delete(IISDeploymentParameters.ServerConfigLocation);
                     }
                     catch (Exception exception)
                     {
                         // Ignore delete failures - just write a log.
-                        Logger.LogWarning("Failed to delete '{config}'. Exception : {exception}", DeploymentParameters.ServerConfigLocation, exception.Message);
+                        Logger.LogWarning("Failed to delete '{config}'. Exception : {exception}", IISDeploymentParameters.ServerConfigLocation, exception.Message);
                     }
                 }
 
-                if (DeploymentParameters.PublishApplicationBeforeDeployment)
+                if (IISDeploymentParameters.PublishApplicationBeforeDeployment)
                 {
                     CleanPublishedOutput();
                 }
@@ -392,36 +392,17 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         {
             // We assume the x64 dotnet.exe is on the path so we need to provide an absolute path for x86 scenarios.
             // Only do it for scenarios that rely on dotnet.exe (Core, portable, etc.).
-            if (DeploymentParameters.RuntimeFlavor == RuntimeFlavor.CoreClr
-                && DeploymentParameters.ApplicationType == ApplicationType.Portable
-                && DotNetCommands.IsRunningX86OnX64(DeploymentParameters.RuntimeArchitecture))
+            if (IISDeploymentParameters.RuntimeFlavor == RuntimeFlavor.CoreClr
+                && IISDeploymentParameters.ApplicationType == ApplicationType.Portable
+                && DotNetCommands.IsRunningX86OnX64(IISDeploymentParameters.RuntimeArchitecture))
             {
-                var executableName = DotNetCommands.GetDotNetExecutable(DeploymentParameters.RuntimeArchitecture);
+                var executableName = DotNetCommands.GetDotNetExecutable(IISDeploymentParameters.RuntimeArchitecture);
                 if (!File.Exists(executableName))
                 {
                     throw new Exception($"Unable to find '{executableName}'.'");
                 }
-                ModifyAspNetCoreSectionInWebConfig("processPath", executableName);
+                IISDeploymentParameters.ModifyAspNetCoreSectionInWebConfig("processPath", executableName);
             }
-        }
-
-        // Transforms the web.config file to set attributes like hostingModel="inprocess" element
-        private void ModifyAspNetCoreSectionInWebConfig(string key, string value)
-        {
-            var webConfigFile = Path.Combine(DeploymentParameters.PublishedApplicationRootPath, "web.config");
-            var config = XDocument.Load(webConfigFile);
-            var element = config.Descendants("aspNetCore").FirstOrDefault();
-            element.SetAttributeValue(key, value);
-            config.Save(webConfigFile);
-        }
-
-        private void ModifyHandlerSectionInWebConfig(string key, string value)
-        {
-            var webConfigFile = Path.Combine(DeploymentParameters.PublishedApplicationRootPath, "web.config");
-            var config = XDocument.Load(webConfigFile);
-            var element = config.Descendants("handlers").FirstOrDefault().Descendants("add").FirstOrDefault();
-            element.SetAttributeValue(key, value);
-            config.Save(webConfigFile);
         }
 
         // These elements are duplicated in the web.config if you publish. Remove them from the host.config.

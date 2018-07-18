@@ -43,7 +43,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
 
             var path = Path.Combine(DeploymentParameters.PublishedApplicationRootPath, "web.config");
             var webconfig = XDocument.Load(path);
-            var xElement = webconfig.Descendants("aspNetCore").Single();
+            var xElement = webconfig.Descendants("system.webServer").Single();
             foreach (var action in IISDeploymentParameters.WebConfigActionList)
             {
                 action.Invoke(xElement);
@@ -52,19 +52,21 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
             webconfig.Save(path);
         }
 
-        public string RunServerConfigActions(string serverConfig)
+        public string RunServerConfigActions(string serverConfigString)
         {
             if (IISDeploymentParameters == null)
             {
-                return serverConfig;
+                return serverConfigString;
             }
 
-            var element = XDocument.Parse(serverConfig);
+            var serverConfig = XDocument.Parse(serverConfigString);
+            var xElement = serverConfig.Descendants("configuration").FirstOrDefault();
+
             foreach (var action in IISDeploymentParameters.ServerConfigActionList)
             {
-                action.Invoke(element.Element("configuration"));
+                action.Invoke(xElement);
             }
-            return element.ToString();
+            return xElement.ToString();
         }
     }
 }

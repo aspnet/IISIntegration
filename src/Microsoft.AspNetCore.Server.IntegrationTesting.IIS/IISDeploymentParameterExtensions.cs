@@ -35,7 +35,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         {
             parameters.WebConfigActionList.Add((element) =>
             {
-                element.SetAttributeValue(key, value);
+                element.Descendants(section).SingleOrDefault().SetAttributeValue(key, value);
             });
         }
 
@@ -63,6 +63,18 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                         .Single()
                         .SetAttributeValue("enabled", "true");
                 });
+        }
+
+        public static void ModifyHandlerSectionInWebConfig(this IISDeploymentParameters parameters, string key, string value)
+        {
+            parameters.WebConfigActionList.Add(element =>
+            {
+                element.Descendants("handlers")
+                        .FirstOrDefault()
+                        .Descendants("add")
+                        .FirstOrDefault()
+                        .SetAttributeValue(key, value);
+            });
         }
     }
 }
