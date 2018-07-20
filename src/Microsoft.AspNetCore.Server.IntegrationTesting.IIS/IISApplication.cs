@@ -78,7 +78,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
 
                 _serverManager.CommitChanges();
 
-                await WaitUntilSiteStarted(apppool);
+                await WaitUntilSiteStarted();
             }
         }
 
@@ -91,7 +91,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
             config.Save(webConfigFile);
         }
 
-        private async Task WaitUntilSiteStarted(ApplicationPool appPool)
+        private async Task WaitUntilSiteStarted()
         {
             var sw = Stopwatch.StartNew();
 
@@ -99,11 +99,18 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
             {
                 try
                 {
-                    var site = _serverManager.Sites.FirstOrDefault(s => s.Name.Equals(WebSiteName));
+                    var serverManager = new ServerManager();
+                    var site = serverManager.Sites.FirstOrDefault(s => s.Name.Equals(WebSiteName));
+                    var appPool = serverManager.ApplicationPools.FirstOrDefault(s => s.Name.Equals(AppPoolName));
 
                     if (site.State == ObjectState.Started)
                     {
                         _logger.LogInformation($"Site {WebSiteName} has started.");
+                        var workerProcess = appPool.WorkerProcesses.SingleOrDefault();
+                        if (workerProcess != null)
+                        {
+                            HostProcess = Process.GetProcessById(workerProcess.ProcessId);
+                        }
                         return;
                     }
                     else if (site.State != ObjectState.Starting)
