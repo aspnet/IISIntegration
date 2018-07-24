@@ -12,6 +12,7 @@
     <ProjectReference Include="..\..\src\Microsoft.AspNetCore.Server.IIS\Microsoft.AspNetCore.Server.IIS.csproj" />
     <ProjectReference Include="..\..\src\Microsoft.AspNetCore.Server.IISIntegration\Microsoft.AspNetCore.Server.IISIntegration.csproj" />
     <ProjectReference Include="..\..\src\Microsoft.AspNetCore.Server.IntegrationTesting.IIS\Microsoft.AspNetCore.Server.IntegrationTesting.IIS.csproj" />
+    <ProjectReference Include="..\Common.Tests\Common.Tests.csproj" />
     <ProjectReference Include="..\WebSites\**\*.csproj">
       <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
@@ -27,7 +28,6 @@
     <None Include="$(MSBuildThisFileDirectory)..\..\src\AspNetCoreModuleV2\AspNetCore\bin\$(Configuration)\x64\aspnetcorev2.dll" CopyToOutputDirectory="PreserveNewest" Visible="true" Link="%(FileName)%(Extension)" />
     <None Include="$(MSBuildThisFileDirectory)..\..\src\AspNetCoreModuleV2\AspNetCore\bin\$(Configuration)\x64\aspnetcorev2.pdb" CopyToOutputDirectory="PreserveNewest" Visible="true" Link="%(FileName)%(Extension)" />
   </ItemGroup>
-
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Server.IntegrationTesting" Version="$(MicrosoftAspNetCoreServerIntegrationTestingPackageVersion)" />
