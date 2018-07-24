@@ -126,6 +126,14 @@ Finished:
         //
         exit(hr);
     }
+    else
+    {
+        UTILITY::LogEventF(g_hEventLog,
+            EVENTLOG_INFORMATION_TYPE,
+            ASPNETCORE_EVENT_APP_SHUTDOWN_SUCCESSFUL,
+            ASPNETCORE_EVENT_APP_SHUTDOWN_SUCCESSFUL_MSG,
+            m_pConfig->QueryConfigPath()->QueryStr());
+    }
 }
 
 VOID
@@ -561,14 +569,19 @@ IN_PROCESS_APPLICATION::RunDotnetApplication(DWORD argc, CONST PCWSTR* argv, hos
 
     __try
     {
+        LOG_INFO("Starting managed application");
         m_ProcessExitCode = pProc(argc, argv);
         if (m_ProcessExitCode != 0)
         {
             hr = HRESULT_FROM_WIN32(GetLastError());
         }
+        
+        LOG_INFOF("Managed application exited with code %d", m_ProcessExitCode);
     }
     __except(GetExceptionCode() != 0)
     {
+        
+        LOG_INFOF("Managed threw an exception %d", GetExceptionCode());
         hr = HRESULT_FROM_WIN32(GetLastError());
     }
 
