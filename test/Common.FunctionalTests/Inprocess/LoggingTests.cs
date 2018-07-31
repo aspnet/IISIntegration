@@ -47,7 +47,8 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
                 StopServer();
 
-                var fileInDirectory = Directory.GetFiles(pathToLogs).Single();
+                // Multiple log files in folder now.
+                var fileInDirectory = Directory.GetFiles(pathToLogs).Last();
 
                 var contents = File.ReadAllText(fileInDirectory);
 

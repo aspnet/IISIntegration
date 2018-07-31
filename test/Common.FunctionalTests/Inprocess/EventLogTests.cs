@@ -22,7 +22,12 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         [ConditionalFact]
         public async Task CheckStartupEventLogMessage()
         {
+<<<<<<< HEAD
             var deploymentParameters = _fixture.GetBaseDeploymentParameters(publish: true);
+=======
+            var deploymentParameters = Helpers.GetBaseDeploymentParameters(publish: true);
+            deploymentParameters.GracefulShutdown = true;
+>>>>>>> e2c9c531... General rough draft of redirecting native stdout
             var deploymentResult = await DeployAsync(deploymentParameters);
             await Helpers.AssertStarts(deploymentResult);
 

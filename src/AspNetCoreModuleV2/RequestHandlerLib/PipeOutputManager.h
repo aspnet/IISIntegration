@@ -24,6 +24,7 @@ public:
     VOID ReadStdErrHandle(LPVOID pContext);
 
 private:
+
     HANDLE                          m_hErrReadPipe;
     HANDLE                          m_hErrWritePipe;
     STRU                            m_struLogFilePath;

@@ -7,6 +7,7 @@
 #include "FileOutputManager.h"
 #include "PipeOutputManager.h"
 #include "NullOutputManager.h"
+#include <fcntl.h>
 
 HRESULT
 LoggingHelpers::CreateLoggingProvider(
@@ -44,4 +45,48 @@ LoggingHelpers::CreateLoggingProvider(
     }
 
     return hr;
+}
+
+VOID
+LoggingHelpers::ReReadStdOutFileNo()
+{
+    HANDLE stdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (stdHandle != INVALID_HANDLE_VALUE)
+    {
+        int fileDescriptor = _open_osfhandle((intptr_t)stdHandle, _O_TEXT);
+        if (fileDescriptor != -1)
+        {
+            FILE* file = _fdopen(fileDescriptor, "w");
+            if (file != NULL)
+            {
+                int dup2Result = _dup2(_fileno(file), _fileno(stdout));
+                if (dup2Result == 0)
+                {
+                    setvbuf(stdout, NULL, _IONBF, 0);
+                }
+            }
+        }
+    }
+}
+
+VOID
+LoggingHelpers::ReReadStdErrFileNo()
+{
+    HANDLE stdHandle = GetStdHandle(STD_ERROR_HANDLE);
+    if (stdHandle != INVALID_HANDLE_VALUE)
+    {
+        int fileDescriptor = _open_osfhandle((intptr_t)stdHandle, _O_TEXT);
+        if (fileDescriptor != -1)
+        {
+            FILE* file = _fdopen(fileDescriptor, "w");
+            if (file != NULL)
+            {
+                int dup2Result = _dup2(_fileno(file), _fileno(stderr));
+                if (dup2Result == 0)
+                {
+                    setvbuf(stderr, NULL, _IONBF, 0);
+                }
+            }
+        }
+    }
 }
