@@ -22,7 +22,7 @@ public:
     virtual HRESULT Stop() override;
 
 private:
-    HandleWrapper<InvalidHandleTraits> m_hLogFileHandle;
+    HANDLE m_hLogFileHandle;
     STTIMER m_Timer;
     STRU m_wsStdOutLogFileName;
     STRU m_wsApplicationPath;

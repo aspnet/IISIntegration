@@ -9,6 +9,10 @@ Helpers::ReadFileContent(std::wstring file)
     std::wcout << file << std::endl;
 
     std::fstream t(file);
+    if (!t.is_open())
+    {
+        return L"";
+    }
     std::stringstream buffer;
     buffer << t.rdbuf();
 

@@ -5,6 +5,8 @@
 #include "gtest/internal/gtest-port.h"
 #include "FileOutputManager.h"
 
+extern PCWSTR g_moduleName = L"commonlibtest";
+
 class FileManagerWrapper
 {
 public:

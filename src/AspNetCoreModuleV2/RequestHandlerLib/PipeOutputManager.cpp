@@ -211,6 +211,7 @@ PipeOutputManager::ReadStdErrHandleInternal(
         }
     }
 
+    // TODO put this on the heap.
     char tempBuffer[MAX_PIPE_READ_SIZE];
     while (true)
     {

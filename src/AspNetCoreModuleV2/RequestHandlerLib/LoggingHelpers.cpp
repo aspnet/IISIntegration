@@ -59,6 +59,7 @@ LoggingHelpers::ReReadStdOutFileNo()
             FILE* file = _fdopen(fileDescriptor, "w");
             if (file != NULL)
             {
+                // This returns -1.
                 int dup2Result = _dup2(_fileno(file), _fileno(stdout));
                 if (dup2Result == 0)
                 {

@@ -39,7 +39,7 @@ namespace PipeOutputManagerTests
         delete pManager;
     }
 
-    TEST(PipeManagerOutputTest, BasicFunctionalityCheck)
+    TEST(PipeManagerOutputTest, BasicFunctionalityCheck2)
     {
         PCWSTR expected = L"test";
         STRA output;
@@ -75,7 +75,7 @@ namespace PipeOutputManagerTests
         delete pManager;
     }
 
-    TEST(PipeManagerOutputTest, CheckMaxPipeSize)
+    TEST(PipeManagerOutputTest, CheckMaxPipeSize2)
     {
         std::wstring test;
         STRA output;
