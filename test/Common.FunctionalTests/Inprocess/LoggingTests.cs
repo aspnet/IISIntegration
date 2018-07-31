@@ -47,26 +47,24 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
                 StopServer();
 
-                // Multiple log files in folder now.
-                var fileInDirectory = Directory.GetFiles(pathToLogs).Last();
-
+                // TODO why are multiple logs in this directory?
+                var filesInDirectory = Directory.GetFiles(pathToLogs);
+                if (filesInDirectory.Count() > 1)
+                {
+                    Logger.LogWarning(string.Join(",", filesInDirectory));
+                    throw new FileLoadException("Multiple files in directory.");
+                }
+                var fileInDirectory = filesInDirectory.Single();
                 var contents = File.ReadAllText(fileInDirectory);
 
                 Assert.NotNull(contents);
                 Assert.Contains("TEST MESSAGE", contents);
                 Assert.DoesNotContain(TestSink.Writes, context => context.Message.Contains("TEST MESSAGE"));
-                // TODO we should check that debug logs are restored during graceful shutdown.
-                // The IIS Express deployer doesn't support graceful shutdown.
+
                 //Assert.Contains(TestSink.Writes, context => context.Message.Contains("Restoring original stdout: "));
             }
             finally
             {
-
-                RetryHelper.RetryOperation(
-                    () => Directory.Delete(pathToLogs, true),
-                    e => Logger.LogWarning($"Failed to delete directory : {e.Message}"),
-                    retryCount: 3,
-                    retryDelayMilliseconds: 100);
             }
         }
 

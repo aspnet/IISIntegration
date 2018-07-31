@@ -10,6 +10,10 @@
 #include "SRWExclusiveLock.h"
 #include "LoggingHelpers.h"
 
+extern PCWSTR              g_moduleName;
+
+#define LOG_IF_ERRNO(err) do { if (err != 0) { LOG_IF_FAILED(HRESULT_FROM_WIN32(_doserrno)); } } while (0, 0);
+
 FileOutputManager::FileOutputManager() :
     m_hLogFileHandle(INVALID_HANDLE_VALUE),
     m_fdPreviousStdOut(-1),
@@ -93,7 +97,7 @@ FileOutputManager::Start()
     GetSystemTime(&systemTime);
 
     RETURN_IF_FAILED(
-        m_struLogFilePath.SafeSnwprintf(L"%s_%d%02d%02d%02d%02d%02d_%d.log",
+        m_struLogFilePath.SafeSnwprintf(L"%s_%d%02d%02d%02d%02d%02d_%d_%s.log",
         struPath.QueryStr(),
         systemTime.wYear,
         systemTime.wMonth,
@@ -101,7 +105,8 @@ FileOutputManager::Start()
         systemTime.wHour,
         systemTime.wMinute,
         systemTime.wSecond,
-        GetCurrentProcessId()));
+        GetCurrentProcessId(),
+            g_moduleName));
 
     m_fdPreviousStdOut = _dup(_fileno(stdout));
     m_fdPreviousStdErr = _dup(_fileno(stderr));
@@ -170,32 +175,55 @@ FileOutputManager::Stop()
     {
         m_Timer.CancelTimer();
     }
+    auto test = FlushFileBuffers(m_hLogFileHandle);
+    if (test)
+    {
+        // std err has twice as much stuff
+        LOG_INFO("Flushed buffers.");
+    }
 
-    // delete empty log file
+    handle = GetStdHandle(STD_ERROR_HANDLE);
+    CloseHandle(handle);
+
+    handle = GetStdHandle(STD_OUTPUT_HANDLE);
+    CloseHandle(handle);
+
+    if (m_fdPreviousStdOut >= 0)
+    {
+        LOG_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdOut)));
+    }
+    else
+    {
+        //LOG_IF_ERRNO(freopen_s(&stream, "NUL:", "w", stdout));
+        //SetStdHandle(STD_OUTPUT_HANDLE, stream);
+    }
+
+    if (m_fdPreviousStdErr >= 0)
+    {
+        LOG_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdErr)));
+    }
+    else
+    {
+        //LOG_IF_ERRNO(freopen_s(&stream, "NUL:", "w", stderr));
+        //SetStdHandle(STD_OUTPUT_HANDLE, stream);
+    }
+    LoggingHelpers::ReReadStdOutFileNo();
+    LoggingHelpers::ReReadStdErrFileNo();
+
+
     handle = FindFirstFile(m_struLogFilePath.QueryStr(), &fileData);
     if (handle != INVALID_HANDLE_VALUE &&
         handle != NULL &&
         fileData.nFileSizeHigh == 0 &&
         fileData.nFileSizeLow == 0) // skip check of nFileSizeHigh
     {
+        LOG_INFO("Log is empty.");
         FindClose(handle);
-        LOG_LAST_ERROR_IF(!DeleteFile(m_struLogFilePath.QueryStr()));
+        auto res = DeleteFile(m_struLogFilePath.QueryStr());
+        LOG_LAST_ERROR_IF(!res);
     }
 
-    if (m_fdPreviousStdOut >= 0)
-    {
-        LOG_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdOut)));
-        LOG_INFOF("Restoring original stdout: %d", m_fdPreviousStdOut);
-    }
-
-    if (m_fdPreviousStdErr >= 0)
-    {
-        LOG_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdErr)));
-        LOG_INFOF("Restoring original stderr: %d", m_fdPreviousStdOut);
-    }
-
-    LoggingHelpers::ReReadStdOutFileNo();
-    LoggingHelpers::ReReadStdErrFileNo();
+    m_hLogFileHandle = INVALID_HANDLE_VALUE;
 
     return S_OK;
 }
