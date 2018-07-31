@@ -18,5 +18,13 @@ public:
         PCWSTR pwzApplicationPath,
         _Out_ IOutputManager** outputManager
     );
+
+    static
+    VOID
+    ReReadStdOutFileNo();
+
+    static
+    VOID
+    ReReadStdErrFileNo();
 };
 

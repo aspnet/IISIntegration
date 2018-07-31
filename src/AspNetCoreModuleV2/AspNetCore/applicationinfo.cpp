@@ -16,6 +16,7 @@
 #include "HandleWrapper.h"
 #include "ServerErrorApplication.h"
 #include "AppOfflineApplication.h"
+#include "..\..\RequestHandlerLib\LoggingHelpers.h"
 
 extern HINSTANCE    g_hModule;
 
@@ -45,7 +46,6 @@ APPLICATION_INFO::Initialize(
 
     return S_OK;
 }
-
 
 HRESULT
 APPLICATION_INFO::GetOrCreateApplication(
@@ -306,6 +306,14 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
     BOOL        fFound = FALSE;
     DWORD       dwBufferSize = 1024 * 10;
     DWORD       dwRequiredBufferSize = 0;
+    STRA output;
+    IOutputManager* pLoggerProvider;
+    hr = LoggingHelpers::CreateLoggingProvider(
+        m_pConfiguration->QueryStdoutLogEnabled(),
+        !GetConsoleWindow(),
+        m_pConfiguration->QueryStdoutLogFile()->QueryStr(),
+        m_pConfiguration->QueryApplicationPhysicalPath()->QueryStr(),
+        &pLoggerProvider);
 
     DBG_ASSERT(struFilename != NULL);
 
@@ -322,6 +330,8 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
     }
 
     FINISHED_IF_FAILED(hr = struNativeSearchPaths.Resize(dwBufferSize));
+
+    pLoggerProvider->Start();
 
     while (TRUE)
     {
@@ -383,6 +393,13 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
     }
 
 Finished:
+
+    pLoggerProvider->Stop();
+
+    delete pLoggerProvider;
+
+    // TODO do stuff with the output here
+
     if (FAILED(hr) && hmHostFxrDll != NULL)
     {
         FreeLibrary(hmHostFxrDll);

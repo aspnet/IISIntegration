@@ -8,6 +8,7 @@
 #include "exceptions.h"
 #include "debugutil.h"
 #include "SRWExclusiveLock.h"
+#include "LoggingHelpers.h"
 
 FileOutputManager::FileOutputManager() :
     m_hLogFileHandle(INVALID_HANDLE_VALUE),
@@ -136,6 +137,9 @@ FileOutputManager::Start()
 
     RETURN_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, m_hLogFileHandle));
 
+    LoggingHelpers::ReReadStdOutFileNo();
+    LoggingHelpers::ReReadStdErrFileNo();
+
     // Periodically flush the log content to file
     m_Timer.InitializeTimer(STTIMER::TimerCallback, &m_struLogFilePath, 3000, 3000);
 
@@ -144,7 +148,6 @@ FileOutputManager::Start()
 
     return S_OK;
 }
-
 
 HRESULT
 FileOutputManager::Stop()
@@ -176,7 +179,7 @@ FileOutputManager::Stop()
         fileData.nFileSizeLow == 0) // skip check of nFileSizeHigh
     {
         FindClose(handle);
-       LOG_LAST_ERROR_IF(!DeleteFile(m_struLogFilePath.QueryStr()));
+        LOG_LAST_ERROR_IF(!DeleteFile(m_struLogFilePath.QueryStr()));
     }
 
     if (m_fdPreviousStdOut >= 0)
@@ -190,6 +193,9 @@ FileOutputManager::Stop()
         LOG_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdErr)));
         LOG_INFOF("Restoring original stderr: %d", m_fdPreviousStdOut);
     }
+
+    LoggingHelpers::ReReadStdOutFileNo();
+    LoggingHelpers::ReReadStdErrFileNo();
 
     return S_OK;
 }

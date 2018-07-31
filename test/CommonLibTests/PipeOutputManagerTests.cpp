@@ -23,12 +23,76 @@ public:
 
 namespace PipeOutputManagerTests
 {
-    TEST(PipeManagerOutputTest, NotifyStartupCompleteCallsDispose)
+    TEST(PipeManagerOutputTest, BasicFunctionalityCheck)
     {
         PCWSTR expected = L"test";
+        STRA output;
 
         PipeOutputManager* pManager = new PipeOutputManager();
+
         ASSERT_EQ(S_OK, pManager->Start());
+        wprintf(expected);
+        ASSERT_EQ(S_OK, pManager->Stop());
+
+        pManager->GetStdOutContent(&output);
+        ASSERT_STREQ(output.QueryStr(), "test");
+        delete pManager;
+    }
+
+    TEST(PipeManagerOutputTest, BasicFunctionalityCheck)
+    {
+        PCWSTR expected = L"test";
+        STRA output;
+
+        PipeOutputManager* pManager = new PipeOutputManager();
+
+        ASSERT_EQ(S_OK, pManager->Start());
+        wprintf(expected, stderr);
+        ASSERT_EQ(S_OK, pManager->Stop());
+
+        pManager->GetStdOutContent(&output);
+        ASSERT_STREQ(output.QueryStr(), "test");
+        delete pManager;
+    }
+
+    TEST(PipeManagerOutputTest, CheckMaxPipeSize)
+    {
+        std::wstring test;
+        STRA output;
+        for (int i = 0; i < 2000; i++)
+        {
+            test.append(L"hello world");
+        }
+
+        PipeOutputManager* pManager = new PipeOutputManager();
+
+        ASSERT_EQ(S_OK, pManager->Start());
+        wprintf(test.c_str());
+        ASSERT_EQ(S_OK, pManager->Stop());
+
+        pManager->GetStdOutContent(&output);
+        ASSERT_EQ(output.QueryCCH(), (DWORD)4096);
+        delete pManager;
+    }
+
+    TEST(PipeManagerOutputTest, CheckMaxPipeSize)
+    {
+        std::wstring test;
+        STRA output;
+        for (int i = 0; i < 2000; i++)
+        {
+            test.append(L"hello world");
+        }
+
+        PipeOutputManager* pManager = new PipeOutputManager();
+
+        ASSERT_EQ(S_OK, pManager->Start());
+        wprintf(test.c_str(), stderr);
+        ASSERT_EQ(S_OK, pManager->Stop());
+
+        pManager->GetStdOutContent(&output);
+        ASSERT_EQ(output.QueryCCH(), (DWORD)4096);
+        delete pManager;
     }
 
     TEST(PipeManagerOutputTest, SetInvalidHandlesForErrAndOut)
@@ -50,6 +114,7 @@ namespace PipeOutputManagerTests
         // Test will fail if we didn't redirect stdout back to a file descriptor.
         // This is because gtest relies on console output to know if a test succeeded or failed.
         // If the output still points to a file/pipe, the test (and all other tests after it) will fail.
+        delete pManager;
     }
 }
 

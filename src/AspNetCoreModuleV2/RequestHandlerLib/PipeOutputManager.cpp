@@ -5,6 +5,7 @@
 #include "PipeOutputManager.h"
 #include "exceptions.h"
 #include "SRWExclusiveLock.h"
+#include "LoggingHelpers.h"
 
 #define LOG_IF_DUPFAIL(err) do { if (err == -1) { LOG_IF_FAILED(HRESULT_FROM_WIN32(_doserrno)); } } while (0, 0);
 #define LOG_IF_ERRNO(err) do { if (err != 0) { LOG_IF_FAILED(HRESULT_FROM_WIN32(_doserrno)); } } while (0, 0);
@@ -59,6 +60,14 @@ HRESULT PipeOutputManager::Start()
 
     RETURN_LAST_ERROR_IF_NULL(m_hErrThread);
 
+    // ONLY FOR IISReadStdErrHandle
+    //FILE* dummyFile;
+    //freopen_s(&dummyFile, "nul", "w", stdout);
+    //freopen_s(&dummyFile, "nul", "w", stderr);
+
+    LoggingHelpers::ReReadStdOutFileNo();
+    LoggingHelpers::ReReadStdErrFileNo();
+
     return S_OK;
 }
 
@@ -91,7 +100,7 @@ HRESULT PipeOutputManager::Stop()
 
     if (m_fdPreviousStdOut >= 0)
     {
-        LOG_LAST_ERROR_IF(SetStdHandle(STD_OUTPUT_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdOut)));
+        LOG_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdOut)));
     }
     else
     {
@@ -100,12 +109,15 @@ HRESULT PipeOutputManager::Stop()
 
     if (m_fdPreviousStdErr >= 0)
     {
-        LOG_LAST_ERROR_IF(SetStdHandle(STD_ERROR_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdErr)));
+        LOG_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdErr)));
     }
     else
     {
         LOG_IF_ERRNO(freopen_s(&stream, "NUL:", "w", stderr));
     }
+
+    LoggingHelpers::ReReadStdOutFileNo();
+    LoggingHelpers::ReReadStdErrFileNo();
 
     if (m_hErrWritePipe != INVALID_HANDLE_VALUE)
     {
@@ -136,7 +148,6 @@ HRESULT PipeOutputManager::Stop()
         CloseHandle(m_hErrThread);
         m_hErrThread = NULL;
     }
-
 
     if (m_hErrReadPipe != INVALID_HANDLE_VALUE)
     {

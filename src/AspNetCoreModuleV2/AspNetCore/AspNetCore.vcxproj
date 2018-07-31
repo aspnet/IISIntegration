@@ -255,6 +255,9 @@
     <ProjectReference Include="..\IISLib\IISLib.vcxproj">
       <Project>{09d9d1d6-2951-4e14-bc35-76a23cf9391a}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\RequestHandlerLib\RequestHandlerLib.vcxproj">
+      <Project>{1533e271-f61b-441b-8b74-59fb61df0552}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="ancm.mof" />

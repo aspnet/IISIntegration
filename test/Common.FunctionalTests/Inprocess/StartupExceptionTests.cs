@@ -2,10 +2,13 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Server.IIS.FunctionalTests.Utilities;
 using Microsoft.AspNetCore.Testing.xunit;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
@@ -80,6 +83,46 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
             var responseText = await response.Content.ReadAsStringAsync();
             Assert.Contains("500.30 - ANCM In-Process Start Failure", responseText);
+        }
+
+        [ConditionalFact]
+        public async Task FrameworkNotFoundExceptionLogged()
+        {
+            var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
+
+            var deploymentResult = await DeployAsync(deploymentParameters);
+
+            var path = Path.Combine(deploymentResult.ContentRoot, "StartupExceptionWebsite.runtimeconfig.json");
+            var depsFileContent = File.ReadAllText(path);
+            depsFileContent = depsFileContent.Replace("2.2.0-preview1-26618-02", "2.9.9");
+            File.WriteAllText(path, depsFileContent);
+
+            var response = await deploymentResult.HttpClient.GetAsync("/");
+            Assert.False(response.IsSuccessStatusCode);
+
+            StopServer();
+
+            //EventLogHelpers.VerifyEventLogEvent(TestSink, "Framework not found.");
+        }
+
+        [ConditionalFact]
+        public async Task FrameworkNotFoundExceptionLogged_Test()
+        {
+            var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
+
+            var deploymentResult = await DeployAsync(deploymentParameters);
+
+            var path = Path.Combine(deploymentResult.ContentRoot, "StartupExceptionWebsite.deps.json");
+            var depsFileContent = File.ReadAllText(path);
+            depsFileContent = depsFileContent.Replace(".NETCoreApp,Version=v2.2", ".NETCoreApp,Version=v2.6");
+            File.WriteAllText(path, depsFileContent);
+
+            var response = await deploymentResult.HttpClient.GetAsync("/");
+            Assert.False(response.IsSuccessStatusCode);
+
+            StopServer();
+
+            //EventLogHelpers.VerifyEventLogEvent(TestSink, "Framework not found.");
         }
     }
 }
