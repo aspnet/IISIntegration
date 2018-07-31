@@ -8,6 +8,8 @@
 #include "PipeOutputManager.h"
 #include "NullOutputManager.h"
 #include <fcntl.h>
+#include "exceptions.h"
+#include "debugutil.h"
 
 HRESULT
 LoggingHelpers::CreateLoggingProvider(
@@ -68,6 +70,11 @@ LoggingHelpers::ReReadStdOutFileNo()
             }
         }
     }
+    HANDLE afterHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (afterHandle)
+    {
+        LOG_INFO("test");
+    }
 }
 
 VOID
@@ -89,5 +96,11 @@ LoggingHelpers::ReReadStdErrFileNo()
                 }
             }
         }
+    }
+
+    HANDLE afterHandle = GetStdHandle(STD_ERROR_HANDLE);
+    if (afterHandle)
+    {
+        LOG_INFO("test");
     }
 }

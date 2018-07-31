@@ -69,7 +69,7 @@ namespace FileOutManagerStartupTests
 
 namespace FileOutManagerOutputTests
 {
-    TEST(FileOutManagerOutputTest, StdErr)
+    /*TEST(FileOutManagerOutputTest, StdErr)
     {
         PCSTR expected = "test";
 
@@ -128,6 +128,34 @@ namespace FileOutManagerOutputTests
 
             ASSERT_EQ(straContent.QueryCCH(), 4096);
         }
+    }
+*/
+    TEST(FileOutManagerOutputTest, CreateDeleteKeepOriginalStdOutAndStdErr)
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            auto tempDirectory = TempDirectory();
+
+            auto stdoutBefore = _fileno(stdout);
+            auto stderrBefore = _fileno(stderr);
+            auto stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+            auto stderrHandle = GetStdHandle(STD_ERROR_HANDLE);
+
+            PCWSTR expected = L"test";
+            STRA output;
+
+            FileOutputManager* pManager = new FileOutputManager();
+            pManager->Initialize(L"", tempDirectory.path().c_str());
+
+            ASSERT_EQ(S_OK, pManager->Start());
+            ASSERT_EQ(S_OK, pManager->Stop());
+
+            ASSERT_EQ(stdoutBefore, _fileno(stdout));
+            ASSERT_EQ(stderrBefore, _fileno(stderr));
+
+            delete pManager;
+        }
+        // When this returns, we get an AV from gtest.
     }
 }
 

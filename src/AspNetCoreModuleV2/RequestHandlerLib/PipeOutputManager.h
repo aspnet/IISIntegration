@@ -34,6 +34,8 @@ private:
     SRWLOCK                         m_srwLock;
     int                             m_fdPreviousStdOut;
     int                             m_fdPreviousStdErr;
+    HANDLE                          m_hPreviousStdOut;
+    HANDLE                          m_hPreviousStdErr;
     BOOL                            m_disposed;
 };
 
