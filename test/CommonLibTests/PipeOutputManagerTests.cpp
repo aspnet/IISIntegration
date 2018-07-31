@@ -116,5 +116,56 @@ namespace PipeOutputManagerTests
         // If the output still points to a file/pipe, the test (and all other tests after it) will fail.
         delete pManager;
     }
+
+    TEST(PipeManagerOutputTest, CreateDeleteKeepOriginalStdOutAndStdErr)
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            auto stdoutBefore = _fileno(stdout);
+            PCWSTR expected = L"test";
+            STRA output;
+
+            PipeOutputManager* pManager = new PipeOutputManager();
+
+            ASSERT_EQ(S_OK, pManager->Start());
+            wprintf(expected);
+            ASSERT_EQ(S_OK, pManager->Stop());
+
+            pManager->GetStdOutContent(&output);
+            ASSERT_STREQ(output.QueryStr(), "test");
+            ASSERT_EQ(stdoutBefore, _fileno(stdout));
+            delete pManager;
+        }
+        // When this returns, we get an AV from gtest.
+    }
+
+    TEST(PipeManagerOutputTest, CreateDeleteKeepOriginalStdErr)
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            auto stdoutBefore = _fileno(stdout);
+            auto stderrBefore = _fileno(stderr);
+            auto stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+            auto stderrHandle = GetStdHandle(STD_ERROR_HANDLE);
+            PCWSTR expected = L"test";
+            STRA output;
+
+            PipeOutputManager* pManager = new PipeOutputManager();
+
+            ASSERT_EQ(S_OK, pManager->Start());
+            wprintf(expected);
+            ASSERT_EQ(S_OK, pManager->Stop());
+
+            pManager->GetStdOutContent(&output);
+            ASSERT_STREQ(output.QueryStr(), "test");
+            ASSERT_EQ(stdoutBefore, _fileno(stdout));
+
+            ASSERT_EQ(stderrBefore, _fileno(stderr));
+
+            delete pManager;
+        }
+
+        wprintf(L"Hello!");
+    }
 }
 

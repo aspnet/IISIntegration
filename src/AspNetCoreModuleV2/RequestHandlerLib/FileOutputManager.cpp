@@ -110,7 +110,12 @@ FileOutputManager::Start()
 
     m_fdPreviousStdOut = _dup(_fileno(stdout));
     m_fdPreviousStdErr = _dup(_fileno(stderr));
-
+    auto handleOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    auto handleErr = GetStdHandle(STD_ERROR_HANDLE);
+    if (handleOut && handleErr)
+    {
+        LOG_INFO("test");
+    }
     m_hLogFileHandle = CreateFileW(m_struLogFilePath.QueryStr(),
         FILE_READ_DATA | FILE_WRITE_DATA,
         FILE_SHARE_READ,
@@ -182,34 +187,23 @@ FileOutputManager::Stop()
         LOG_INFO("Flushed buffers.");
     }
 
-    handle = GetStdHandle(STD_ERROR_HANDLE);
-    CloseHandle(handle);
-
-    handle = GetStdHandle(STD_OUTPUT_HANDLE);
-    CloseHandle(handle);
+    auto handleOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    auto handleErr = GetStdHandle(STD_ERROR_HANDLE);
 
     if (m_fdPreviousStdOut >= 0)
     {
         LOG_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdOut)));
-    }
-    else
-    {
-        //LOG_IF_ERRNO(freopen_s(&stream, "NUL:", "w", stdout));
-        //SetStdHandle(STD_OUTPUT_HANDLE, stream);
     }
 
     if (m_fdPreviousStdErr >= 0)
     {
         LOG_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdErr)));
     }
-    else
-    {
-        //LOG_IF_ERRNO(freopen_s(&stream, "NUL:", "w", stderr));
-        //SetStdHandle(STD_OUTPUT_HANDLE, stream);
-    }
     LoggingHelpers::ReReadStdOutFileNo();
     LoggingHelpers::ReReadStdErrFileNo();
 
+    CloseHandle(handleOut);
+    CloseHandle(handleErr);
 
     handle = FindFirstFile(m_struLogFilePath.QueryStr(), &fileData);
     if (handle != INVALID_HANDLE_VALUE &&

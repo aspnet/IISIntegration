@@ -60,7 +60,6 @@ HRESULT PipeOutputManager::Start()
 
     RETURN_LAST_ERROR_IF_NULL(m_hErrThread);
 
-    // ONLY FOR IISReadStdErrHandle
     //FILE* dummyFile;
     //freopen_s(&dummyFile, "nul", "w", stdout);
     //freopen_s(&dummyFile, "nul", "w", stderr);
