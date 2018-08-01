@@ -48,13 +48,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 StopServer();
 
                 // TODO why are multiple logs in this directory?
-                var filesInDirectory = Directory.GetFiles(pathToLogs);
-                if (filesInDirectory.Count() > 1)
-                {
-                    Logger.LogWarning(string.Join(",", filesInDirectory));
-                    throw new FileLoadException("Multiple files in directory.");
-                }
-                var fileInDirectory = filesInDirectory.Single();
+                var fileInDirectory = Directory.GetFiles(pathToLogs).Where(fileName => fileName.Contains("inprocess")).Single();
                 var contents = File.ReadAllText(fileInDirectory);
 
                 Assert.NotNull(contents);

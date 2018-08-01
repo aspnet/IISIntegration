@@ -52,6 +52,8 @@ LoggingHelpers::CreateLoggingProvider(
 VOID
 LoggingHelpers::ReReadStdOutFileNo()
 {
+    // This function shouldn't modify the return value of GetStdHandle, if it does,
+    // investigate why.
     HANDLE stdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
     if (stdHandle != INVALID_HANDLE_VALUE)
     {
@@ -62,6 +64,7 @@ LoggingHelpers::ReReadStdOutFileNo()
             if (file != NULL)
             {
                 // This returns -1.
+                // stdout now refers to the file open here.
                 int dup2Result = _dup2(_fileno(file), _fileno(stdout));
                 if (dup2Result == 0)
                 {
@@ -70,10 +73,11 @@ LoggingHelpers::ReReadStdOutFileNo()
             }
         }
     }
-    HANDLE afterHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (afterHandle)
+
+    HANDLE stdHandleAfter = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (stdHandle != stdHandleAfter)
     {
-        LOG_INFO("test");
+        LOG_INFO("Rip");
     }
 }
 
@@ -98,9 +102,10 @@ LoggingHelpers::ReReadStdErrFileNo()
         }
     }
 
-    HANDLE afterHandle = GetStdHandle(STD_ERROR_HANDLE);
-    if (afterHandle)
+
+    HANDLE stdHandleAfter = GetStdHandle(STD_ERROR_HANDLE);
+    if (stdHandle != stdHandleAfter)
     {
-        LOG_INFO("test");
+        LOG_INFO("Rip");
     }
 }

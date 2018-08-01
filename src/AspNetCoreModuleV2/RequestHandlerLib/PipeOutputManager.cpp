@@ -36,8 +36,20 @@ HRESULT PipeOutputManager::Start()
     m_fdPreviousStdOut = _dup(_fileno(stdout));
     LOG_IF_DUPFAIL(m_fdPreviousStdOut);
 
+    if (m_fdPreviousStdOut == -1)
+    {
+        FILE* dummyFile;
+        freopen_s(&dummyFile, "nul", "w", stdout);
+    }
+
     m_fdPreviousStdErr = _dup(_fileno(stderr));
     LOG_IF_DUPFAIL(m_fdPreviousStdErr);
+
+    if (m_fdPreviousStdErr == -1)
+    {
+        FILE* dummyFile;
+        freopen_s(&dummyFile, "nul", "w", stderr);
+    }
 
     RETURN_LAST_ERROR_IF(!CreatePipe(&hStdErrReadPipe, &hStdErrWritePipe, &saAttr, 0 /*nSize*/));
 
@@ -45,6 +57,9 @@ HRESULT PipeOutputManager::Start()
     RETURN_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, hStdErrWritePipe));
 
     RETURN_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, hStdErrWritePipe));
+
+    LoggingHelpers::ReReadStdOutFileNo();
+    LoggingHelpers::ReReadStdErrFileNo();
 
     m_hErrReadPipe = hStdErrReadPipe;
     m_hErrWritePipe = hStdErrWritePipe;
@@ -64,8 +79,6 @@ HRESULT PipeOutputManager::Start()
     //freopen_s(&dummyFile, "nul", "w", stdout);
     //freopen_s(&dummyFile, "nul", "w", stderr);
 
-    LoggingHelpers::ReReadStdOutFileNo();
-    LoggingHelpers::ReReadStdErrFileNo();
 
     return S_OK;
 }
@@ -95,7 +108,6 @@ HRESULT PipeOutputManager::Stop()
 
     // If stdout/stderr were not set, we need to set it to NUL:
     // such that other calls to Console.WriteLine don't use an invalid handle
-    FILE *stream;
 
     if (m_fdPreviousStdOut >= 0)
     {
@@ -103,7 +115,7 @@ HRESULT PipeOutputManager::Stop()
     }
     else
     {
-        LOG_IF_ERRNO(freopen_s(&stream, "NUL:", "w", stdout));
+        LOG_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, (HANDLE)NULL));
     }
 
     if (m_fdPreviousStdErr >= 0)
@@ -112,7 +124,7 @@ HRESULT PipeOutputManager::Stop()
     }
     else
     {
-        LOG_IF_ERRNO(freopen_s(&stream, "NUL:", "w", stderr));
+        LOG_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, (HANDLE)NULL));
     }
 
     LoggingHelpers::ReReadStdOutFileNo();

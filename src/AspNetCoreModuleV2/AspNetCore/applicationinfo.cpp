@@ -181,16 +181,8 @@ APPLICATION_INFO::FindRequestHandlerAssembly(STRU& location)
 
                 FINISHED_IF_FAILED(location.Copy(options->GetExeLocation()));
 
-                if (FAILED_LOG(hr = FindNativeAssemblyFromHostfxr(options.get(), pstrHandlerDllName, &struFileName)))
-                {
-                    UTILITY::LogEventF(g_hEventLog,
-                            EVENTLOG_ERROR_TYPE,
-                            ASPNETCORE_EVENT_INPROCESS_RH_MISSING,
-                            ASPNETCORE_EVENT_INPROCESS_RH_MISSING_MSG,
-                            struFileName.IsEmpty() ? s_pwzAspnetcoreInProcessRequestHandlerName : struFileName.QueryStr());
-
-                    FINISHED(hr);
-                }
+                FINISHED_IF_FAILED(hr = FindNativeAssemblyFromHostfxr(options.get(), pstrHandlerDllName, &struFileName));
+                
             }
             else
             {
@@ -396,14 +388,29 @@ Finished:
 
     pLoggerProvider->Stop();
 
-    delete pLoggerProvider;
-
-    // TODO do stuff with the output here
-
     if (FAILED(hr) && hmHostFxrDll != NULL)
     {
+        STRA content;
+        STRU struStdMsg;
+
+        pLoggerProvider->GetStdOutContent(&content);
+        if (content.QueryCCH() > 0)
+        {
+            struStdMsg.CopyA(content.QueryStr());
+        }
+
+        UTILITY::LogEventF(g_hEventLog,
+            EVENTLOG_ERROR_TYPE,
+            ASPNETCORE_EVENT_GENERAL_ERROR_MSG,
+            ASPNETCORE_EVENT_INPROCESS_RH_ERROR_MSG,
+            struFilename->IsEmpty() ? s_pwzAspnetcoreInProcessRequestHandlerName : struFilename->QueryStr(),
+            struStdMsg.QueryStr());
+
         FreeLibrary(hmHostFxrDll);
     }
+
+    delete pLoggerProvider;
+
     return hr;
 }
 
