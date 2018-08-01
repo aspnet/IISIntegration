@@ -26,7 +26,6 @@ HANDLE              g_hEventLog = NULL;
 bool                g_fInProcessApplicationCreated = false;
 PCWSTR              g_moduleName = L"inprocess";
 
-
 HRESULT
 InitializeGlobalConfiguration(
     IHttpServer * pServer,

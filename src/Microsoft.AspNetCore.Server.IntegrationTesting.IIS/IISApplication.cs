@@ -22,7 +22,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
         internal const int ERROR_OBJECT_NOT_FOUND = unchecked((int)0x800710D8);
         internal const int ERROR_SHARING_VIOLATION = unchecked((int)0x80070020);
 
-        private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan _timeout = Debugger.IsAttached ? TimeSpan.FromMinutes(60) : TimeSpan.FromSeconds(10);
         private static readonly TimeSpan _retryDelay = TimeSpan.FromMilliseconds(200);
         private readonly ServerManager _serverManager = new ServerManager();
         private readonly DeploymentParameters _deploymentParameters;

@@ -3,9 +3,11 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Server.IIS.FunctionalTests.Utilities;
+using Microsoft.AspNetCore.Server.IntegrationTesting.IIS;
 using Microsoft.AspNetCore.Testing.xunit;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -86,7 +88,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         }
 
         [ConditionalFact]
-        public async Task FrameworkNotFoundExceptionLogged()
+        public async Task FrameworkNotFoundExceptionLogged_Pipe()
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
 
@@ -102,19 +104,27 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
             StopServer();
 
-            //EventLogHelpers.VerifyEventLogEvent(TestSink, "Framework not found.");
+            EventLogHelpers.VerifyEventLogEvent(TestSink, "Could not find the assembly 'aspnetcorev2_inprocess.dll' for in-process application.");
+            Assert.Contains(TestSink.Writes, context => context.Message.Contains("The specified framework 'Microsoft.NETCore.App', version '2.9.9' was not found."));
         }
 
         [ConditionalFact]
-        public async Task FrameworkNotFoundExceptionLogged_Test()
+        public async Task FrameworkNotFoundExceptionLogged_File()
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
 
+            deploymentParameters.WebConfigActionList.Add(
+              WebConfigHelpers.AddOrModifyAspNetCoreSection("stdoutLogEnabled", "true"));
+
+            var pathToLogs = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            deploymentParameters.WebConfigActionList.Add(
+                WebConfigHelpers.AddOrModifyAspNetCoreSection("stdoutLogFile", Path.Combine(pathToLogs, "std")));
+
             var deploymentResult = await DeployAsync(deploymentParameters);
 
-            var path = Path.Combine(deploymentResult.ContentRoot, "StartupExceptionWebsite.deps.json");
+            var path = Path.Combine(deploymentResult.ContentRoot, "StartupExceptionWebsite.runtimeconfig.json");
             var depsFileContent = File.ReadAllText(path);
-            depsFileContent = depsFileContent.Replace(".NETCoreApp,Version=v2.2", ".NETCoreApp,Version=v2.6");
+            depsFileContent = depsFileContent.Replace("2.2.0-preview1-26618-02", "2.9.9");
             File.WriteAllText(path, depsFileContent);
 
             var response = await deploymentResult.HttpClient.GetAsync("/");
@@ -122,7 +132,11 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
             StopServer();
 
-            //EventLogHelpers.VerifyEventLogEvent(TestSink, "Framework not found.");
+            // TODO why are multiple logs in this directory?
+            var fileInDirectory = Directory.GetFiles(pathToLogs).Single();
+            var contents = File.ReadAllText(fileInDirectory);
+
+            Assert.Contains("The specified framework 'Microsoft.NETCore.App', version '2.9.9' was not found.", contents);
         }
     }
 }
