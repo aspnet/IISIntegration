@@ -197,6 +197,7 @@
     <ClInclude Include="IOutputManager.h" />
     <ClInclude Include="LoggingHelpers.h" />
     <ClInclude Include="PipeOutputManager.h" />
+    <ClInclude Include="PipeWrapper.h" />
     <ClInclude Include="requesthandler_config.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
@@ -204,6 +205,7 @@
     <ClCompile Include="AppOfflineTrackingApplication.cpp" />
     <ClCompile Include="FileOutputManager.cpp" />
     <ClCompile Include="filewatcher.cpp" />
+    <ClCompile Include="PipeWrapper.cpp" />
     <ClCompile Include="requesthandler_config.cpp" />
     <ClCompile Include="LoggingHelpers.cpp" />
     <ClCompile Include="PipeOutputManager.cpp" />

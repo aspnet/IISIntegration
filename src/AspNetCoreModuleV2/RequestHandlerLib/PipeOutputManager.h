@@ -4,6 +4,7 @@
 #pragma once
 
 #include "IOutputManager.h"
+#include "PipeWrapper.h"
 
 class PipeOutputManager : public IOutputManager
 {
@@ -32,12 +33,8 @@ private:
     CHAR                            m_pzFileContents[MAX_PIPE_READ_SIZE] = { 0 };
     DWORD                           m_dwStdErrReadTotal;
     SRWLOCK                         m_srwLock;
-    int                             m_fdPreviousStdOut;
-    int                             m_fdPreviousStdErr;
-    HANDLE                          m_hPreviousStdOut;
-    HANDLE                          m_hPreviousStdErr;
     BOOL                            m_disposed;
-    FILE*                           m_fdCurrentStdOut;
-    FILE*                           m_fdCurrentStdErr;
+    std::unique_ptr<PipeWrapper>    stdoutWrapper;
+    std::unique_ptr<PipeWrapper>    stderrWrapper;
 };
 

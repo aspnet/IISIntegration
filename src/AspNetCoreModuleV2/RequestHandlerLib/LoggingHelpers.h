@@ -21,10 +21,6 @@ public:
 
     static
     FILE*
-    ReReadStdOutFileNo();
-
-    static
-    FILE*
-    ReReadStdErrFileNo();
+    ReReadStdFileNo(DWORD nHandle, FILE* originalFile);
 };
 
