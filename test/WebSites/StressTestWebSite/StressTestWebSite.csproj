@@ -3,7 +3,8 @@
   <Import Project="..\..\..\build\testsite.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>$(StandardTestTfms)</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
+    <InProcessTestSite>true</InProcessTestSite>
   </PropertyGroup>
 
   <ItemGroup>
