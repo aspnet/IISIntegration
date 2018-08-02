@@ -50,41 +50,12 @@ LoggingHelpers::CreateLoggingProvider(
 }
 
 FILE*
-LoggingHelpers::ReReadStdOutFileNo()
-{
-    // This function shouldn't modify the return value of GetStdHandle, if it does,
-    // investigate why.
-    FILE* file = NULL;
-    int fileDescriptor = -1;
-    HANDLE stdHandle;
-
-    DuplicateHandle(GetCurrentProcess(), GetStdHandle(STD_ERROR_HANDLE), GetCurrentProcess(), &stdHandle, 0, TRUE, DUPLICATE_SAME_ACCESS);
-    if (stdHandle != INVALID_HANDLE_VALUE)
-    {
-        fileDescriptor = _open_osfhandle((intptr_t)stdHandle, _O_TEXT);
-        if (fileDescriptor != -1)
-        {
-            file = _fdopen(fileDescriptor, "w");
-            if (file != NULL)
-            {
-                int dup2Result = _dup2(_fileno(file), _fileno(stdout));
-                if (dup2Result == 0)
-                {
-                    setvbuf(stdout, NULL, _IONBF, 0);
-                }
-            }
-        }
-    }
-    return file;
-}
-
-FILE*
-LoggingHelpers::ReReadStdErrFileNo()
+LoggingHelpers::ReReadStdFileNo(DWORD nHandle, FILE* originalFile)
 {
     FILE* file = NULL;
     int fileDescriptor = -1;
     HANDLE stdHandle;
-    DuplicateHandle(GetCurrentProcess(), GetStdHandle(STD_ERROR_HANDLE), GetCurrentProcess(), &stdHandle, 0, TRUE, DUPLICATE_SAME_ACCESS);
+    DuplicateHandle(GetCurrentProcess(), GetStdHandle(nHandle), GetCurrentProcess(), &stdHandle, 0, TRUE, DUPLICATE_SAME_ACCESS);
 
     if (stdHandle != INVALID_HANDLE_VALUE)
     {
@@ -94,10 +65,10 @@ LoggingHelpers::ReReadStdErrFileNo()
             file = _fdopen(fileDescriptor, "w");
             if (file != NULL)
             {
-                int dup2Result = _dup2(_fileno(file), _fileno(stderr));
+                int dup2Result = _dup2(_fileno(file), _fileno(originalFile));
                 if (dup2Result == 0)
                 {
-                    setvbuf(stderr, NULL, _IONBF, 0);
+                    setvbuf(originalFile, NULL, _IONBF, 0);
                 }
             }
         }

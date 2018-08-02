@@ -143,8 +143,8 @@ FileOutputManager::Start()
     // Periodically flush the log content to file
     m_Timer.InitializeTimer(STTIMER::TimerCallback, &m_struLogFilePath, 3000, 3000);
 
-    LoggingHelpers::ReReadStdErrFileNo();
-    LoggingHelpers::ReReadStdOutFileNo();
+    LoggingHelpers::ReReadStdFileNo(STD_OUTPUT_HANDLE, stdout);
+    LoggingHelpers::ReReadStdFileNo(STD_ERROR_HANDLE, stderr);
 
     return S_OK;
 }
@@ -186,8 +186,8 @@ FileOutputManager::Stop()
         LOG_INFOF("Restoring original stderr: %d", m_fdPreviousStdOut);
     }
 
-    LoggingHelpers::ReReadStdErrFileNo();
-    LoggingHelpers::ReReadStdOutFileNo();
+    LoggingHelpers::ReReadStdFileNo(STD_OUTPUT_HANDLE, stdout);
+    LoggingHelpers::ReReadStdFileNo(STD_ERROR_HANDLE, stderr);
 
     // delete empty log file
     handle = FindFirstFile(m_struLogFilePath.QueryStr(), &fileData);

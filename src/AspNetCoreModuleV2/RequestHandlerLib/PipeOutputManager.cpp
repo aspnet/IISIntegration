@@ -6,6 +6,7 @@
 #include "exceptions.h"
 #include "SRWExclusiveLock.h"
 #include "LoggingHelpers.h"
+#include "PipeWrapper.h"
 
 #define LOG_IF_DUPFAIL(err) do { if (err == -1) { LOG_IF_FAILED(HRESULT_FROM_WIN32(_doserrno)); } } while (0, 0);
 #define LOG_IF_ERRNO(err) do { if (err != 0) { LOG_IF_FAILED(HRESULT_FROM_WIN32(_doserrno)); } } while (0, 0);
@@ -15,9 +16,7 @@ PipeOutputManager::PipeOutputManager() :
     m_hErrReadPipe(INVALID_HANDLE_VALUE),
     m_hErrWritePipe(INVALID_HANDLE_VALUE),
     m_hErrThread(NULL),
-    m_disposed(FALSE),
-    m_fdPreviousStdOut(-1),
-    m_fdPreviousStdErr(-1)
+    m_disposed(FALSE)
 {
     InitializeSRWLock(&m_srwLock);
 }
@@ -33,33 +32,13 @@ HRESULT PipeOutputManager::Start()
     HANDLE                  hStdErrReadPipe;
     HANDLE                  hStdErrWritePipe;
 
-    m_fdPreviousStdOut = _dup(_fileno(stdout));
-    LOG_IF_DUPFAIL(m_fdPreviousStdOut);
-
-    if (m_fdPreviousStdOut == -1)
-    {
-        FILE* dummyFile;
-        freopen_s(&dummyFile, "nul", "w", stdout);
-        m_fdPreviousStdOut = _fileno(stdout);
-    }
-    m_fdPreviousStdErr = _dup(_fileno(stderr));
-    LOG_IF_DUPFAIL(m_fdPreviousStdErr);
-
-    if (m_fdPreviousStdErr == -1)
-    {
-        FILE* dummyFile;
-        freopen_s(&dummyFile, "nul", "w", stderr);
-        m_fdPreviousStdErr = _fileno(stderr);
-    }
-
     RETURN_LAST_ERROR_IF(!CreatePipe(&hStdErrReadPipe, &hStdErrWritePipe, &saAttr, 0 /*nSize*/));
 
-    RETURN_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, hStdErrWritePipe));
+    stdoutWrapper = std::make_unique<PipeWrapper>(stdout, STD_OUTPUT_HANDLE, hStdErrWritePipe);
+    stderrWrapper = std::make_unique<PipeWrapper>(stderr, STD_ERROR_HANDLE, hStdErrWritePipe);
 
-    RETURN_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, hStdErrWritePipe));
-
-    m_fdCurrentStdOut = LoggingHelpers::ReReadStdOutFileNo();
-    m_fdCurrentStdErr = LoggingHelpers::ReReadStdErrFileNo();
+    stdoutWrapper->SetupRedirection();
+    stderrWrapper->SetupRedirection();
 
     m_hErrReadPipe = hStdErrReadPipe;
     m_hErrWritePipe = hStdErrWritePipe;
@@ -74,8 +53,6 @@ HRESULT PipeOutputManager::Start()
         NULL);      // receive thread identifier
 
     RETURN_LAST_ERROR_IF_NULL(m_hErrThread);
-    //printf("test");
-    //wprintf(L"Another test");
     return S_OK;
 }
 
@@ -96,7 +73,6 @@ HRESULT PipeOutputManager::Stop()
     }
     m_disposed = true;
 
-    fflush(stdout);
     fflush(stderr);
 
     // Restore the original stdout and stderr handles of the process,
@@ -106,30 +82,14 @@ HRESULT PipeOutputManager::Stop()
     // such that other calls to Console.WriteLine don't use an invalid handle
     FlushFileBuffers(m_hErrWritePipe);
 
-    if (m_fdPreviousStdOut >= 0)
-    {
-        LOG_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdOut)));
-    }
-
-    if (m_fdPreviousStdErr >= 0)
-    {
-        LOG_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdErr)));
-    }
     //auto stdOutVal = _fileno(stdout);
     //auto stdErrVal = _fileno(stderr);
-
-    LoggingHelpers::ReReadStdOutFileNo();
-    LoggingHelpers::ReReadStdErrFileNo();
+    stdoutWrapper->StopRedirection();
+    stderrWrapper->StopRedirection();
 
     if (m_hErrWritePipe != INVALID_HANDLE_VALUE)
     {
-        auto res1 = fclose(m_fdCurrentStdOut);
-        auto res2 = fclose(m_fdCurrentStdErr);
-        auto res3 = CloseHandle(m_hErrWritePipe);
-        if (res1 && res2 && res3)
-        {
-            LOG_INFO("");
-        }
+        CloseHandle(m_hErrWritePipe);
         m_hErrWritePipe = INVALID_HANDLE_VALUE;
     }
 
@@ -170,8 +130,6 @@ HRESULT PipeOutputManager::Stop()
         // Need to flush contents for the new stdout and stderr
         _flushall();
     }
-
-    printf("test");
 
     return S_OK;
 }
