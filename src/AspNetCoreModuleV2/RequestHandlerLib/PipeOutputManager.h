@@ -37,5 +37,7 @@ private:
     HANDLE                          m_hPreviousStdOut;
     HANDLE                          m_hPreviousStdErr;
     BOOL                            m_disposed;
+    FILE*                           m_fdCurrentStdOut;
+    FILE*                           m_fdCurrentStdErr;
 };
 

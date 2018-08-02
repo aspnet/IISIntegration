@@ -20,11 +20,11 @@ public:
     );
 
     static
-    VOID
+    FILE*
     ReReadStdOutFileNo();
 
     static
-    VOID
+    FILE*
     ReReadStdErrFileNo();
 };
 

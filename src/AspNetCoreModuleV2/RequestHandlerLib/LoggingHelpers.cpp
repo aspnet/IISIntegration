@@ -8,8 +8,8 @@
 #include "PipeOutputManager.h"
 #include "NullOutputManager.h"
 #include <fcntl.h>
-#include "exceptions.h"
 #include "debugutil.h"
+#include "HandleWrapper.h"
 
 HRESULT
 LoggingHelpers::CreateLoggingProvider(
@@ -49,22 +49,24 @@ LoggingHelpers::CreateLoggingProvider(
     return hr;
 }
 
-VOID
+FILE*
 LoggingHelpers::ReReadStdOutFileNo()
 {
     // This function shouldn't modify the return value of GetStdHandle, if it does,
     // investigate why.
-    HANDLE stdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    FILE* file = NULL;
+    int fileDescriptor = -1;
+    HANDLE stdHandle;
+
+    DuplicateHandle(GetCurrentProcess(), GetStdHandle(STD_ERROR_HANDLE), GetCurrentProcess(), &stdHandle, 0, TRUE, DUPLICATE_SAME_ACCESS);
     if (stdHandle != INVALID_HANDLE_VALUE)
     {
-        int fileDescriptor = _open_osfhandle((intptr_t)stdHandle, _O_TEXT);
+        fileDescriptor = _open_osfhandle((intptr_t)stdHandle, _O_TEXT);
         if (fileDescriptor != -1)
         {
-            FILE* file = _fdopen(fileDescriptor, "w");
+            file = _fdopen(fileDescriptor, "w");
             if (file != NULL)
             {
-                // This returns -1.
-                // stdout now refers to the file open here.
                 int dup2Result = _dup2(_fileno(file), _fileno(stdout));
                 if (dup2Result == 0)
                 {
@@ -73,24 +75,23 @@ LoggingHelpers::ReReadStdOutFileNo()
             }
         }
     }
-
-    HANDLE stdHandleAfter = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (stdHandle != stdHandleAfter)
-    {
-        LOG_INFO("Rip");
-    }
+    return file;
 }
 
-VOID
+FILE*
 LoggingHelpers::ReReadStdErrFileNo()
 {
-    HANDLE stdHandle = GetStdHandle(STD_ERROR_HANDLE);
+    FILE* file = NULL;
+    int fileDescriptor = -1;
+    HANDLE stdHandle;
+    DuplicateHandle(GetCurrentProcess(), GetStdHandle(STD_ERROR_HANDLE), GetCurrentProcess(), &stdHandle, 0, TRUE, DUPLICATE_SAME_ACCESS);
+
     if (stdHandle != INVALID_HANDLE_VALUE)
     {
-        int fileDescriptor = _open_osfhandle((intptr_t)stdHandle, _O_TEXT);
+        fileDescriptor = _open_osfhandle((intptr_t)stdHandle, _O_TEXT);
         if (fileDescriptor != -1)
         {
-            FILE* file = _fdopen(fileDescriptor, "w");
+            file = _fdopen(fileDescriptor, "w");
             if (file != NULL)
             {
                 int dup2Result = _dup2(_fileno(file), _fileno(stderr));
@@ -101,11 +102,5 @@ LoggingHelpers::ReReadStdErrFileNo()
             }
         }
     }
-
-
-    HANDLE stdHandleAfter = GetStdHandle(STD_ERROR_HANDLE);
-    if (stdHandle != stdHandleAfter)
-    {
-        LOG_INFO("Rip");
-    }
+    return file;
 }
