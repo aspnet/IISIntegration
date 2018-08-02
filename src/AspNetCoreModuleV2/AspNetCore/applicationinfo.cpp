@@ -309,6 +309,8 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
 
     DBG_ASSERT(struFilename != NULL);
 
+    pLoggerProvider->Start();
+
     FINISHED_LAST_ERROR_IF_NULL(hmHostFxrDll = LoadLibraryW(hostfxrOptions->GetHostFxrLocation()));
 
     hostfxr_get_native_search_directories_fn pFnHostFxrSearchDirectories = (hostfxr_get_native_search_directories_fn)
@@ -323,7 +325,6 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
 
     FINISHED_IF_FAILED(hr = struNativeSearchPaths.Resize(dwBufferSize));
 
-    pLoggerProvider->Start();
 
     while (TRUE)
     {

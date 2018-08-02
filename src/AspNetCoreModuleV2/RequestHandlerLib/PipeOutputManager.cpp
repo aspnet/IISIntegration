@@ -40,8 +40,8 @@ HRESULT PipeOutputManager::Start()
     {
         FILE* dummyFile;
         freopen_s(&dummyFile, "nul", "w", stdout);
+        m_fdPreviousStdOut = _fileno(stdout);
     }
-
     m_fdPreviousStdErr = _dup(_fileno(stderr));
     LOG_IF_DUPFAIL(m_fdPreviousStdErr);
 
@@ -49,17 +49,17 @@ HRESULT PipeOutputManager::Start()
     {
         FILE* dummyFile;
         freopen_s(&dummyFile, "nul", "w", stderr);
+        m_fdPreviousStdErr = _fileno(stderr);
     }
 
     RETURN_LAST_ERROR_IF(!CreatePipe(&hStdErrReadPipe, &hStdErrWritePipe, &saAttr, 0 /*nSize*/));
 
-    // TODO this still doesn't redirect calls in native, like wprintf
     RETURN_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, hStdErrWritePipe));
 
     RETURN_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, hStdErrWritePipe));
 
-    LoggingHelpers::ReReadStdOutFileNo();
-    LoggingHelpers::ReReadStdErrFileNo();
+    m_fdCurrentStdOut = LoggingHelpers::ReReadStdOutFileNo();
+    m_fdCurrentStdErr = LoggingHelpers::ReReadStdErrFileNo();
 
     m_hErrReadPipe = hStdErrReadPipe;
     m_hErrWritePipe = hStdErrWritePipe;
@@ -74,12 +74,8 @@ HRESULT PipeOutputManager::Start()
         NULL);      // receive thread identifier
 
     RETURN_LAST_ERROR_IF_NULL(m_hErrThread);
-
-    //FILE* dummyFile;
-    //freopen_s(&dummyFile, "nul", "w", stdout);
-    //freopen_s(&dummyFile, "nul", "w", stderr);
-
-
+    //printf("test");
+    //wprintf(L"Another test");
     return S_OK;
 }
 
@@ -108,34 +104,36 @@ HRESULT PipeOutputManager::Stop()
 
     // If stdout/stderr were not set, we need to set it to NUL:
     // such that other calls to Console.WriteLine don't use an invalid handle
+    FlushFileBuffers(m_hErrWritePipe);
 
     if (m_fdPreviousStdOut >= 0)
     {
         LOG_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdOut)));
-    }
-    else
-    {
-        LOG_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, (HANDLE)NULL));
     }
 
     if (m_fdPreviousStdErr >= 0)
     {
         LOG_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdErr)));
     }
-    else
-    {
-        LOG_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, (HANDLE)NULL));
-    }
+    //auto stdOutVal = _fileno(stdout);
+    //auto stdErrVal = _fileno(stderr);
 
     LoggingHelpers::ReReadStdOutFileNo();
     LoggingHelpers::ReReadStdErrFileNo();
 
     if (m_hErrWritePipe != INVALID_HANDLE_VALUE)
     {
-        CloseHandle(m_hErrWritePipe);
+        auto res1 = fclose(m_fdCurrentStdOut);
+        auto res2 = fclose(m_fdCurrentStdErr);
+        auto res3 = CloseHandle(m_hErrWritePipe);
+        if (res1 && res2 && res3)
+        {
+            LOG_INFO("");
+        }
         m_hErrWritePipe = INVALID_HANDLE_VALUE;
     }
 
+    CancelSynchronousIo(m_hErrThread);
     // GetExitCodeThread returns 0 on failure; thread status code is invalid.
     if (m_hErrThread != NULL &&
         !LOG_LAST_ERROR_IF(GetExitCodeThread(m_hErrThread, &dwThreadStatus) == 0) &&
@@ -172,6 +170,8 @@ HRESULT PipeOutputManager::Stop()
         // Need to flush contents for the new stdout and stderr
         _flushall();
     }
+
+    printf("test");
 
     return S_OK;
 }
@@ -216,7 +216,7 @@ PipeOutputManager::ReadStdErrHandleInternal(
                 break;
             }
         }
-        else if (GetLastError() == ERROR_BROKEN_PIPE)
+        else
         {
             return;
         }
@@ -229,7 +229,7 @@ PipeOutputManager::ReadStdErrHandleInternal(
         if (ReadFile(m_hErrReadPipe, tempBuffer, MAX_PIPE_READ_SIZE, &dwNumBytesRead, NULL))
         {
         }
-        else if (GetLastError() == ERROR_BROKEN_PIPE)
+        else
         {
             return;
         }
