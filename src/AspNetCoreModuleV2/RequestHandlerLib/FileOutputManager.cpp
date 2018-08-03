@@ -85,6 +85,15 @@ FileOutputManager::Start()
     SECURITY_ATTRIBUTES saAttr = { 0 };
     STRU struPath;
 
+    auto stdoutput2 = _fileno(stdout);
+    auto stdoutHandle2 = GetStdHandle(STD_OUTPUT_HANDLE);
+    auto stderror2 = _fileno(stderr);
+    auto stderrHandle2 = GetStdHandle(STD_ERROR_HANDLE);
+    if (stdoutput2 && stdoutHandle2 && stderror2 && stderrHandle2)
+    {
+        LOG_INFO("");
+    }
+
     RETURN_IF_FAILED(UTILITY::ConvertPathToFullPath(
         m_wsStdOutLogFileName.QueryStr(),
         m_wsApplicationPath.QueryStr(),
@@ -197,7 +206,6 @@ FileOutputManager::Stop()
         LOG_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, reinterpret_cast<HANDLE>(_get_osfhandle(m_fdPreviousStdErr))));
     }
 
-
     LoggingHelpers::ReReadStdFileNo(STD_OUTPUT_HANDLE, stdout);
     LoggingHelpers::ReReadStdFileNo(STD_ERROR_HANDLE, stderr);
 
@@ -210,6 +218,15 @@ FileOutputManager::Stop()
     {
         FindClose(handle);
         LOG_LAST_ERROR_IF(!DeleteFile(m_struLogFilePath.QueryStr()));
+    }
+
+    auto stdoutput2 = _fileno(stdout);
+    auto stdoutHandle2 = GetStdHandle(STD_OUTPUT_HANDLE);
+    auto stderror2 = _fileno(stderr);
+    auto stderrHandle2 = GetStdHandle(STD_ERROR_HANDLE);
+    if (stdoutput2 && stdoutHandle2 && stderror2 && stderrHandle2)
+    {
+        LOG_INFO("");
     }
 
     return S_OK;

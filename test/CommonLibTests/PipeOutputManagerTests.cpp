@@ -49,6 +49,7 @@ namespace PipeOutputManagerTests
         auto stdoutHandle2 = GetStdHandle(STD_OUTPUT_HANDLE);
         auto stderror2 = _fileno(stderr);
         auto stderrHandle2 = GetStdHandle(STD_ERROR_HANDLE);
+        wprintf(expected, stdout);
     }
 
     TEST(PipeManagerOutputTest, BasicFunctionalityCheck2)
@@ -71,7 +72,7 @@ namespace PipeOutputManagerTests
     {
         std::wstring test;
         STRA output;
-        for (int i = 0; i < 2000; i++)
+        for (int i = 0; i < 3000; i++)
         {
             test.append(L"hello world");
         }
@@ -83,7 +84,7 @@ namespace PipeOutputManagerTests
         ASSERT_EQ(S_OK, pManager->Stop());
 
         pManager->GetStdOutContent(&output);
-        ASSERT_EQ(output.QueryCCH(), (DWORD)4096);
+        ASSERT_EQ(output.QueryCCH(), (DWORD)30000);
         delete pManager;
     }
 
@@ -91,7 +92,7 @@ namespace PipeOutputManagerTests
     {
         std::wstring test;
         STRA output;
-        for (int i = 0; i < 2000; i++)
+        for (int i = 0; i < 3000; i++)
         {
             test.append(L"hello world");
         }
@@ -103,7 +104,7 @@ namespace PipeOutputManagerTests
         ASSERT_EQ(S_OK, pManager->Stop());
 
         pManager->GetStdOutContent(&output);
-        ASSERT_EQ(output.QueryCCH(), (DWORD)4096);
+        ASSERT_EQ(output.QueryCCH(), (DWORD)30000);
         delete pManager;
     }
 

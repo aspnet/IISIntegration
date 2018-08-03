@@ -135,14 +135,6 @@ HRESULT PipeOutputManager::Stop()
         _flushall();
     }
 
-    auto stdoutput2 = _fileno(stdout);
-    auto stdoutHandle2 = GetStdHandle(STD_OUTPUT_HANDLE);
-    auto stderror2 = _fileno(stderr);
-    auto stderrHandle2 = GetStdHandle(STD_ERROR_HANDLE);
-    if (stdoutput2 && stdoutHandle2 && stderror2 && stderrHandle2)
-    {
-        LOG_INFO("");
-    }
     return S_OK;
 }
 
