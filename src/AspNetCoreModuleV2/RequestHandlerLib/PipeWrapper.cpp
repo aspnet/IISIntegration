@@ -1,9 +1,9 @@
+// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the MIT License. See License.txt in the project root for license information.
 
 #include "stdafx.h"
 #include "PipeWrapper.h"
-#include "stdafx.h"
 #include "exceptions.h"
-#include <fcntl.h>
 #include "LoggingHelpers.h"
 
 PipeWrapper::PipeWrapper(FILE* outputStream, DWORD nHandle, HANDLE pipeHandle)
@@ -44,10 +44,14 @@ SetupRedirection()
 HRESULT
 PipeWrapper::StopRedirection() const
 {
+    // Restore the original std handle
     LOG_LAST_ERROR_IF(!SetStdHandle(nHandle, reinterpret_cast<HANDLE>(_get_osfhandle(previousFileDescriptor))));
 
+    // Close the redirected file. 
     LOG_LAST_ERROR_IF(fclose(redirectedFile));
 
+    // After setting the std handle, we need to set stdout/stderr to the current
+    // output/error handle.
     LoggingHelpers::ReReadStdFileNo(nHandle, stdStream);
 
     return S_OK;

@@ -31,5 +31,6 @@ private:
     int m_fdPreviousStdErr;
     BOOL m_disposed;
     SRWLOCK m_srwLock;
+    FILE* m_pStdout;
+    FILE* m_pStderr;
 };
-

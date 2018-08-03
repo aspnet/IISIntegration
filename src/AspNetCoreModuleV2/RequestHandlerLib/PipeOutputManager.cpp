@@ -60,6 +60,7 @@ HRESULT PipeOutputManager::Stop()
     DWORD    dwThreadStatus = 0;
     STRA     straStdOutput;
 
+
     if (m_disposed)
     {
         return S_OK;
@@ -90,7 +91,8 @@ HRESULT PipeOutputManager::Stop()
     }
 
     // Forces ReadFile to cancel, causing the read loop to complete.
-    RETURN_LAST_ERROR_IF(!CancelSynchronousIo(m_hErrThread));
+    // Don't check return value as IO may or may not be completed already.
+    CancelSynchronousIo(m_hErrThread);
 
     // GetExitCodeThread returns 0 on failure; thread status code is invalid.
     if (m_hErrThread != nullptr &&
@@ -126,12 +128,21 @@ HRESULT PipeOutputManager::Stop()
     // Useful for the IIS Express scenario as it is running with stdout and stderr
     if (GetStdOutContent(&straStdOutput))
     {
-        RETURN_LAST_ERROR_IF(printf(straStdOutput.QueryStr()) == -1);
+        int res = printf(straStdOutput.QueryStr());
+        RETURN_LAST_ERROR_IF(res == -1);
 
         // Need to flush contents for the new stdout and stderr
         _flushall();
     }
 
+    auto stdoutput2 = _fileno(stdout);
+    auto stdoutHandle2 = GetStdHandle(STD_OUTPUT_HANDLE);
+    auto stderror2 = _fileno(stderr);
+    auto stderrHandle2 = GetStdHandle(STD_ERROR_HANDLE);
+    if (stdoutput2 && stdoutHandle2 && stderror2 && stderrHandle2)
+    {
+        LOG_INFO("");
+    }
     return S_OK;
 }
 
@@ -162,10 +173,17 @@ bool PipeOutputManager::GetStdOutContent(STRA* straStdOutput)
 void
 PipeOutputManager::ReadStdErrHandleInternal()
 {
+    // If ReadFile ever returns false, exit the thread
+
     DWORD dwNumBytesRead = 0;
     while (true)
     {
-        if (ReadFile(m_hErrReadPipe, &m_pzFileContents[m_dwStdErrReadTotal], MAX_PIPE_READ_SIZE - m_dwStdErrReadTotal, &dwNumBytesRead, nullptr))
+        // Fill a maximum of MAX_PIPE_READ_SIZE into a buffer.
+        if (ReadFile(m_hErrReadPipe,
+            &m_pzFileContents[m_dwStdErrReadTotal],
+            MAX_PIPE_READ_SIZE - m_dwStdErrReadTotal,
+            &dwNumBytesRead,
+            nullptr))
         {
             m_dwStdErrReadTotal += dwNumBytesRead;
             if (m_dwStdErrReadTotal >= MAX_PIPE_READ_SIZE)
@@ -179,8 +197,10 @@ PipeOutputManager::ReadStdErrHandleInternal()
         }
     }
 
-    std::string tempBuffer;
+    std::string tempBuffer; // Using std::string as a wrapper around new char[] so we don't need to call delete
     tempBuffer.resize(MAX_PIPE_READ_SIZE);
+
+    // After reading the maximum amount of data, keep reading in a loop until Stop is called on the output manager.
     while (true)
     {
         if (ReadFile(m_hErrReadPipe, &tempBuffer[0], MAX_PIPE_READ_SIZE, &dwNumBytesRead, nullptr))
