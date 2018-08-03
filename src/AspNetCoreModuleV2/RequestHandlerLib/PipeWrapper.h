@@ -1,3 +1,6 @@
+// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the MIT License. See License.txt in the project root for license information.
+
 #pragma once
 
 #include <cstdio>
@@ -8,12 +11,12 @@ public:
     PipeWrapper(FILE* outputStream, DWORD nHandle, HANDLE pipeHandle);
     ~PipeWrapper();
     HRESULT SetupRedirection();
-    HRESULT StopRedirection();
+    HRESULT StopRedirection() const;
 
     int previousFileDescriptor;
     FILE* stdStream;
     DWORD nHandle;
-    HANDLE pipeHandle;
+    HANDLE writerHandle;
     FILE* redirectedFile;
 };
 

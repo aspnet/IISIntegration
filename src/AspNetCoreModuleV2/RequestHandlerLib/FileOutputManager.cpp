@@ -107,7 +107,20 @@ FileOutputManager::Start()
             g_moduleName));
 
     m_fdPreviousStdOut = _dup(_fileno(stdout));
+    if (m_fdPreviousStdOut == -1)
+    {
+        FILE* dummyFile;
+        freopen_s(&dummyFile, "nul", "w", stdout);
+        m_fdPreviousStdOut = _fileno(stdout);
+    }
+
     m_fdPreviousStdErr = _dup(_fileno(stderr));
+    if (m_fdPreviousStdErr == -1)
+    {
+        FILE* dummyFile;
+        freopen_s(&dummyFile, "nul", "w", stderr);
+        m_fdPreviousStdErr = _fileno(stderr);
+    }
 
     m_hLogFileHandle = CreateFileW(m_struLogFilePath.QueryStr(),
         FILE_READ_DATA | FILE_WRITE_DATA,
@@ -143,8 +156,8 @@ FileOutputManager::Start()
     // Periodically flush the log content to file
     m_Timer.InitializeTimer(STTIMER::TimerCallback, &m_struLogFilePath, 3000, 3000);
 
-    LoggingHelpers::ReReadStdFileNo(STD_OUTPUT_HANDLE, stdout);
-    LoggingHelpers::ReReadStdFileNo(STD_ERROR_HANDLE, stderr);
+    m_pStdout = LoggingHelpers::ReReadStdFileNo(STD_OUTPUT_HANDLE, stdout);
+    m_pStderr = LoggingHelpers::ReReadStdFileNo(STD_ERROR_HANDLE, stderr);
 
     return S_OK;
 }
@@ -176,15 +189,14 @@ FileOutputManager::Stop()
 
     if (m_fdPreviousStdOut >= 0)
     {
-        LOG_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdOut)));
-        LOG_INFOF("Restoring original stdout: %d", m_fdPreviousStdOut);
+        LOG_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, reinterpret_cast<HANDLE>(_get_osfhandle(m_fdPreviousStdOut))));
     }
 
     if (m_fdPreviousStdErr >= 0)
     {
-        LOG_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, (HANDLE)_get_osfhandle(m_fdPreviousStdErr)));
-        LOG_INFOF("Restoring original stderr: %d", m_fdPreviousStdOut);
+        LOG_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, reinterpret_cast<HANDLE>(_get_osfhandle(m_fdPreviousStdErr))));
     }
+
 
     LoggingHelpers::ReReadStdFileNo(STD_OUTPUT_HANDLE, stdout);
     LoggingHelpers::ReReadStdFileNo(STD_ERROR_HANDLE, stderr);

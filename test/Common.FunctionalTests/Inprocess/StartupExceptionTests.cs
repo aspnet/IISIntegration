@@ -132,11 +132,58 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
             StopServer();
 
-            // TODO why are multiple logs in this directory?
             var fileInDirectory = Directory.GetFiles(pathToLogs).Single();
             var contents = File.ReadAllText(fileInDirectory);
 
             Assert.Contains("The specified framework 'Microsoft.NETCore.App', version '2.9.9' was not found.", contents);
+        }
+
+        [ConditionalFact]
+        public async Task EnableCoreHostTraceLogging_TwoLogFilesCreated()
+        {
+            var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
+
+            deploymentParameters.WebConfigActionList.Add(
+                WebConfigHelpers.AddOrModifyAspNetCoreSection("stdoutLogEnabled", "true"));
+
+            var pathToLogs = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            deploymentParameters.WebConfigActionList.Add(
+                WebConfigHelpers.AddOrModifyAspNetCoreSection("stdoutLogFile", Path.Combine(pathToLogs, "std")));
+            deploymentParameters.EnvironmentVariables["COREHOST_TRACE"] = "1";
+
+            var deploymentResult = await DeployAsync(deploymentParameters);
+
+            var response = await deploymentResult.HttpClient.GetAsync("/");
+            Assert.False(response.IsSuccessStatusCode);
+
+            StopServer();
+
+            var filesInDirectory = Directory.GetFiles(pathToLogs);
+            Assert.Equal(2, filesInDirectory.Length);
+        }
+
+        [ConditionalFact]
+        public async Task EnableCoreHostTraceLogging_PipeRestoreCorrectly()
+        {
+            var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
+            deploymentParameters.EnvironmentVariables["COREHOST_TRACE"] = "1";
+
+            var deploymentResult = await DeployAsync(deploymentParameters);
+
+            var response = await deploymentResult.HttpClient.GetAsync("/");
+            Assert.False(response.IsSuccessStatusCode);
+
+            StopServer();
+            var count = 0;
+            foreach (var line in TestSink.Writes)
+            {
+                if (line.Message.Contains("Tracing enabled"))
+                {
+                    count++;
+                }
+            }
+
+            Assert.Equal(2, count);
         }
     }
 }

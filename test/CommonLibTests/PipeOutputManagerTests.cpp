@@ -25,18 +25,30 @@ namespace PipeOutputManagerTests
 {
     TEST(PipeManagerOutputTest, BasicFunctionalityCheck)
     {
+        auto stdoutput = _fileno(stdout);
+        auto stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+        auto stderror = _fileno(stderr);
+        auto stderrHandle = GetStdHandle(STD_ERROR_HANDLE);
+
         PCWSTR expected = L"test";
         STRA output;
 
         PipeOutputManager* pManager = new PipeOutputManager();
 
         ASSERT_EQ(S_OK, pManager->Start());
-        wprintf(expected);
+        wprintf(expected, stdout);
+        wprintf(expected, stderr);
+
         ASSERT_EQ(S_OK, pManager->Stop());
 
         pManager->GetStdOutContent(&output);
-        ASSERT_STREQ(output.QueryStr(), "test");
+        ASSERT_STREQ(output.QueryStr(), "testtest");
         delete pManager;
+
+        auto stdoutput2 = _fileno(stdout);
+        auto stdoutHandle2 = GetStdHandle(STD_OUTPUT_HANDLE);
+        auto stderror2 = _fileno(stderr);
+        auto stderrHandle2 = GetStdHandle(STD_ERROR_HANDLE);
     }
 
     TEST(PipeManagerOutputTest, BasicFunctionalityCheck2)

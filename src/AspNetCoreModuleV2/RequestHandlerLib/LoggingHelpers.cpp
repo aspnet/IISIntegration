@@ -9,7 +9,6 @@
 #include "NullOutputManager.h"
 #include <fcntl.h>
 #include "debugutil.h"
-#include "HandleWrapper.h"
 
 HRESULT
 LoggingHelpers::CreateLoggingProvider(
@@ -52,26 +51,42 @@ LoggingHelpers::CreateLoggingProvider(
 FILE*
 LoggingHelpers::ReReadStdFileNo(DWORD nHandle, FILE* originalFile)
 {
-    FILE* file = NULL;
-    int fileDescriptor = -1;
+    FILE* file = nullptr;
     HANDLE stdHandle;
-    DuplicateHandle(GetCurrentProcess(), GetStdHandle(nHandle), GetCurrentProcess(), &stdHandle, 0, TRUE, DUPLICATE_SAME_ACCESS);
 
+    // As both stdout and stderr will point to the same handle,
+    // we need to duplicate the handle for both of these. This is because
+    // on dll unload, all currently open file handles will try to be closed
+    // which will cause an exception as the stdout handle will be closed twice.
+    DuplicateHandle(
+        /* hSourceProcessHandle*/ GetCurrentProcess(),
+        /* hSourceHandle */ GetStdHandle(nHandle),
+        /* hTargetProcessHandle */ GetCurrentProcess(),
+        /* lpTargetHandle */&stdHandle,
+        /* dwDesiredAccess */ 0, // dwDesired is ignored if DUPLICATE_SAME_ACCESS is specified
+        /* bInheritHandle */ TRUE,
+        /* dwOptions  */ DUPLICATE_SAME_ACCESS);
+
+    // From the handle, we will get a file descriptor which will then be used
+    // to get a FILE*. 
     if (stdHandle != INVALID_HANDLE_VALUE)
     {
-        fileDescriptor = _open_osfhandle((intptr_t)stdHandle, _O_TEXT);
+        const auto fileDescriptor = _open_osfhandle(reinterpret_cast<intptr_t>(stdHandle), _O_TEXT);
         if (fileDescriptor != -1)
         {
             file = _fdopen(fileDescriptor, "w");
-            if (file != NULL)
+            if (file != nullptr)
             {
-                int dup2Result = _dup2(_fileno(file), _fileno(originalFile));
+                // Set stdout/stderr to the newly created file output.
+                const auto dup2Result = _dup2(_fileno(file), _fileno(originalFile));
                 if (dup2Result == 0)
                 {
-                    setvbuf(originalFile, NULL, _IONBF, 0);
+                    // Removes buffering from the output
+                    setvbuf(originalFile, nullptr, _IONBF, 0);
                 }
             }
         }
     }
+
     return file;
 }
