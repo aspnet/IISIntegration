@@ -90,14 +90,11 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         [ConditionalFact]
         public async Task FrameworkNotFoundExceptionLogged_Pipe()
         {
-            var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
+            var deploymentParameters = GetStartupExceptionParameters();
 
             var deploymentResult = await DeployAsync(deploymentParameters);
 
-            var path = Path.Combine(deploymentResult.ContentRoot, "StartupExceptionWebsite.runtimeconfig.json");
-            var depsFileContent = File.ReadAllText(path);
-            depsFileContent = depsFileContent.Replace("2.2.0-preview1-26618-02", "2.9.9");
-            File.WriteAllText(path, depsFileContent);
+            InvalidateRuntimeConfig(deploymentResult);
 
             var response = await deploymentResult.HttpClient.GetAsync("/");
             Assert.False(response.IsSuccessStatusCode);
@@ -112,20 +109,13 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         public async Task FrameworkNotFoundExceptionLogged_File()
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
+            deploymentParameters.GracefulShutdown = true;
 
-            deploymentParameters.WebConfigActionList.Add(
-              WebConfigHelpers.AddOrModifyAspNetCoreSection("stdoutLogEnabled", "true"));
-
-            var pathToLogs = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-            deploymentParameters.WebConfigActionList.Add(
-                WebConfigHelpers.AddOrModifyAspNetCoreSection("stdoutLogFile", Path.Combine(pathToLogs, "std")));
+            var pathToLogs = deploymentParameters.EnableLogging();
 
             var deploymentResult = await DeployAsync(deploymentParameters);
 
-            var path = Path.Combine(deploymentResult.ContentRoot, "StartupExceptionWebsite.runtimeconfig.json");
-            var depsFileContent = File.ReadAllText(path);
-            depsFileContent = depsFileContent.Replace("2.2.0-preview1-26618-02", "2.9.9");
-            File.WriteAllText(path, depsFileContent);
+            InvalidateRuntimeConfig(deploymentResult);
 
             var response = await deploymentResult.HttpClient.GetAsync("/");
             Assert.False(response.IsSuccessStatusCode);
@@ -142,14 +132,10 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         public async Task EnableCoreHostTraceLogging_TwoLogFilesCreated()
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
-
-            deploymentParameters.WebConfigActionList.Add(
-                WebConfigHelpers.AddOrModifyAspNetCoreSection("stdoutLogEnabled", "true"));
-
-            var pathToLogs = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-            deploymentParameters.WebConfigActionList.Add(
-                WebConfigHelpers.AddOrModifyAspNetCoreSection("stdoutLogFile", Path.Combine(pathToLogs, "std")));
             deploymentParameters.EnvironmentVariables["COREHOST_TRACE"] = "1";
+            deploymentParameters.GracefulShutdown = true;
+
+            var pathToLogs = deploymentParameters.EnableLogging();
 
             var deploymentResult = await DeployAsync(deploymentParameters);
 
@@ -167,6 +153,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
             deploymentParameters.EnvironmentVariables["COREHOST_TRACE"] = "1";
+            deploymentParameters.GracefulShutdown = true;
 
             var deploymentResult = await DeployAsync(deploymentParameters);
 
@@ -183,7 +170,22 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 }
             }
 
-            Assert.Equal(2, count);
+            Assert.Equal(6, count);
+        }
+
+        private static IISDeploymentParameters GetStartupExceptionParameters()
+        {
+            var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
+            deploymentParameters.GracefulShutdown = true;
+            return deploymentParameters;
+        }
+
+        private static void InvalidateRuntimeConfig(IISDeploymentResult deploymentResult)
+        {
+            var path = Path.Combine(deploymentResult.ContentRoot, "StartupExceptionWebsite.runtimeconfig.json");
+            var depsFileContent = File.ReadAllText(path);
+            depsFileContent = depsFileContent.Replace("2.2.0-preview1-26618-02", "2.9.9");
+            File.WriteAllText(path, depsFileContent);
         }
     }
 }

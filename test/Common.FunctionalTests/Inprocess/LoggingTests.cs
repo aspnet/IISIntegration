@@ -31,6 +31,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         public async Task CheckStdoutLoggingToFile(string path)
         {
             var deploymentParameters = _fixture.GetBaseDeploymentParameters(publish: true);
+            deploymentParameters.GracefulShutdown = true;
 
             deploymentParameters.WebConfigActionList.Add(
                 WebConfigHelpers.AddOrModifyAspNetCoreSection("stdoutLogEnabled", "true"));
@@ -47,18 +48,20 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
                 StopServer();
 
-                // TODO why are multiple logs in this directory?
-                var fileInDirectory = Directory.GetFiles(pathToLogs).Where(fileName => fileName.Contains("inprocess")).Single();
+                var fileInDirectory = Directory.GetFiles(pathToLogs).Single(fileName => fileName.Contains("inprocess"));
                 var contents = File.ReadAllText(fileInDirectory);
 
                 Assert.NotNull(contents);
                 Assert.Contains("TEST MESSAGE", contents);
                 Assert.DoesNotContain(TestSink.Writes, context => context.Message.Contains("TEST MESSAGE"));
-
-                //Assert.Contains(TestSink.Writes, context => context.Message.Contains("Restoring original stdout: "));
             }
             finally
             {
+                RetryHelper.RetryOperation(
+                    () => Directory.Delete(pathToLogs, true),
+                    e => Logger.LogWarning($"Failed to delete directory : {e.Message}"),
+                    retryCount: 3,
+                    retryDelayMilliseconds: 100);
             }
         }
 

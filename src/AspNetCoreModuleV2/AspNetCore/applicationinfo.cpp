@@ -309,7 +309,7 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
 
     DBG_ASSERT(struFilename != NULL);
 
-    pLoggerProvider->Start();
+    LOG_IF_FAILED(pLoggerProvider->Start());
 
     FINISHED_LAST_ERROR_IF_NULL(hmHostFxrDll = LoadLibraryW(hostfxrOptions->GetHostFxrLocation()));
 
