@@ -5,17 +5,16 @@
 #include "PipeOutputManager.h"
 #include "exceptions.h"
 #include "SRWExclusiveLock.h"
-#include "LoggingHelpers.h"
 #include "PipeWrapper.h"
 
 #define LOG_IF_DUPFAIL(err) do { if (err == -1) { LOG_IF_FAILED(HRESULT_FROM_WIN32(_doserrno)); } } while (0, 0);
 #define LOG_IF_ERRNO(err) do { if (err != 0) { LOG_IF_FAILED(HRESULT_FROM_WIN32(_doserrno)); } } while (0, 0);
 
 PipeOutputManager::PipeOutputManager() :
-    m_dwStdErrReadTotal(0),
     m_hErrReadPipe(INVALID_HANDLE_VALUE),
     m_hErrWritePipe(INVALID_HANDLE_VALUE),
-    m_hErrThread(NULL),
+    m_hErrThread(nullptr),
+    m_dwStdErrReadTotal(0),
     m_disposed(FALSE)
 {
     InitializeSRWLock(&m_srwLock);
@@ -23,7 +22,7 @@ PipeOutputManager::PipeOutputManager() :
 
 PipeOutputManager::~PipeOutputManager()
 {
-    Stop();
+    PipeOutputManager::Stop();
 }
 
 HRESULT PipeOutputManager::Start()
@@ -34,23 +33,23 @@ HRESULT PipeOutputManager::Start()
 
     RETURN_LAST_ERROR_IF(!CreatePipe(&hStdErrReadPipe, &hStdErrWritePipe, &saAttr, 0 /*nSize*/));
 
-    stdoutWrapper = std::make_unique<PipeWrapper>(stdout, STD_OUTPUT_HANDLE, hStdErrWritePipe);
-    stderrWrapper = std::make_unique<PipeWrapper>(stderr, STD_ERROR_HANDLE, hStdErrWritePipe);
-
-    stdoutWrapper->SetupRedirection();
-    stderrWrapper->SetupRedirection();
-
     m_hErrReadPipe = hStdErrReadPipe;
     m_hErrWritePipe = hStdErrWritePipe;
 
+    stdoutWrapper = std::make_unique<PipeWrapper>(stdout, STD_OUTPUT_HANDLE, hStdErrWritePipe);
+    stderrWrapper = std::make_unique<PipeWrapper>(stderr, STD_ERROR_HANDLE, hStdErrWritePipe);
+
+    RETURN_IF_FAILED(stdoutWrapper->SetupRedirection());
+    RETURN_IF_FAILED(stderrWrapper->SetupRedirection());
+
     // Read the stderr handle on a separate thread until we get 4096 bytes.
     m_hErrThread = CreateThread(
-        NULL,       // default security attributes
+        nullptr,       // default security attributes
         0,          // default stack size
-        (LPTHREAD_START_ROUTINE)ReadStdErrHandle,
+        reinterpret_cast<LPTHREAD_START_ROUTINE>(ReadStdErrHandle),
         this,       // thread function arguments
         0,          // default creation flags
-        NULL);      // receive thread identifier
+        nullptr);      // receive thread identifier
 
     RETURN_LAST_ERROR_IF_NULL(m_hErrThread);
     return S_OK;
@@ -65,37 +64,36 @@ HRESULT PipeOutputManager::Stop()
     {
         return S_OK;
     }
+
     SRWExclusiveLock lock(m_srwLock);
 
     if (m_disposed)
     {
         return S_OK;
     }
+
     m_disposed = true;
 
-    fflush(stderr);
+    // Flush the pipe writer before closing to capture all output
+    RETURN_LAST_ERROR_IF(!FlushFileBuffers(m_hErrWritePipe));
 
-    // Restore the original stdout and stderr handles of the process,
-    // as the application has either finished startup or has exited.
+    // Tell each pipe wrapper to stop redirecting output and restore the original values
+    RETURN_IF_FAILED(stdoutWrapper->StopRedirection());
+    RETURN_IF_FAILED(stderrWrapper->StopRedirection());
 
-    // If stdout/stderr were not set, we need to set it to NUL:
-    // such that other calls to Console.WriteLine don't use an invalid handle
-    FlushFileBuffers(m_hErrWritePipe);
-
-    //auto stdOutVal = _fileno(stdout);
-    //auto stdErrVal = _fileno(stderr);
-    stdoutWrapper->StopRedirection();
-    stderrWrapper->StopRedirection();
-
+    // Both pipe wrappers duplicate the pipe writer handle
+    // meaning we are fine to close the handle too.
     if (m_hErrWritePipe != INVALID_HANDLE_VALUE)
     {
         CloseHandle(m_hErrWritePipe);
         m_hErrWritePipe = INVALID_HANDLE_VALUE;
     }
 
-    CancelSynchronousIo(m_hErrThread);
+    // Forces ReadFile to cancel, causing the read loop to complete.
+    RETURN_LAST_ERROR_IF(!CancelSynchronousIo(m_hErrThread));
+
     // GetExitCodeThread returns 0 on failure; thread status code is invalid.
-    if (m_hErrThread != NULL &&
+    if (m_hErrThread != nullptr &&
         !LOG_LAST_ERROR_IF(GetExitCodeThread(m_hErrThread, &dwThreadStatus) == 0) &&
         dwThreadStatus == STILL_ACTIVE)
     {
@@ -112,10 +110,10 @@ HRESULT PipeOutputManager::Stop()
         }
     }
 
-    if (m_hErrThread != NULL)
+    if (m_hErrThread != nullptr)
     {
         CloseHandle(m_hErrThread);
-        m_hErrThread = NULL;
+        m_hErrThread = nullptr;
     }
 
     if (m_hErrReadPipe != INVALID_HANDLE_VALUE)
@@ -124,9 +122,12 @@ HRESULT PipeOutputManager::Stop()
         m_hErrReadPipe = INVALID_HANDLE_VALUE;
     }
 
+    // If we captured any output, relog it to the original stdout
+    // Useful for the IIS Express scenario as it is running with stdout and stderr
     if (GetStdOutContent(&straStdOutput))
     {
-        printf(straStdOutput.QueryStr());
+        RETURN_LAST_ERROR_IF(printf(straStdOutput.QueryStr()) == -1);
+
         // Need to flush contents for the new stdout and stderr
         _flushall();
     }
@@ -134,12 +135,12 @@ HRESULT PipeOutputManager::Stop()
     return S_OK;
 }
 
-VOID
+void
 PipeOutputManager::ReadStdErrHandle(
     LPVOID pContext
 )
 {
-    PipeOutputManager *pLoggingProvider = (PipeOutputManager*)pContext;
+    auto pLoggingProvider = static_cast<PipeOutputManager*>(pContext);
     DBG_ASSERT(pLoggingProvider != NULL);
     pLoggingProvider->ReadStdErrHandleInternal();
 }
@@ -158,15 +159,13 @@ bool PipeOutputManager::GetStdOutContent(STRA* straStdOutput)
     return fLogged;
 }
 
-VOID
-PipeOutputManager::ReadStdErrHandleInternal(
-    VOID
-)
+void
+PipeOutputManager::ReadStdErrHandleInternal()
 {
     DWORD dwNumBytesRead = 0;
     while (true)
     {
-        if (ReadFile(m_hErrReadPipe, &m_pzFileContents[m_dwStdErrReadTotal], MAX_PIPE_READ_SIZE - m_dwStdErrReadTotal, &dwNumBytesRead, NULL))
+        if (ReadFile(m_hErrReadPipe, &m_pzFileContents[m_dwStdErrReadTotal], MAX_PIPE_READ_SIZE - m_dwStdErrReadTotal, &dwNumBytesRead, nullptr))
         {
             m_dwStdErrReadTotal += dwNumBytesRead;
             if (m_dwStdErrReadTotal >= MAX_PIPE_READ_SIZE)
@@ -180,11 +179,11 @@ PipeOutputManager::ReadStdErrHandleInternal(
         }
     }
 
-    // TODO put this on the heap.
-    char tempBuffer[MAX_PIPE_READ_SIZE];
+    std::string tempBuffer;
+    tempBuffer.resize(MAX_PIPE_READ_SIZE);
     while (true)
     {
-        if (ReadFile(m_hErrReadPipe, tempBuffer, MAX_PIPE_READ_SIZE, &dwNumBytesRead, NULL))
+        if (ReadFile(m_hErrReadPipe, &tempBuffer[0], MAX_PIPE_READ_SIZE, &dwNumBytesRead, nullptr))
         {
         }
         else

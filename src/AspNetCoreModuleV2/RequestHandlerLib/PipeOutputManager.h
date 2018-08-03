@@ -8,21 +8,26 @@
 
 class PipeOutputManager : public IOutputManager
 {
+    // Timeout to be used if a thread never 
     #define PIPE_OUTPUT_THREAD_TIMEOUT 2000
-    #define MAX_PIPE_READ_SIZE 4096
+
+    // Max event log message is ~32KB, limit pipe size just below that.
+    #define MAX_PIPE_READ_SIZE 30000
 public:
     PipeOutputManager();
     ~PipeOutputManager();
 
-    virtual HRESULT Start() override;
-    virtual HRESULT Stop() override;
-    virtual bool GetStdOutContent(STRA* struStdOutput) override;
+    HRESULT Start() override;
+    HRESULT Stop() override;
+    bool GetStdOutContent(STRA* straStdOutput) override;
 
     // Thread functions
-    VOID ReadStdErrHandleInternal(VOID);
+    void 
+    ReadStdErrHandleInternal();
 
     static
-    VOID ReadStdErrHandle(LPVOID pContext);
+    void 
+    ReadStdErrHandle(LPVOID pContext);
 
 private:
 
@@ -32,7 +37,7 @@ private:
     HANDLE                          m_hErrThread;
     CHAR                            m_pzFileContents[MAX_PIPE_READ_SIZE] = { 0 };
     DWORD                           m_dwStdErrReadTotal;
-    SRWLOCK                         m_srwLock;
+    SRWLOCK                         m_srwLock {};
     BOOL                            m_disposed;
     std::unique_ptr<PipeWrapper>    stdoutWrapper;
     std::unique_ptr<PipeWrapper>    stderrWrapper;

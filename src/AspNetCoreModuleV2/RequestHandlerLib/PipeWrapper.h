@@ -11,7 +11,7 @@ public:
     HRESULT StopRedirection();
 
     int previousFileDescriptor;
-    FILE* outputStream;
+    FILE* stdStream;
     DWORD nHandle;
     HANDLE pipeHandle;
     FILE* redirectedFile;
