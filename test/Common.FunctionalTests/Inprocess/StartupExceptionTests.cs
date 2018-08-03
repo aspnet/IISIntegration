@@ -148,11 +148,17 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             Assert.Equal(2, filesInDirectory.Length);
         }
 
-        [ConditionalFact]
-        public async Task EnableCoreHostTraceLogging_PipeRestoreCorrectly()
+        [ConditionalTheory]
+        [InlineData("CheckLargeStdErrWrites")]
+        [InlineData("CheckLargeStdOutWrites")]
+        [InlineData("CheckOversizedStdErrWrites")]
+        [InlineData("CheckOversizedStdOutWrites")]
+        public async Task EnableCoreHostTraceLogging_PipeRestoreCorrectly(string path)
         {
             var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
             deploymentParameters.EnvironmentVariables["COREHOST_TRACE"] = "1";
+            deploymentParameters.WebConfigBasedEnvironmentVariables["ASPNETCORE_INPROCESS_STARTUP_VALUE"] = path;
+
             deploymentParameters.GracefulShutdown = true;
 
             var deploymentResult = await DeployAsync(deploymentParameters);
@@ -161,6 +167,9 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             Assert.False(response.IsSuccessStatusCode);
 
             StopServer();
+
+            Assert.Contains(TestSink.Writes, context => context.Message.Contains(new string('a', 4096)));
+
             var count = 0;
             foreach (var line in TestSink.Writes)
             {
