@@ -15,7 +15,9 @@ PipeOutputManager::PipeOutputManager() :
     m_hErrWritePipe(INVALID_HANDLE_VALUE),
     m_hErrThread(nullptr),
     m_dwStdErrReadTotal(0),
-    m_disposed(FALSE)
+    m_disposed(FALSE),
+    stdoutWrapper(nullptr),
+    stderrWrapper(nullptr)
 {
     InitializeSRWLock(&m_srwLock);
 }
@@ -76,29 +78,33 @@ HRESULT PipeOutputManager::Stop()
     m_disposed = true;
 
     // Flush the pipe writer before closing to capture all output
-    RETURN_LAST_ERROR_IF(!FlushFileBuffers(m_hErrWritePipe)); 
 
     // Tell each pipe wrapper to stop redirecting output and restore the original values
-    RETURN_IF_FAILED(stdoutWrapper->StopRedirection());
-    RETURN_IF_FAILED(stderrWrapper->StopRedirection());
+
 
     // Both pipe wrappers duplicate the pipe writer handle
     // meaning we are fine to close the handle too.
     if (m_hErrWritePipe != INVALID_HANDLE_VALUE)
     {
+        RETURN_LAST_ERROR_IF(!FlushFileBuffers(m_hErrWritePipe));
         CloseHandle(m_hErrWritePipe);
         m_hErrWritePipe = INVALID_HANDLE_VALUE;
+    }
+    if (stdoutWrapper != nullptr)
+    {
+        RETURN_IF_FAILED(stdoutWrapper->StopRedirection());
+        RETURN_IF_FAILED(stderrWrapper->StopRedirection());
     }
 
     // Forces ReadFile to cancel, causing the read loop to complete.
     // Don't check return value as IO may or may not be completed already.
-    CancelSynchronousIo(m_hErrThread);
 
-    // GetExitCodeThread returns 0 on failure; thread status code is invalid.
+     // GetExitCodeThread returns 0 on failure; thread status code is invalid.
     if (m_hErrThread != nullptr &&
         !LOG_LAST_ERROR_IF(GetExitCodeThread(m_hErrThread, &dwThreadStatus) == 0) &&
         dwThreadStatus == STILL_ACTIVE)
     {
+        CancelSynchronousIo(m_hErrThread);
         // wait for graceful shutdown, i.e., the exit of the background thread or timeout
         if (WaitForSingleObject(m_hErrThread, PIPE_OUTPUT_THREAD_TIMEOUT) != WAIT_OBJECT_0)
         {
