@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Server.IIS.FunctionalTests.Utilities;
+using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.AspNetCore.Server.IntegrationTesting.IIS;
 using Microsoft.AspNetCore.Testing.xunit;
 using Xunit;
@@ -106,7 +107,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         [ConditionalFact]
         public async Task FrameworkNotFoundExceptionLogged_File()
         {
-            var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.StartupExceptionWebsite, publish: true);
             deploymentParameters.GracefulShutdown = true;
 
             var pathToLogs = deploymentParameters.EnableLogging();
@@ -129,7 +130,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         [ConditionalFact]
         public async Task EnableCoreHostTraceLogging_TwoLogFilesCreated()
         {
-            var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.StartupExceptionWebsite, publish: true);
             deploymentParameters.EnvironmentVariables["COREHOST_TRACE"] = "1";
             deploymentParameters.GracefulShutdown = true;
 
@@ -153,7 +154,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         [InlineData("CheckOversizedStdOutWrites")]
         public async Task EnableCoreHostTraceLogging_PipeRestoreCorrectly(string path)
         {
-            var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.StartupExceptionWebsite, publish: true);
             deploymentParameters.EnvironmentVariables["COREHOST_TRACE"] = "1";
             deploymentParameters.WebConfigBasedEnvironmentVariables["ASPNETCORE_INPROCESS_STARTUP_VALUE"] = path;
 
@@ -166,7 +167,10 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             Assert.False(response.IsSuccessStatusCode);
 
             StopServer();
-            Assert.Contains(TestSink.Writes, context => context.Message.Contains("Invoked hostfxr"));
+            if (deploymentParameters.ServerType == ServerType.IISExpress)
+            {
+                Assert.Contains(TestSink.Writes, context => context.Message.Contains("Invoked hostfxr"));
+            }
         }
 
         [ConditionalTheory]
@@ -176,7 +180,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         [InlineData("CheckOversizedStdOutWrites")]
         public async Task EnableCoreHostTraceLogging_FileRestoreCorrectly(string path)
         {
-            var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.StartupExceptionWebsite, publish: true);
             deploymentParameters.EnvironmentVariables["COREHOST_TRACE"] = "1";
             deploymentParameters.WebConfigBasedEnvironmentVariables["ASPNETCORE_INPROCESS_STARTUP_VALUE"] = path;
             var pathToLogs = deploymentParameters.EnableLogging();
@@ -194,17 +198,11 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
             Assert.Contains("Invoked hostfxr", contents);
 
-            //fileInDirectory = Directory.GetFiles(pathToLogs).Last();
-
-            //contents = File.ReadAllText(fileInDirectory);
-            //Assert.Contains("Invoked hostfxr", contents);
-
-            Assert.DoesNotContain(TestSink.Writes, context => context.Message.Contains("breadcrumb"));
         }
 
-        private static IISDeploymentParameters GetStartupExceptionParameters()
+        private IISDeploymentParameters GetStartupExceptionParameters()
         {
-            var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.StartupExceptionWebsite, publish: true);
             deploymentParameters.GracefulShutdown = true;
             return deploymentParameters;
         }

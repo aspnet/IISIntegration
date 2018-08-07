@@ -16,7 +16,9 @@ FileOutputManager::FileOutputManager() :
     m_hLogFileHandle(INVALID_HANDLE_VALUE),
     m_fdPreviousStdOut(-1),
     m_fdPreviousStdErr(-1),
-    m_disposed(false)
+    m_disposed(false),
+    stdoutWrapper(nullptr),
+    stderrWrapper(nullptr)
 {
     InitializeSRWLock(&m_srwLock);
 }
@@ -109,16 +111,16 @@ FileOutputManager::Start()
         FILE_ATTRIBUTE_NORMAL,
         NULL);
 
+    if (m_hLogFileHandle == INVALID_HANDLE_VALUE)
+    {
+        return LOG_IF_FAILED(HRESULT_FROM_WIN32(GetLastError()));
+    }
+
     stderrWrapper = std::make_unique<PipeWrapper>(stderr, STD_ERROR_HANDLE, m_hLogFileHandle, GetStdHandle(STD_ERROR_HANDLE));
     stdoutWrapper = std::make_unique<PipeWrapper>(stdout, STD_OUTPUT_HANDLE, m_hLogFileHandle, GetStdHandle(STD_OUTPUT_HANDLE));
 
     RETURN_IF_FAILED(stderrWrapper->SetupRedirection());
     RETURN_IF_FAILED(stdoutWrapper->SetupRedirection());
-
-    if (m_hLogFileHandle == INVALID_HANDLE_VALUE)
-    {
-        return LOG_IF_FAILED(HRESULT_FROM_WIN32(GetLastError()));
-    }
 
     // There are a few options for redirecting stdout/stderr,
     // but there are issues with most of them.
@@ -164,12 +166,18 @@ FileOutputManager::Stop()
     if (m_hLogFileHandle != INVALID_HANDLE_VALUE)
     {
         m_Timer.CancelTimer();
+        FlushFileBuffers(m_hLogFileHandle);
     }
 
-    FlushFileBuffers(m_hLogFileHandle);
+    if (stdoutWrapper != nullptr)
+    {
+        RETURN_IF_FAILED(stdoutWrapper->StopRedirection());
+    }
 
-    RETURN_IF_FAILED(stdoutWrapper->StopRedirection());
-    RETURN_IF_FAILED(stderrWrapper->StopRedirection());
+    if (stderrWrapper != nullptr)
+    {
+        RETURN_IF_FAILED(stderrWrapper->StopRedirection());
+    }
 
     // delete empty log file
     handle = FindFirstFile(m_struLogFilePath.QueryStr(), &fileData);
