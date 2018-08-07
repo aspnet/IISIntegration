@@ -6,6 +6,7 @@
 #include "exceptions.h"
 #include "SRWExclusiveLock.h"
 #include "PipeWrapper.h"
+#include "ntassert.h"
 
 #define LOG_IF_DUPFAIL(err) do { if (err == -1) { LOG_IF_FAILED(HRESULT_FROM_WIN32(_doserrno)); } } while (0, 0);
 #define LOG_IF_ERRNO(err) do { if (err != 0) { LOG_IF_FAILED(HRESULT_FROM_WIN32(_doserrno)); } } while (0, 0);

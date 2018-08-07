@@ -16,7 +16,7 @@
 #include "HandleWrapper.h"
 #include "ServerErrorApplication.h"
 #include "AppOfflineApplication.h"
-#include "..\..\RequestHandlerLib\LoggingHelpers.h"
+#include "LoggingHelpers.h"
 
 extern HINSTANCE    g_hModule;
 
@@ -298,8 +298,9 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
     BOOL        fFound = FALSE;
     DWORD       dwBufferSize = 1024 * 10;
     DWORD       dwRequiredBufferSize = 0;
-    STRA output;
+    STRA        output;
     IOutputManager* pLoggerProvider;
+
     hr = LoggingHelpers::CreateLoggingProvider(
         m_pConfiguration->QueryStdoutLogEnabled(),
         !GetConsoleWindow(),
@@ -309,22 +310,26 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
 
     DBG_ASSERT(struFilename != NULL);
 
+    // Don't fail to start site due to not being able to log, log the error to the debug log.
     LOG_IF_FAILED(pLoggerProvider->Start());
 
     FINISHED_LAST_ERROR_IF_NULL(hmHostFxrDll = LoadLibraryW(hostfxrOptions->GetHostFxrLocation()));
 
-    hostfxr_get_native_search_directories_fn pFnHostFxrSearchDirectories = (hostfxr_get_native_search_directories_fn)
+    const auto pFnHostFxrSearchDirectories = (hostfxr_get_native_search_directories_fn)
         GetProcAddress(hmHostFxrDll, "hostfxr_get_native_search_directories");
 
-    if (pFnHostFxrSearchDirectories == NULL)
+    if (pFnHostFxrSearchDirectories == nullptr)
     {
         // Host fxr version is incorrect (need a higher version).
-        // TODO log error
-        FINISHED(E_FAIL);
+        UTILITY::LogEventF(g_hEventLog,
+            EVENTLOG_ERROR_TYPE,
+            ASPNETCORE_EVENT_GENERAL_ERROR_MSG,
+            ASPNETCORE_EVENT_HOSTFXR_DLL_INVALID_VERSION_MSG,
+            hostfxrOptions->GetHostFxrLocation());
+        RETURN_IF_FAILED(E_FAIL);
     }
 
     FINISHED_IF_FAILED(hr = struNativeSearchPaths.Resize(dwBufferSize));
-
 
     while (TRUE)
     {

@@ -9,6 +9,9 @@
 #include "NullOutputManager.h"
 #include <fcntl.h>
 #include "debugutil.h"
+#include <Windows.h>
+#include <corecrt_io.h>
+#include "ntassert.h"
 
 HRESULT
 LoggingHelpers::CreateLoggingProvider(

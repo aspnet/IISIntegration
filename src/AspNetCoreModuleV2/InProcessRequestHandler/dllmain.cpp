@@ -24,7 +24,6 @@ HINSTANCE           g_hWinHttpModule;
 HINSTANCE           g_hAspNetCoreModule;
 HANDLE              g_hEventLog = NULL;
 bool                g_fInProcessApplicationCreated = false;
-PCWSTR              g_moduleName = L"inprocess";
 
 HRESULT
 InitializeGlobalConfiguration(

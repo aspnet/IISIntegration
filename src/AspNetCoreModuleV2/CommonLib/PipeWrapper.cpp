@@ -5,6 +5,7 @@
 #include "PipeWrapper.h"
 #include "exceptions.h"
 #include "LoggingHelpers.h"
+#include <corecrt_io.h>
 
 PipeWrapper::PipeWrapper(FILE* outputStream, DWORD nHandle, HANDLE pipeHandle, HANDLE previousStdOut)
     : stdStream(outputStream),
