@@ -10,7 +10,7 @@
 #include "SRWExclusiveLock.h"
 #include "PipeWrapper.h"
 
-extern PCWSTR              g_moduleName;
+extern HINSTANCE    g_hModule;
 
 FileOutputManager::FileOutputManager() :
     m_hLogFileHandle(INVALID_HANDLE_VALUE),
@@ -91,6 +91,10 @@ FileOutputManager::Start()
 
     GetSystemTime(&systemTime);
 
+    WCHAR path[MAX_PATH];
+    RETURN_LAST_ERROR_IF(!GetModuleFileName(g_hModule, path, sizeof(path)));
+    std::filesystem::path fsPath(path);
+
     RETURN_IF_FAILED(
         m_struLogFilePath.SafeSnwprintf(L"%s_%d%02d%02d%02d%02d%02d_%d_%s.log",
             struPath.QueryStr(),
@@ -101,7 +105,7 @@ FileOutputManager::Start()
             systemTime.wMinute,
             systemTime.wSecond,
             GetCurrentProcessId(),
-            g_moduleName));
+            fsPath.filename().stem().c_str()));
 
     m_hLogFileHandle = CreateFileW(m_struLogFilePath.QueryStr(),
         FILE_READ_DATA | FILE_WRITE_DATA,

@@ -5,6 +5,7 @@
 
 #include "IOutputManager.h"
 #include "PipeWrapper.h"
+#include "stringu.h"
 
 class PipeOutputManager : public IOutputManager
 {

@@ -3,7 +3,6 @@
 
 #include "fx_ver.h"
 
-#include <Windows.h>
 #include <sstream>
 #include <cassert>
 

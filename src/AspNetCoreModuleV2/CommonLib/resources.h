@@ -47,6 +47,7 @@
 #define ASPNETCORE_EVENT_HOSTFXR_DIRECTORY_NOT_FOUND_MSG     L"Could not find the hostfxr directory '%s' in the dotnet directory. ErrorCode = '0x%x'."
 #define ASPNETCORE_EVENT_HOSTFXR_DLL_NOT_FOUND_LEVEL         EVENTLOG_ERROR_TYPE
 #define ASPNETCORE_EVENT_HOSTFXR_DLL_NOT_FOUND_MSG           L"Could not find hostfxr.dll in '%s'. ErrorCode = '0x%x'."
+#define ASPNETCORE_EVENT_HOSTFXR_DLL_INVALID_VERSION_MSG     L"Hostfxr version used does not support 'hostfxr_get_native_search_directories', update the version of hostfxr to a higher version. Path to hostfxr: '%s'."
 #define ASPNETCORE_EVENT_APPLICATION_EXE_NOT_FOUND_LEVEL     EVENTLOG_ERROR_TYPE
 #define ASPNETCORE_EVENT_APPLICATION_EXE_NOT_FOUND_MSG       L"Could not find application executable in '%s'. ErrorCode = '0x%x'."
 #define ASPNETCORE_EVENT_INPROCESS_THREAD_EXCEPTION_MSG      L"Application '%s' with physical root '%s' hit unexpected managed exception, ErrorCode = '0x%x. Please check the stderr logs for more information."

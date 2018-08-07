@@ -7,6 +7,8 @@
 #include "IOutputManager.h"
 #include "HandleWrapper.h"
 #include "PipeWrapper.h"
+#include "stringa.h"
+#include "stringu.h"
 
 class FileOutputManager : public IOutputManager
 {

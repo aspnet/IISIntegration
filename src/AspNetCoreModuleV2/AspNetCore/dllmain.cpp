@@ -16,7 +16,6 @@ DECLARE_DEBUG_PRINT_OBJECT("aspnetcorev2.dll");
 HANDLE              g_hEventLog = NULL;
 BOOL                g_fRecycleProcessCalled = FALSE;
 BOOL                g_fInShutdown = FALSE;
-PCWSTR              g_moduleName = L"aspnetcorev2";
 
 VOID
 StaticCleanup()
