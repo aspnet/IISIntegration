@@ -53,7 +53,6 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
                 Assert.NotNull(contents);
                 Assert.Contains("TEST MESSAGE", contents);
-                Assert.DoesNotContain(TestSink.Writes, context => context.Message.Contains("TEST MESSAGE"));
             }
             finally
             {

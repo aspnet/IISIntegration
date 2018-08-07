@@ -36,8 +36,8 @@ namespace PipeOutputManagerTests
         PipeOutputManager* pManager = new PipeOutputManager();
 
         ASSERT_EQ(S_OK, pManager->Start());
-        wprintf(expected, stdout);
-        wprintf(expected, stderr);
+        wprintf(expected);
+        wprintf(expected);
 
         ASSERT_EQ(S_OK, pManager->Stop());
 
@@ -135,18 +135,26 @@ namespace PipeOutputManagerTests
         for (int i = 0; i < 10; i++)
         {
             auto stdoutBefore = _fileno(stdout);
+            auto stderrBefore = _fileno(stderr);
+            auto stdoutHandleBefore = GetStdHandle(STD_OUTPUT_HANDLE);
+            auto stderrHandleBefore = GetStdHandle(STD_ERROR_HANDLE);
             PCWSTR expected = L"test";
             STRA output;
 
             PipeOutputManager* pManager = new PipeOutputManager();
 
             ASSERT_EQ(S_OK, pManager->Start());
-            wprintf(expected);
+            fwprintf(stderr, expected);
+            fwprintf(stdout, expected);
+
             ASSERT_EQ(S_OK, pManager->Stop());
 
             pManager->GetStdOutContent(&output);
-            ASSERT_STREQ(output.QueryStr(), "test");
+            ASSERT_STREQ(output.QueryStr(), "testtest");
             ASSERT_EQ(stdoutBefore, _fileno(stdout));
+            ASSERT_EQ(stderrBefore, _fileno(stderr));
+            ASSERT_EQ(stdoutHandleBefore, GetStdHandle(STD_OUTPUT_HANDLE));
+            ASSERT_EQ(stderrHandleBefore, GetStdHandle(STD_ERROR_HANDLE));
             delete pManager;
         }
         // When this returns, we get an AV from gtest.

@@ -6,10 +6,12 @@
 #include "sttimer.h"
 #include "IOutputManager.h"
 #include "HandleWrapper.h"
+#include "PipeWrapper.h"
 
 class FileOutputManager : public IOutputManager
 {
     #define FILE_FLUSH_TIMEOUT 3000
+    #define MAX_FILE_READ_SIZE 30000
 public:
     FileOutputManager();
     ~FileOutputManager();
@@ -33,4 +35,6 @@ private:
     SRWLOCK m_srwLock;
     FILE* m_pStdout;
     FILE* m_pStderr;
+    std::unique_ptr<PipeWrapper>    stdoutWrapper;
+    std::unique_ptr<PipeWrapper>    stderrWrapper;
 };

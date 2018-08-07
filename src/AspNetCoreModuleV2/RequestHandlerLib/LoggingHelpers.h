@@ -21,6 +21,8 @@ public:
 
     static
     FILE*
-    ReReadStdFileNo(DWORD nHandle, FILE* originalFile);
+    ReReadStdFileNo(DWORD nHandle, FILE* originalFile, HANDLE writerHandle);
+    static
+        FILE* UndoStdFileHandle(const DWORD n_handle, FILE* const std_stream);
 };
 

@@ -8,7 +8,7 @@
 class PipeWrapper
 {
 public:
-    PipeWrapper(FILE* outputStream, DWORD nHandle, HANDLE pipeHandle);
+    PipeWrapper(FILE* outputStream, DWORD nHandle, HANDLE pipeHandle, HANDLE previousStdOut);
     ~PipeWrapper();
     HRESULT SetupRedirection();
     HRESULT StopRedirection() const;
@@ -17,6 +17,7 @@ public:
     FILE* stdStream;
     DWORD nHandle;
     HANDLE writerHandle;
+    HANDLE previousStdOut;
     FILE* redirectedFile;
 };
 
