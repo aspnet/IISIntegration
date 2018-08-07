@@ -6,10 +6,11 @@
 #include "exceptions.h"
 #include "LoggingHelpers.h"
 
-PipeWrapper::PipeWrapper(FILE* outputStream, DWORD nHandle, HANDLE pipeHandle)
+PipeWrapper::PipeWrapper(FILE* outputStream, DWORD nHandle, HANDLE pipeHandle, HANDLE previousStdOut)
     : stdStream(outputStream),
-      nHandle(nHandle),
-      writerHandle(pipeHandle)
+    nHandle(nHandle),
+    writerHandle(pipeHandle),
+    previousStdOut(previousStdOut)
 {
 }
 
@@ -31,12 +32,13 @@ SetupRedirection()
         previousFileDescriptor = _fileno(stdStream);
     }
 
-    // set the std handle to the  
-    RETURN_LAST_ERROR_IF(!SetStdHandle(nHandle, writerHandle));
+    // set the std handle to the writer
+    //RETURN_LAST_ERROR_IF(!SetStdHandle(nHandle, writerHandle));
+
 
     // After setting the std handle, we need to set stdout/stderr to the current
     // output/error handle.
-    redirectedFile = LoggingHelpers::ReReadStdFileNo(nHandle, stdStream);
+    redirectedFile = LoggingHelpers::ReReadStdFileNo(nHandle, stdStream, writerHandle);
 
     return S_OK;
 }
@@ -44,15 +46,37 @@ SetupRedirection()
 HRESULT
 PipeWrapper::StopRedirection() const
 {
-    // Restore the original std handle
-    LOG_LAST_ERROR_IF(!SetStdHandle(nHandle, reinterpret_cast<HANDLE>(_get_osfhandle(previousFileDescriptor))));
+    FILE* file = nullptr;
+
+    //// Restore the original std handle
+    //auto handleToClose = reinterpret_cast<HANDLE>(_get_osfhandle(3));
+  
+    // After setting the std handle, we need to set stdout/stderr to the current
+    // output/error handle.
+    file = _fdopen(previousFileDescriptor, "w");
+    if (file != nullptr)
+    {
+        // Set stdout/stderr to the newly created file output.
+        const auto dup2Result = _dup2(_fileno(file), _fileno(stdStream));
+        if (dup2Result == 0)
+        {
+            // Removes buffering from the output
+            setvbuf(stdStream, nullptr, _IONBF, 0);
+        }
+        else
+        {
+            auto error = GetLastError();
+            if (error)
+            {
+                LOG_INFO("");
+            }
+        }
+    }
+
+    LOG_LAST_ERROR_IF(!SetStdHandle(nHandle, previousStdOut));
 
     // Close the redirected file. 
     LOG_LAST_ERROR_IF(fclose(redirectedFile));
-
-    // After setting the std handle, we need to set stdout/stderr to the current
-    // output/error handle.
-    LoggingHelpers::ReReadStdFileNo(nHandle, stdStream);
 
     return S_OK;
 }

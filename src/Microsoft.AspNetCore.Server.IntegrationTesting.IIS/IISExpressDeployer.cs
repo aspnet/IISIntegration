@@ -27,7 +27,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         private const string FailedToInitializeBindingsMessage = "Failed to initialize site bindings";
         private const string UnableToStartIISExpressMessage = "Unable to start iisexpress.";
         private const int MaximumAttempts = 5;
-        private readonly TimeSpan ShutdownTimeSpan = TimeSpan.FromSeconds(60);
+        private readonly TimeSpan ShutdownTimeSpan = Debugger.IsAttached ? TimeSpan.FromDays(1) : TimeSpan.FromSeconds(60);
         private static readonly Regex UrlDetectorRegex = new Regex(@"^\s*Successfully registered URL ""(?<url>[^""]+)"" for site.*$");
 
         private Process _hostProcess;

@@ -8,7 +8,7 @@
 #include "exceptions.h"
 #include "debugutil.h"
 #include "SRWExclusiveLock.h"
-#include "LoggingHelpers.h"
+#include "PipeWrapper.h"
 
 extern PCWSTR              g_moduleName;
 
@@ -24,6 +24,8 @@ FileOutputManager::FileOutputManager() :
 FileOutputManager::~FileOutputManager()
 {
     Stop();
+
+    CloseHandle(m_hLogFileHandle);
 }
 
 HRESULT
@@ -42,7 +44,7 @@ bool FileOutputManager::GetStdOutContent(STRA* struStdOutput)
     // This will be a common place for errors as it means the hostfxr_main returned
     // or there was an exception.
     //
-    CHAR            pzFileContents[4096] = { 0 };
+    CHAR            pzFileContents[MAX_FILE_READ_SIZE] = { 0 };
     DWORD           dwNumBytesRead;
     LARGE_INTEGER   li = { 0 };
     BOOL            fLogged = FALSE;
@@ -52,19 +54,12 @@ bool FileOutputManager::GetStdOutContent(STRA* struStdOutput)
     {
         if (GetFileSizeEx(m_hLogFileHandle, &li) && li.LowPart > 0 && li.HighPart == 0)
         {
-            if (li.LowPart > 4096)
-            {
-                dwFilePointer = SetFilePointer(m_hLogFileHandle, -4096, NULL, FILE_END);
-            }
-            else
-            {
-                dwFilePointer = SetFilePointer(m_hLogFileHandle, 0, NULL, FILE_BEGIN);
-            }
+            dwFilePointer = SetFilePointer(m_hLogFileHandle, 0, NULL, FILE_BEGIN);
 
             if (dwFilePointer != INVALID_SET_FILE_POINTER)
             {
                 // Read file fails.
-                if (ReadFile(m_hLogFileHandle, pzFileContents, 4096, &dwNumBytesRead, NULL))
+                if (ReadFile(m_hLogFileHandle, pzFileContents, MAX_FILE_READ_SIZE, &dwNumBytesRead, NULL))
                 {
                     if (SUCCEEDED(struStdOutput->Copy(pzFileContents, dwNumBytesRead)))
                     {
@@ -84,15 +79,6 @@ FileOutputManager::Start()
     SYSTEMTIME systemTime;
     SECURITY_ATTRIBUTES saAttr = { 0 };
     STRU struPath;
-
-    auto stdoutput2 = _fileno(stdout);
-    auto stdoutHandle2 = GetStdHandle(STD_OUTPUT_HANDLE);
-    auto stderror2 = _fileno(stderr);
-    auto stderrHandle2 = GetStdHandle(STD_ERROR_HANDLE);
-    if (stdoutput2 && stdoutHandle2 && stderror2 && stderrHandle2)
-    {
-        LOG_INFO("");
-    }
 
     RETURN_IF_FAILED(UTILITY::ConvertPathToFullPath(
         m_wsStdOutLogFileName.QueryStr(),
@@ -115,22 +101,6 @@ FileOutputManager::Start()
             GetCurrentProcessId(),
             g_moduleName));
 
-    m_fdPreviousStdOut = _dup(_fileno(stdout));
-    if (m_fdPreviousStdOut == -1)
-    {
-        FILE* dummyFile;
-        freopen_s(&dummyFile, "nul", "w", stdout);
-        m_fdPreviousStdOut = _fileno(stdout);
-    }
-
-    m_fdPreviousStdErr = _dup(_fileno(stderr));
-    if (m_fdPreviousStdErr == -1)
-    {
-        FILE* dummyFile;
-        freopen_s(&dummyFile, "nul", "w", stderr);
-        m_fdPreviousStdErr = _fileno(stderr);
-    }
-
     m_hLogFileHandle = CreateFileW(m_struLogFilePath.QueryStr(),
         FILE_READ_DATA | FILE_WRITE_DATA,
         FILE_SHARE_READ,
@@ -138,6 +108,12 @@ FileOutputManager::Start()
         CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL,
         NULL);
+
+    stderrWrapper = std::make_unique<PipeWrapper>(stderr, STD_ERROR_HANDLE, m_hLogFileHandle, GetStdHandle(STD_ERROR_HANDLE));
+    stdoutWrapper = std::make_unique<PipeWrapper>(stdout, STD_OUTPUT_HANDLE, m_hLogFileHandle, GetStdHandle(STD_OUTPUT_HANDLE));
+
+    RETURN_IF_FAILED(stderrWrapper->SetupRedirection());
+    RETURN_IF_FAILED(stdoutWrapper->SetupRedirection());
 
     if (m_hLogFileHandle == INVALID_HANDLE_VALUE)
     {
@@ -158,15 +134,9 @@ FileOutputManager::Start()
     // Calling SetStdHandle works for redirecting managed logs, however you cannot
     // capture native logs (including hostfxr failures).
 
-    RETURN_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, m_hLogFileHandle));
-
-    RETURN_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, m_hLogFileHandle));
 
     // Periodically flush the log content to file
     m_Timer.InitializeTimer(STTIMER::TimerCallback, &m_struLogFilePath, 3000, 3000);
-
-    m_pStdout = LoggingHelpers::ReReadStdFileNo(STD_OUTPUT_HANDLE, stdout);
-    m_pStderr = LoggingHelpers::ReReadStdFileNo(STD_ERROR_HANDLE, stderr);
 
     return S_OK;
 }
@@ -175,6 +145,8 @@ FileOutputManager::Start()
 HRESULT
 FileOutputManager::Stop()
 {
+    STRA     straStdOutput;
+
     if (m_disposed)
     {
         return S_OK;
@@ -196,18 +168,8 @@ FileOutputManager::Stop()
 
     FlushFileBuffers(m_hLogFileHandle);
 
-    if (m_fdPreviousStdOut >= 0)
-    {
-        LOG_LAST_ERROR_IF(!SetStdHandle(STD_OUTPUT_HANDLE, reinterpret_cast<HANDLE>(_get_osfhandle(m_fdPreviousStdOut))));
-    }
-
-    if (m_fdPreviousStdErr >= 0)
-    {
-        LOG_LAST_ERROR_IF(!SetStdHandle(STD_ERROR_HANDLE, reinterpret_cast<HANDLE>(_get_osfhandle(m_fdPreviousStdErr))));
-    }
-
-    LoggingHelpers::ReReadStdFileNo(STD_OUTPUT_HANDLE, stdout);
-    LoggingHelpers::ReReadStdFileNo(STD_ERROR_HANDLE, stderr);
+    RETURN_IF_FAILED(stdoutWrapper->StopRedirection());
+    RETURN_IF_FAILED(stderrWrapper->StopRedirection());
 
     // delete empty log file
     handle = FindFirstFile(m_struLogFilePath.QueryStr(), &fileData);
@@ -220,13 +182,17 @@ FileOutputManager::Stop()
         LOG_LAST_ERROR_IF(!DeleteFile(m_struLogFilePath.QueryStr()));
     }
 
-    auto stdoutput2 = _fileno(stdout);
-    auto stdoutHandle2 = GetStdHandle(STD_OUTPUT_HANDLE);
-    auto stderror2 = _fileno(stderr);
-    auto stderrHandle2 = GetStdHandle(STD_ERROR_HANDLE);
-    if (stdoutput2 && stdoutHandle2 && stderror2 && stderrHandle2)
+    // If we captured any output, relog it to the original stdout
+    // Useful for the IIS Express scenario as it is running with stdout and stderr
+
+    if (GetStdOutContent(&straStdOutput))
     {
-        LOG_INFO("");
+        int res = printf(straStdOutput.QueryStr());
+        // This will fail on full IIS (which is fine).
+        RETURN_LAST_ERROR_IF(res == -1);
+
+        // Need to flush contents for the new stdout and stderr
+        _flushall();
     }
 
     return S_OK;

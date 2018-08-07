@@ -407,7 +407,6 @@ Finished:
             struFilename->IsEmpty() ? s_pwzAspnetcoreInProcessRequestHandlerName : struFilename->QueryStr(),
             struStdMsg.QueryStr());
 
-        FreeLibrary(hmHostFxrDll);
     }
 
     delete pLoggerProvider;

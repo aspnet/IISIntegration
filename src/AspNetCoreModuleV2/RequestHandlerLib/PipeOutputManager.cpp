@@ -36,11 +36,11 @@ HRESULT PipeOutputManager::Start()
     m_hErrReadPipe = hStdErrReadPipe;
     m_hErrWritePipe = hStdErrWritePipe;
 
-    stdoutWrapper = std::make_unique<PipeWrapper>(stdout, STD_OUTPUT_HANDLE, hStdErrWritePipe);
-    stderrWrapper = std::make_unique<PipeWrapper>(stderr, STD_ERROR_HANDLE, hStdErrWritePipe);
+    stderrWrapper = std::make_unique<PipeWrapper>(stderr, STD_ERROR_HANDLE, hStdErrWritePipe, GetStdHandle(STD_ERROR_HANDLE));
+    stdoutWrapper = std::make_unique<PipeWrapper>(stdout, STD_OUTPUT_HANDLE, hStdErrWritePipe, GetStdHandle(STD_OUTPUT_HANDLE));
 
-    RETURN_IF_FAILED(stdoutWrapper->SetupRedirection());
     RETURN_IF_FAILED(stderrWrapper->SetupRedirection());
+    RETURN_IF_FAILED(stdoutWrapper->SetupRedirection());
 
     // Read the stderr handle on a separate thread until we get 4096 bytes.
     m_hErrThread = CreateThread(
@@ -52,6 +52,7 @@ HRESULT PipeOutputManager::Start()
         nullptr);      // receive thread identifier
 
     RETURN_LAST_ERROR_IF_NULL(m_hErrThread);
+
     return S_OK;
 }
 
@@ -59,7 +60,6 @@ HRESULT PipeOutputManager::Stop()
 {
     DWORD    dwThreadStatus = 0;
     STRA     straStdOutput;
-
 
     if (m_disposed)
     {
@@ -76,7 +76,7 @@ HRESULT PipeOutputManager::Stop()
     m_disposed = true;
 
     // Flush the pipe writer before closing to capture all output
-    RETURN_LAST_ERROR_IF(!FlushFileBuffers(m_hErrWritePipe));
+    RETURN_LAST_ERROR_IF(!FlushFileBuffers(m_hErrWritePipe)); 
 
     // Tell each pipe wrapper to stop redirecting output and restore the original values
     RETURN_IF_FAILED(stdoutWrapper->StopRedirection());
@@ -129,12 +129,12 @@ HRESULT PipeOutputManager::Stop()
     if (GetStdOutContent(&straStdOutput))
     {
         int res = printf(straStdOutput.QueryStr());
+        // This will fail on full IIS (which is fine).
         RETURN_LAST_ERROR_IF(res == -1);
 
         // Need to flush contents for the new stdout and stderr
         _flushall();
     }
-
     return S_OK;
 }
 

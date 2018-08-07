@@ -162,22 +162,44 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             var deploymentResult = await DeployAsync(deploymentParameters);
 
             var response = await deploymentResult.HttpClient.GetAsync("/");
+
+            Assert.False(response.IsSuccessStatusCode);
+
+            StopServer();
+            Assert.Contains(TestSink.Writes, context => context.Message.Contains("Invoked hostfxr"));
+        }
+
+        [ConditionalTheory]
+        [InlineData("CheckLargeStdErrWrites")]
+        [InlineData("CheckLargeStdOutWrites")]
+        [InlineData("CheckOversizedStdErrWrites")]
+        [InlineData("CheckOversizedStdOutWrites")]
+        public async Task EnableCoreHostTraceLogging_FileRestoreCorrectly(string path)
+        {
+            var deploymentParameters = Helpers.GetBaseDeploymentParameters("StartupExceptionWebsite", publish: true);
+            deploymentParameters.EnvironmentVariables["COREHOST_TRACE"] = "1";
+            deploymentParameters.WebConfigBasedEnvironmentVariables["ASPNETCORE_INPROCESS_STARTUP_VALUE"] = path;
+            var pathToLogs = deploymentParameters.EnableLogging();
+            deploymentParameters.GracefulShutdown = true;
+
+            var deploymentResult = await DeployAsync(deploymentParameters);
+
+            var response = await deploymentResult.HttpClient.GetAsync("/");
             Assert.False(response.IsSuccessStatusCode);
 
             StopServer();
 
-            Assert.Contains(TestSink.Writes, context => context.Message.Contains(new string('a', 4096)));
+            var fileInDirectory = Directory.GetFiles(pathToLogs).First();
+            var contents = File.ReadAllText(fileInDirectory);
 
-            var count = 0;
-            foreach (var line in TestSink.Writes)
-            {
-                if (line.Message.Contains("Tracing enabled"))
-                {
-                    count++;
-                }
-            }
+            Assert.Contains("Invoked hostfxr", contents);
 
-            Assert.Equal(6, count);
+            //fileInDirectory = Directory.GetFiles(pathToLogs).Last();
+
+            //contents = File.ReadAllText(fileInDirectory);
+            //Assert.Contains("Invoked hostfxr", contents);
+
+            Assert.DoesNotContain(TestSink.Writes, context => context.Message.Contains("breadcrumb"));
         }
 
         private static IISDeploymentParameters GetStartupExceptionParameters()
