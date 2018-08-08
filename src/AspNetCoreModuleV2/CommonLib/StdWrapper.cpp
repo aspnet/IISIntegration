@@ -22,14 +22,18 @@ StdWrapper::
 SetupRedirection()
 {
     // Duplicate the current stdstream to be used for restoring. 
-    previousFileDescriptor = _dup(_fileno(stdStream));
 
     // in IIS, stdout and stderr are both invalid initially, so _dup will return -1
     // Open a null file to restore back and save the previous file descriptor
-    if (previousFileDescriptor == -1)
+    if (_fileno(stdStream) == -2)
     {
         FILE* dummyFile;
         freopen_s(&dummyFile, "nul", "w", stdStream);
+        // Why does this need to be duped
+        previousFileDescriptor = _dup(_fileno(stdStream));
+    }
+    else
+    {
         previousFileDescriptor = _dup(_fileno(stdStream));
     }
 
