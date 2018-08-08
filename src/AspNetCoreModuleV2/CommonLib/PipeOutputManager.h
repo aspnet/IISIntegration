@@ -4,7 +4,7 @@
 #pragma once
 
 #include "IOutputManager.h"
-#include "PipeWrapper.h"
+#include "StdWrapper.h"
 #include "stringu.h"
 
 class PipeOutputManager : public IOutputManager
@@ -40,7 +40,7 @@ private:
     DWORD                           m_dwStdErrReadTotal;
     SRWLOCK                         m_srwLock {};
     BOOL                            m_disposed;
-    std::unique_ptr<PipeWrapper>    stdoutWrapper;
-    std::unique_ptr<PipeWrapper>    stderrWrapper;
+    std::unique_ptr<StdWrapper>    stdoutWrapper;
+    std::unique_ptr<StdWrapper>    stderrWrapper;
 };
 

@@ -8,7 +8,7 @@
 #include "exceptions.h"
 #include "debugutil.h"
 #include "SRWExclusiveLock.h"
-#include "PipeWrapper.h"
+#include "StdWrapper.h"
 
 extern HINSTANCE    g_hModule;
 
@@ -120,8 +120,8 @@ FileOutputManager::Start()
         return LOG_IF_FAILED(HRESULT_FROM_WIN32(GetLastError()));
     }
 
-    stderrWrapper = std::make_unique<PipeWrapper>(stderr, STD_ERROR_HANDLE, m_hLogFileHandle, GetStdHandle(STD_ERROR_HANDLE));
-    stdoutWrapper = std::make_unique<PipeWrapper>(stdout, STD_OUTPUT_HANDLE, m_hLogFileHandle, GetStdHandle(STD_OUTPUT_HANDLE));
+    stderrWrapper = std::make_unique<StdWrapper>(stderr, STD_ERROR_HANDLE, m_hLogFileHandle, GetStdHandle(STD_ERROR_HANDLE));
+    stdoutWrapper = std::make_unique<StdWrapper>(stdout, STD_OUTPUT_HANDLE, m_hLogFileHandle, GetStdHandle(STD_OUTPUT_HANDLE));
 
     RETURN_IF_FAILED(stderrWrapper->SetupRedirection());
     RETURN_IF_FAILED(stdoutWrapper->SetupRedirection());
@@ -199,10 +199,9 @@ FileOutputManager::Stop()
 
     if (GetStdOutContent(&straStdOutput))
     {
-        int res = printf(straStdOutput.QueryStr());
-        // This will fail on full IIS (which is fine).
-        RETURN_LAST_ERROR_IF(res == -1);
+        printf(straStdOutput.QueryStr());
 
+        // This will fail on full IIS (which is fine).
         // Need to flush contents for the new stdout and stderr
         _flushall();
     }

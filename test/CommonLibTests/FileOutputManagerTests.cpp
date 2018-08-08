@@ -132,4 +132,28 @@ namespace FileOutManagerOutputTests
             ASSERT_EQ(straContent.QueryCCH(), 30000);
         }
     }
+
+
+    TEST(FileOutManagerOutputTest, StartStopRestoresCorrectly)
+    {
+        PCSTR expected = "hello world";
+
+        auto tempDirectory = TempDirectory();
+
+        FileOutputManager* pManager = new FileOutputManager;
+        pManager->Initialize(L"", tempDirectory.path().c_str());
+        {
+            FileManagerWrapper wrapper(pManager);
+
+            for (int i = 0; i < 3000; i++)
+            {
+                printf(expected);
+            }
+
+            STRA straContent;
+            ASSERT_TRUE(pManager->GetStdOutContent(&straContent));
+
+            ASSERT_EQ(straContent.QueryCCH(), 30000);
+        }
+    }
 }

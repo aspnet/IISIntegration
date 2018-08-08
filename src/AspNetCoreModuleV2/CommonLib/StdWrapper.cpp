@@ -2,12 +2,12 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 #include "stdafx.h"
-#include "PipeWrapper.h"
+#include "StdWrapper.h"
 #include "exceptions.h"
 #include "LoggingHelpers.h"
 #include <corecrt_io.h>
 
-PipeWrapper::PipeWrapper(FILE* outputStream, DWORD nHandle, HANDLE pipeHandle, HANDLE previousStdOut)
+StdWrapper::StdWrapper(FILE* outputStream, DWORD nHandle, HANDLE pipeHandle, HANDLE previousStdOut)
     : stdStream(outputStream),
     nHandle(nHandle),
     writerHandle(pipeHandle),
@@ -15,10 +15,10 @@ PipeWrapper::PipeWrapper(FILE* outputStream, DWORD nHandle, HANDLE pipeHandle, H
 {
 }
 
-PipeWrapper::~PipeWrapper() = default;
+StdWrapper::~StdWrapper() = default;
 
 HRESULT
-PipeWrapper::
+StdWrapper::
 SetupRedirection()
 {
     // Duplicate the current stdstream to be used for restoring. 
@@ -45,7 +45,7 @@ SetupRedirection()
 }
 
 HRESULT
-PipeWrapper::StopRedirection() const
+StdWrapper::StopRedirection() const
 {
     FILE* file = nullptr;
 
