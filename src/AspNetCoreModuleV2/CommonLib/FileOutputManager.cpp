@@ -199,9 +199,9 @@ FileOutputManager::Stop()
 
     if (GetStdOutContent(&straStdOutput))
     {
-        printf(straStdOutput.QueryStr());
-
         // This will fail on full IIS (which is fine).
+        printf(straStdOutput.QueryStr());
+        
         // Need to flush contents for the new stdout and stderr
         _flushall();
     }
