@@ -6,7 +6,7 @@
 #include "sttimer.h"
 #include "IOutputManager.h"
 #include "HandleWrapper.h"
-#include "PipeWrapper.h"
+#include "StdWrapper.h"
 #include "stringa.h"
 #include "stringu.h"
 
@@ -37,6 +37,6 @@ private:
     SRWLOCK m_srwLock;
     FILE* m_pStdout;
     FILE* m_pStderr;
-    std::unique_ptr<PipeWrapper>    stdoutWrapper;
-    std::unique_ptr<PipeWrapper>    stderrWrapper;
+    std::unique_ptr<StdWrapper>    stdoutWrapper;
+    std::unique_ptr<StdWrapper>    stderrWrapper;
 };

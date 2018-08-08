@@ -5,7 +5,7 @@
 #include "PipeOutputManager.h"
 #include "exceptions.h"
 #include "SRWExclusiveLock.h"
-#include "PipeWrapper.h"
+#include "StdWrapper.h"
 #include "ntassert.h"
 
 #define LOG_IF_DUPFAIL(err) do { if (err == -1) { LOG_IF_FAILED(HRESULT_FROM_WIN32(_doserrno)); } } while (0, 0);
@@ -39,8 +39,8 @@ HRESULT PipeOutputManager::Start()
     m_hErrReadPipe = hStdErrReadPipe;
     m_hErrWritePipe = hStdErrWritePipe;
 
-    stderrWrapper = std::make_unique<PipeWrapper>(stderr, STD_ERROR_HANDLE, hStdErrWritePipe, GetStdHandle(STD_ERROR_HANDLE));
-    stdoutWrapper = std::make_unique<PipeWrapper>(stdout, STD_OUTPUT_HANDLE, hStdErrWritePipe, GetStdHandle(STD_OUTPUT_HANDLE));
+    stderrWrapper = std::make_unique<StdWrapper>(stderr, STD_ERROR_HANDLE, hStdErrWritePipe, GetStdHandle(STD_ERROR_HANDLE));
+    stdoutWrapper = std::make_unique<StdWrapper>(stdout, STD_OUTPUT_HANDLE, hStdErrWritePipe, GetStdHandle(STD_OUTPUT_HANDLE));
 
     RETURN_IF_FAILED(stderrWrapper->SetupRedirection());
     RETURN_IF_FAILED(stdoutWrapper->SetupRedirection());
@@ -78,38 +78,41 @@ HRESULT PipeOutputManager::Stop()
 
     m_disposed = true;
 
-    // Flush the pipe writer before closing to capture all output
-
-    // Tell each pipe wrapper to stop redirecting output and restore the original values
-
-
     // Both pipe wrappers duplicate the pipe writer handle
     // meaning we are fine to close the handle too.
     if (m_hErrWritePipe != INVALID_HANDLE_VALUE)
     {
+        // Flush the pipe writer before closing to capture all output
         RETURN_LAST_ERROR_IF(!FlushFileBuffers(m_hErrWritePipe));
         CloseHandle(m_hErrWritePipe);
         m_hErrWritePipe = INVALID_HANDLE_VALUE;
     }
+
+    // Tell each pipe wrapper to stop redirecting output and restore the original values
     if (stdoutWrapper != nullptr)
     {
         RETURN_IF_FAILED(stdoutWrapper->StopRedirection());
+    }
+
+    if (stderrWrapper != nullptr)
+    {
         RETURN_IF_FAILED(stderrWrapper->StopRedirection());
     }
 
-    // Forces ReadFile to cancel, causing the read loop to complete.
-    // Don't check return value as IO may or may not be completed already.
 
      // GetExitCodeThread returns 0 on failure; thread status code is invalid.
     if (m_hErrThread != nullptr &&
         !LOG_LAST_ERROR_IF(GetExitCodeThread(m_hErrThread, &dwThreadStatus) == 0) &&
         dwThreadStatus == STILL_ACTIVE)
     {
+        // Forces ReadFile to cancel, causing the read loop to complete.
+        // Don't check return value as IO may or may not be completed already.
         CancelSynchronousIo(m_hErrThread);
-        // wait for graceful shutdown, i.e., the exit of the background thread or timeout
+
+        // Wait for graceful shutdown, i.e., the exit of the background thread or timeout
         if (WaitForSingleObject(m_hErrThread, PIPE_OUTPUT_THREAD_TIMEOUT) != WAIT_OBJECT_0)
         {
-            // if the thread is still running, we need kill it first before exit to avoid AV
+            // If the thread is still running, we need kill it first before exit to avoid AV
             if (!LOG_LAST_ERROR_IF(GetExitCodeThread(m_hErrThread, &dwThreadStatus) == 0) &&
                 dwThreadStatus == STILL_ACTIVE)
             {
@@ -135,10 +138,8 @@ HRESULT PipeOutputManager::Stop()
     // Useful for the IIS Express scenario as it is running with stdout and stderr
     if (GetStdOutContent(&straStdOutput))
     {
-        int res = printf(straStdOutput.QueryStr());
+        printf(straStdOutput.QueryStr());
         // This will fail on full IIS (which is fine).
-        RETURN_LAST_ERROR_IF(res == -1);
-
         // Need to flush contents for the new stdout and stderr
         _flushall();
     }
@@ -173,7 +174,6 @@ void
 PipeOutputManager::ReadStdErrHandleInternal()
 {
     // If ReadFile ever returns false, exit the thread
-
     DWORD dwNumBytesRead = 0;
     while (true)
     {

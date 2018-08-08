@@ -5,11 +5,11 @@
 
 #include <cstdio>
 
-class PipeWrapper
+class StdWrapper
 {
 public:
-    PipeWrapper(FILE* outputStream, DWORD nHandle, HANDLE pipeHandle, HANDLE previousStdOut);
-    ~PipeWrapper();
+    StdWrapper(FILE* outputStream, DWORD nHandle, HANDLE pipeHandle, HANDLE previousStdOut);
+    ~StdWrapper();
     HRESULT SetupRedirection();
     HRESULT StopRedirection() const;
 
