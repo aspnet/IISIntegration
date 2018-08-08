@@ -26,8 +26,6 @@ FileOutputManager::FileOutputManager() :
 FileOutputManager::~FileOutputManager()
 {
     Stop();
-
-    CloseHandle(m_hLogFileHandle);
 }
 
 HRESULT
@@ -46,33 +44,9 @@ bool FileOutputManager::GetStdOutContent(STRA* struStdOutput)
     // This will be a common place for errors as it means the hostfxr_main returned
     // or there was an exception.
     //
-    CHAR            pzFileContents[MAX_FILE_READ_SIZE] = { 0 };
-    DWORD           dwNumBytesRead;
-    LARGE_INTEGER   li = { 0 };
-    BOOL            fLogged = FALSE;
-    DWORD           dwFilePointer = 0;
 
-    if (m_hLogFileHandle != INVALID_HANDLE_VALUE)
-    {
-        if (GetFileSizeEx(m_hLogFileHandle, &li) && li.LowPart > 0 && li.HighPart == 0)
-        {
-            dwFilePointer = SetFilePointer(m_hLogFileHandle, 0, NULL, FILE_BEGIN);
-
-            if (dwFilePointer != INVALID_SET_FILE_POINTER)
-            {
-                // Read file fails.
-                if (ReadFile(m_hLogFileHandle, pzFileContents, MAX_FILE_READ_SIZE, &dwNumBytesRead, NULL))
-                {
-                    if (SUCCEEDED(struStdOutput->Copy(pzFileContents, dwNumBytesRead)))
-                    {
-                        fLogged = TRUE;
-                    }
-                }
-            }
-        }
-    }
-
-    return fLogged;
+    struStdOutput->Copy(m_straFileContent);
+    return m_straFileContent.QueryCCH() > 0;
 }
 
 HRESULT
@@ -113,7 +87,7 @@ FileOutputManager::Start()
         &saAttr,
         CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL,
-        NULL);
+        nullptr);
 
     if (m_hLogFileHandle == INVALID_HANDLE_VALUE)
     {
@@ -183,8 +157,6 @@ FileOutputManager::Stop()
         RETURN_IF_FAILED(stderrWrapper->StopRedirection());
     }
 
-    Sleep(1000);
-
     // delete empty log file
     handle = FindFirstFile(m_struLogFilePath.QueryStr(), &fileData);
     if (handle != INVALID_HANDLE_VALUE &&
@@ -199,14 +171,41 @@ FileOutputManager::Stop()
     // If we captured any output, relog it to the original stdout
     // Useful for the IIS Express scenario as it is running with stdout and stderr
 
+    CHAR            pzFileContents[MAX_FILE_READ_SIZE] = { 0 };
+    DWORD           dwNumBytesRead;
+    LARGE_INTEGER   li = { 0 };
+    DWORD           dwFilePointer = 0;
+
+    if (m_hLogFileHandle != INVALID_HANDLE_VALUE)
+    {
+        if (GetFileSizeEx(m_hLogFileHandle, &li) && li.LowPart > 0 && li.HighPart == 0)
+        {
+            dwFilePointer = SetFilePointer(m_hLogFileHandle, 0, NULL, FILE_BEGIN);
+
+            if (dwFilePointer != INVALID_SET_FILE_POINTER)
+            {
+                // Read file fails.
+                if (ReadFile(m_hLogFileHandle, pzFileContents, MAX_FILE_READ_SIZE, &dwNumBytesRead, NULL))
+                {
+                    m_straFileContent.Copy(pzFileContents, dwNumBytesRead);
+                }
+            }
+        }
+    }
+
+    CloseHandle(m_hLogFileHandle);
+
     if (GetStdOutContent(&straStdOutput))
     {
         // This will fail on full IIS (which is fine).
+        // TODO this still points to the original file,
+        // causing it to be logged twice.
         printf(straStdOutput.QueryStr());
         
         // Need to flush contents for the new stdout and stderr
         _flushall();
     }
+
 
     return S_OK;
 }

@@ -31,6 +31,7 @@ private:
     STRU m_wsStdOutLogFileName;
     STRU m_wsApplicationPath;
     STRU m_struLogFilePath;
+    STRA m_straFileContent;
     int m_fdPreviousStdOut;
     int m_fdPreviousStdErr;
     BOOL m_disposed;

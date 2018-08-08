@@ -82,6 +82,8 @@ namespace FileOutManagerOutputTests
             FileManagerWrapper wrapper(pManager);
 
             printf(expected, stderr);
+            pManager->Stop();
+
             STRA straContent;
             ASSERT_TRUE(pManager->GetStdOutContent(&straContent));
 
@@ -111,7 +113,7 @@ namespace FileOutManagerOutputTests
     }
 
     TEST(FileOutManagerOutputTest, CapAt30KB)
-     {
+    {
         PCSTR expected = "hello world";
 
         auto tempDirectory = TempDirectory();
@@ -125,7 +127,7 @@ namespace FileOutManagerOutputTests
             {
                 printf(expected);
             }
-
+            pManager->Stop();
             STRA straContent;
             ASSERT_TRUE(pManager->GetStdOutContent(&straContent));
 
@@ -149,7 +151,7 @@ namespace FileOutManagerOutputTests
             {
                 printf(expected);
             }
-
+            pManager->Stop();
             STRA straContent;
             ASSERT_TRUE(pManager->GetStdOutContent(&straContent));
 

@@ -30,12 +30,8 @@ SetupRedirection()
     {
         FILE* dummyFile;
         freopen_s(&dummyFile, "nul", "w", stdStream);
-        previousFileDescriptor = _fileno(stdStream);
+        previousFileDescriptor = _dup(_fileno(stdStream));
     }
-
-    // set the std handle to the writer
-    //RETURN_LAST_ERROR_IF(!SetStdHandle(nHandle, writerHandle));
-
 
     // After setting the std handle, we need to set stdout/stderr to the current
     // output/error handle.
@@ -54,6 +50,7 @@ StdWrapper::StopRedirection() const
   
     // After setting the std handle, we need to set stdout/stderr to the current
     // output/error handle.
+
     file = _fdopen(previousFileDescriptor, "w");
     if (file != nullptr)
     {

@@ -101,7 +101,17 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             StopServer();
 
             EventLogHelpers.VerifyEventLogEvent(TestSink, "Could not find the assembly 'aspnetcorev2_inprocess.dll' for in-process application.");
-            Assert.Contains(TestSink.Writes, context => context.Message.Contains("The specified framework 'Microsoft.NETCore.App', version '2.9.9' was not found."));
+            var count = 0;
+            foreach (var write in TestSink.Writes)
+            {
+                if (write.Message.Contains(
+                    "The specified framework 'Microsoft.NETCore.App', version '2.9.9' was not found."))
+                {
+                    count++;
+                }
+            }
+
+            Assert.Equal(1, count);
         }
 
         [ConditionalFact]
@@ -125,6 +135,17 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             var contents = File.ReadAllText(fileInDirectory);
 
             Assert.Contains("The specified framework 'Microsoft.NETCore.App', version '2.9.9' was not found.", contents);
+            var count = 0;
+            foreach (var write in TestSink.Writes)
+            {
+                if (write.Message.Contains(
+                    "The specified framework 'Microsoft.NETCore.App', version '2.9.9' was not found."))
+                {
+                    count++;
+                }
+            }
+            Assert.Equal(1, count);
+
         }
 
         [ConditionalFact]
