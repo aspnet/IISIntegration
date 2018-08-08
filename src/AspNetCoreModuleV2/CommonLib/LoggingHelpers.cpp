@@ -25,6 +25,7 @@ LoggingHelpers::CreateLoggingProvider(
     HRESULT hr = S_OK;
 
     DBG_ASSERT(outputManager != NULL);
+    AllocConsole();
 
     try
     {
@@ -40,7 +41,7 @@ LoggingHelpers::CreateLoggingProvider(
         }
         else
         {
-            *outputManager = new NullOutputManager;
+            *outputManager = new PipeOutputManager;
         }
     }
     catch (std::bad_alloc&)
