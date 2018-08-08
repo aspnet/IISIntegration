@@ -106,6 +106,8 @@ HRESULT PipeOutputManager::Stop()
         CancelSynchronousIo(m_hErrThread);
     }
 
+    Sleep(1000);
+
      // GetExitCodeThread returns 0 on failure; thread status code is invalid.
     if (m_hErrThread != nullptr &&
         !LOG_LAST_ERROR_IF(GetExitCodeThread(m_hErrThread, &dwThreadStatus) == 0) &&

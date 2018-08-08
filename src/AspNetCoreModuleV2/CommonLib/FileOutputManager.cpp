@@ -183,6 +183,8 @@ FileOutputManager::Stop()
         RETURN_IF_FAILED(stderrWrapper->StopRedirection());
     }
 
+    Sleep(1000);
+
     // delete empty log file
     handle = FindFirstFile(m_struLogFilePath.QueryStr(), &fileData);
     if (handle != INVALID_HANDLE_VALUE &&
