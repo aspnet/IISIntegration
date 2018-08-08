@@ -197,7 +197,6 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             var contents = File.ReadAllText(fileInDirectory);
 
             Assert.Contains("Invoked hostfxr", contents);
-
         }
 
         private IISDeploymentParameters GetStartupExceptionParameters()
