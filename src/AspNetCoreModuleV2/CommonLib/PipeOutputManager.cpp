@@ -99,16 +99,18 @@ HRESULT PipeOutputManager::Stop()
         RETURN_IF_FAILED(stderrWrapper->StopRedirection());
     }
 
+    // Forces ReadFile to cancel, causing the read loop to complete.
+    // Don't check return value as IO may or may not be completed already.
+    if (m_hErrThread != nullptr)
+    {
+        CancelSynchronousIo(m_hErrThread);
+    }
 
      // GetExitCodeThread returns 0 on failure; thread status code is invalid.
     if (m_hErrThread != nullptr &&
         !LOG_LAST_ERROR_IF(GetExitCodeThread(m_hErrThread, &dwThreadStatus) == 0) &&
         dwThreadStatus == STILL_ACTIVE)
     {
-        // Forces ReadFile to cancel, causing the read loop to complete.
-        // Don't check return value as IO may or may not be completed already.
-        CancelSynchronousIo(m_hErrThread);
-
         // Wait for graceful shutdown, i.e., the exit of the background thread or timeout
         if (WaitForSingleObject(m_hErrThread, PIPE_OUTPUT_THREAD_TIMEOUT) != WAIT_OBJECT_0)
         {
@@ -138,8 +140,9 @@ HRESULT PipeOutputManager::Stop()
     // Useful for the IIS Express scenario as it is running with stdout and stderr
     if (GetStdOutContent(&straStdOutput))
     {
-        printf(straStdOutput.QueryStr());
         // This will fail on full IIS (which is fine).
+        printf(straStdOutput.QueryStr());
+
         // Need to flush contents for the new stdout and stderr
         _flushall();
     }
