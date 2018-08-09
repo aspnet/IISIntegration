@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>$(DeveloperBuildTestTfms)</TargetFrameworks>
     <TestGroupName>IIS.FunctionalTests</TestGroupName>
+    <DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
   </PropertyGroup>
 
   <ItemGroup>
