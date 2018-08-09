@@ -1,4 +1,4 @@
-﻿<Project>
+<Project>
   <PropertyGroup>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
   </PropertyGroup>
@@ -14,7 +14,7 @@
     <MicrosoftAspNetCoreHttpOverridesPackageVersion>2.2.0-preview1-34896</MicrosoftAspNetCoreHttpOverridesPackageVersion>
     <MicrosoftAspNetCoreHttpPackageVersion>2.2.0-preview1-34896</MicrosoftAspNetCoreHttpPackageVersion>
     <MicrosoftAspNetCoreHttpSysSourcesPackageVersion>2.2.0-preview1-34896</MicrosoftAspNetCoreHttpSysSourcesPackageVersion>
-    <MicrosoftAspNetCoreServerIntegrationTestingPackageVersion>0.6.0-preview1-34896</MicrosoftAspNetCoreServerIntegrationTestingPackageVersion>
+    <MicrosoftAspNetCoreServerIntegrationTestingPackageVersion>0.6.0-a-preview1-tratcher-share-17115</MicrosoftAspNetCoreServerIntegrationTestingPackageVersion>
     <MicrosoftAspNetCoreServerKestrelPackageVersion>2.2.0-preview1-34896</MicrosoftAspNetCoreServerKestrelPackageVersion>
     <MicrosoftAspNetCoreTestHostPackageVersion>2.2.0-preview1-34896</MicrosoftAspNetCoreTestHostPackageVersion>
     <MicrosoftAspNetCoreTestingPackageVersion>2.2.0-preview1-34896</MicrosoftAspNetCoreTestingPackageVersion>
