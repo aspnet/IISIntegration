@@ -34,7 +34,6 @@
        <GenerateDebugInformation>true</GenerateDebugInformation>
        <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
        <StripPrivateSymbols>$(OutDir)$(TargetName).pub.pdb</StripPrivateSymbols>
-       <AdditionalOptions>/NODEFAULTLIB:libucrt.lib /DEFAULTLIB:ucrt.lib %(AdditionalOptions)</AdditionalOptions>
       <OptimizeReferences>true</OptimizeReferences>
        <EnableCOMDATFolding>true</EnableCOMDATFolding>
        <Profile>true</Profile>
