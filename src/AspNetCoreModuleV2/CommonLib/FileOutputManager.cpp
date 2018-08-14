@@ -81,6 +81,10 @@ FileOutputManager::Start()
             GetCurrentProcessId(),
             fsPath.filename().stem().c_str()));
 
+    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    saAttr.bInheritHandle = TRUE;
+    saAttr.lpSecurityDescriptor = NULL;
+
     m_hLogFileHandle = CreateFileW(m_struLogFilePath.QueryStr(),
         FILE_READ_DATA | FILE_WRITE_DATA,
         FILE_SHARE_READ,
@@ -97,8 +101,8 @@ FileOutputManager::Start()
     stderrWrapper = std::make_unique<StdWrapper>(stderr, STD_ERROR_HANDLE, m_hLogFileHandle, GetStdHandle(STD_ERROR_HANDLE));
     stdoutWrapper = std::make_unique<StdWrapper>(stdout, STD_OUTPUT_HANDLE, m_hLogFileHandle, GetStdHandle(STD_OUTPUT_HANDLE));
 
-    RETURN_IF_FAILED(stderrWrapper->SetupRedirection());
-    RETURN_IF_FAILED(stdoutWrapper->SetupRedirection());
+    stderrWrapper->SetupRedirection();
+    stdoutWrapper->SetupRedirection();
 
     // There are a few options for redirecting stdout/stderr,
     // but there are issues with most of them.

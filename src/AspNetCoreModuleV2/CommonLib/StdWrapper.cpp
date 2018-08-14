@@ -17,8 +17,7 @@ StdWrapper::StdWrapper(FILE* outputStream, DWORD nHandle, HANDLE pipeHandle, HAN
 
 StdWrapper::~StdWrapper() = default;
 
-HRESULT
-StdWrapper::
+FILE* StdWrapper::
 SetupRedirection()
 {
     // Duplicate the current stdstream to be used for restoring. 
@@ -27,8 +26,6 @@ SetupRedirection()
     // Open a null file to restore back and save the previous file descriptor
     if (_fileno(stdStream) == -2)
     {
-        FILE* dummyFile;
-        freopen_s(&dummyFile, "nul", "w", stdStream);
         // Why does this need to be duped
         previousFileDescriptor = _dup(_fileno(stdStream));
     }
@@ -40,8 +37,7 @@ SetupRedirection()
     // After setting the std handle, we need to set stdout/stderr to the current
     // output/error handle.
     redirectedFile = LoggingHelpers::ReReadStdFileNo(nHandle, stdStream, writerHandle);
-
-    return S_OK;
+    return redirectedFile;
 }
 
 HRESULT

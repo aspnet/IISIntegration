@@ -7,6 +7,7 @@
 #include "SRWExclusiveLock.h"
 #include "StdWrapper.h"
 #include "ntassert.h"
+#include <corecrt_io.h>
 
 #define LOG_IF_DUPFAIL(err) do { if (err == -1) { LOG_IF_FAILED(HRESULT_FROM_WIN32(_doserrno)); } } while (0, 0);
 #define LOG_IF_ERRNO(err) do { if (err != 0) { LOG_IF_FAILED(HRESULT_FROM_WIN32(_doserrno)); } } while (0, 0);
@@ -34,16 +35,27 @@ HRESULT PipeOutputManager::Start()
     HANDLE                  hStdErrReadPipe;
     HANDLE                  hStdErrWritePipe;
 
+    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    saAttr.bInheritHandle = TRUE;
+    saAttr.lpSecurityDescriptor = NULL;
+    auto pSD = (PSECURITY_DESCRIPTOR)LocalAlloc(LPTR,
+        SECURITY_DESCRIPTOR_MIN_LENGTH);
+
+    InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION);
+
     RETURN_LAST_ERROR_IF(!CreatePipe(&hStdErrReadPipe, &hStdErrWritePipe, &saAttr, 0 /*nSize*/));
 
     m_hErrReadPipe = hStdErrReadPipe;
     m_hErrWritePipe = hStdErrWritePipe;
 
-    stderrWrapper = std::make_unique<StdWrapper>(stderr, STD_ERROR_HANDLE, hStdErrWritePipe, GetStdHandle(STD_ERROR_HANDLE));
     stdoutWrapper = std::make_unique<StdWrapper>(stdout, STD_OUTPUT_HANDLE, hStdErrWritePipe, GetStdHandle(STD_OUTPUT_HANDLE));
+    stderrWrapper = std::make_unique<StdWrapper>(stderr, STD_ERROR_HANDLE, hStdErrWritePipe, GetStdHandle(STD_ERROR_HANDLE));
+    freopen_s((FILE**)stdout, "nul", "w", stdout);
+    freopen_s((FILE**)stderr, "nul", "w", stderr);
 
-    RETURN_IF_FAILED(stderrWrapper->SetupRedirection());
-    RETURN_IF_FAILED(stdoutWrapper->SetupRedirection());
+    stdoutWrapper->SetupRedirection();
+    stderrWrapper->SetupRedirection();
+
 
     // Read the stderr handle on a separate thread until we get 4096 bytes.
     m_hErrThread = CreateThread(
@@ -55,6 +67,9 @@ HRESULT PipeOutputManager::Start()
         nullptr);      // receive thread identifier
 
     RETURN_LAST_ERROR_IF_NULL(m_hErrThread);
+
+    fprintf(stdout, "aspnetcore stdout");
+    fprintf(stderr, "aspnetcore stderr");
 
     return S_OK;
 }

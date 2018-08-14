@@ -10,7 +10,7 @@ class StdWrapper
 public:
     StdWrapper(FILE* outputStream, DWORD nHandle, HANDLE pipeHandle, HANDLE previousStdOut);
     ~StdWrapper();
-    HRESULT SetupRedirection();
+    FILE* SetupRedirection();
     HRESULT StopRedirection() const;
 
     int previousFileDescriptor;

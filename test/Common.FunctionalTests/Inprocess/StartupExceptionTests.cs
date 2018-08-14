@@ -89,29 +89,39 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         [ConditionalFact]
         public async Task FrameworkNotFoundExceptionLogged_Pipe()
         {
-            var deploymentParameters = GetStartupExceptionParameters();
-
-            var deploymentResult = await DeployAsync(deploymentParameters);
-
-            InvalidateRuntimeConfig(deploymentResult);
-
-            var response = await deploymentResult.HttpClient.GetAsync("/");
-            Assert.False(response.IsSuccessStatusCode);
-
-            StopServer();
-
-            EventLogHelpers.VerifyEventLogEvent(TestSink, "Could not find the assembly 'aspnetcorev2_inprocess.dll' for in-process application.");
-            var count = 0;
-            foreach (var write in TestSink.Writes)
+            try
             {
-                if (write.Message.Contains(
-                    "The specified framework 'Microsoft.NETCore.App', version '2.9.9' was not found."))
-                {
-                    count++;
-                }
-            }
+                var deploymentParameters = GetStartupExceptionParameters();
 
-            Assert.Equal(1, count);
+                var deploymentResult = await DeployAsync(deploymentParameters);
+
+                InvalidateRuntimeConfig(deploymentResult);
+                Directory.Move(@"C:\Users\jukotali\.dotnet\x64\host\fxr\2.0.0",
+                    @"C:\Users\jukotali\.dotnet\x64\host\fxr\2.3.0");
+                var response = await deploymentResult.HttpClient.GetAsync("/");
+                Assert.False(response.IsSuccessStatusCode);
+
+                StopServer();
+
+                EventLogHelpers.VerifyEventLogEvent(TestSink,
+                    "Could not find the assembly 'aspnetcorev2_inprocess.dll' for in-process application.");
+                var count = 0;
+                foreach (var write in TestSink.Writes)
+                {
+                    if (write.Message.Contains(
+                        "The specified framework 'Microsoft.NETCore.App', version '2.9.9' was not found."))
+                    {
+                        count++;
+                    }
+                }
+
+                Assert.Equal(1, count);
+            }
+            finally
+            {
+                Directory.Move(@"C:\Users\jukotali\.dotnet\x64\host\fxr\2.3.0",
+                    @"C:\Users\jukotali\.dotnet\x64\host\fxr\2.0.0");
+            }
         }
 
         [ConditionalFact]

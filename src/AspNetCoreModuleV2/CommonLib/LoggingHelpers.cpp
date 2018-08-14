@@ -25,7 +25,6 @@ LoggingHelpers::CreateLoggingProvider(
     HRESULT hr = S_OK;
 
     DBG_ASSERT(outputManager != NULL);
-    AllocConsole();
 
     try
     {

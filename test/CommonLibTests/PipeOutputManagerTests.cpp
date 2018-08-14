@@ -36,8 +36,8 @@ namespace PipeOutputManagerTests
         PipeOutputManager* pManager = new PipeOutputManager();
 
         ASSERT_EQ(S_OK, pManager->Start());
-        wprintf(expected);
-        wprintf(expected);
+        fwprintf(stdout, expected);
+        fwprintf(stderr, expected);
 
         ASSERT_EQ(S_OK, pManager->Stop());
 
@@ -60,7 +60,7 @@ namespace PipeOutputManagerTests
         PipeOutputManager* pManager = new PipeOutputManager();
 
         ASSERT_EQ(S_OK, pManager->Start());
-        wprintf(expected, stderr);
+        fwprintf(stderr, expected);
         ASSERT_EQ(S_OK, pManager->Stop());
 
         pManager->GetStdOutContent(&output);

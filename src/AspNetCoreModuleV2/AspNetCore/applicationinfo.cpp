@@ -17,6 +17,8 @@
 #include "ServerErrorApplication.h"
 #include "AppOfflineApplication.h"
 #include "LoggingHelpers.h"
+#include <fcntl.h>
+#include <corecrt_io.h>
 
 extern HINSTANCE    g_hModule;
 
@@ -300,6 +302,32 @@ APPLICATION_INFO::FindNativeAssemblyFromHostfxr(
     DWORD       dwRequiredBufferSize = 0;
     STRA        output;
     IOutputManager* pLoggerProvider;
+    
+    /*AllocConsole();
+    {
+        auto lStdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+
+        auto hConHandle = _open_osfhandle((intptr_t)lStdHandle, _O_TEXT);
+
+        _fdopen(hConHandle, "w");
+
+        _dup2(hConHandle, _fileno(stdout));
+
+        setvbuf(stdout, NULL, _IONBF, 0);
+    }
+
+    {
+        auto lStdHandle = GetStdHandle(STD_ERROR_HANDLE);
+
+        auto hConHandle = _open_osfhandle((intptr_t)lStdHandle, _O_TEXT);
+
+        _fdopen(hConHandle, "w");
+
+        _dup2(hConHandle, _fileno(stderr));
+
+        setvbuf(stderr, NULL, _IONBF, 0);
+    }*/
+
 
     hr = LoggingHelpers::CreateLoggingProvider(
         m_pConfiguration->QueryStdoutLogEnabled(),
