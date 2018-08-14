@@ -96,8 +96,8 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 var deploymentResult = await DeployAsync(deploymentParameters);
 
                 InvalidateRuntimeConfig(deploymentResult);
-                Directory.Move(@"C:\Users\jukotali\.dotnet\x64\host\fxr\2.0.0",
-                    @"C:\Users\jukotali\.dotnet\x64\host\fxr\2.3.0");
+                //Directory.Move(@"C:\Users\jukotali\.dotnet\x64\host\fxr\2.0.0",
+                //    @"C:\Users\jukotali\.dotnet\x64\host\fxr\2.3.0");
                 var response = await deploymentResult.HttpClient.GetAsync("/");
                 Assert.False(response.IsSuccessStatusCode);
 
@@ -119,8 +119,8 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             }
             finally
             {
-                Directory.Move(@"C:\Users\jukotali\.dotnet\x64\host\fxr\2.3.0",
-                    @"C:\Users\jukotali\.dotnet\x64\host\fxr\2.0.0");
+                //Directory.Move(@"C:\Users\jukotali\.dotnet\x64\host\fxr\2.3.0",
+                //    @"C:\Users\jukotali\.dotnet\x64\host\fxr\2.0.0");
             }
         }
 

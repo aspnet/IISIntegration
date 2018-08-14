@@ -35,13 +35,13 @@ HRESULT PipeOutputManager::Start()
     HANDLE                  hStdErrReadPipe;
     HANDLE                  hStdErrWritePipe;
 
+    //while (!IsDebuggerPresent())
+    //{
+    //    Sleep(100);
+    //}
     saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
     saAttr.bInheritHandle = TRUE;
     saAttr.lpSecurityDescriptor = NULL;
-    auto pSD = (PSECURITY_DESCRIPTOR)LocalAlloc(LPTR,
-        SECURITY_DESCRIPTOR_MIN_LENGTH);
-
-    InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION);
 
     RETURN_LAST_ERROR_IF(!CreatePipe(&hStdErrReadPipe, &hStdErrWritePipe, &saAttr, 0 /*nSize*/));
 
@@ -67,9 +67,6 @@ HRESULT PipeOutputManager::Start()
         nullptr);      // receive thread identifier
 
     RETURN_LAST_ERROR_IF_NULL(m_hErrThread);
-
-    fprintf(stdout, "aspnetcore stdout");
-    fprintf(stderr, "aspnetcore stderr");
 
     return S_OK;
 }
