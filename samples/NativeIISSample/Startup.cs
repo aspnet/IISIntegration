@@ -15,10 +15,13 @@ namespace NativeIISSample
     public class Startup
     {
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IAuthenticationSchemeProvider authSchemeProvider)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IAuthenticationSchemeProvider authSchemeProvider) 
         {
             app.Run(async (context) =>
             {
+                //context.Response.Headers["Name"] = "François";
+                context.Response.Headers["Message"] = "你好";
+
                 context.Response.ContentType = "text/plain";
 
                 await context.Response.WriteAsync("Hello World - " + DateTimeOffset.Now + Environment.NewLine);
