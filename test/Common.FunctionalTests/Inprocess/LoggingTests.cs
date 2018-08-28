@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,7 +9,6 @@ using Microsoft.AspNetCore.Server.IIS.FunctionalTests.Utilities;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.AspNetCore.Server.IntegrationTesting.IIS;
 using Microsoft.AspNetCore.Testing.xunit;
-using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
@@ -19,10 +17,21 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
     public class LoggingTests : IISFunctionalTestBase
     {
         private readonly PublishedSitesFixture _fixture;
+        private readonly string _logFolderPath;
 
         public LoggingTests(PublishedSitesFixture fixture)
         {
+            _logFolderPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             _fixture = fixture;
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            if (Directory.Exists(_logFolderPath))
+            {
+                Directory.Delete(_logFolderPath, true);
+            }
         }
 
         [ConditionalTheory]
@@ -32,41 +41,18 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         {
             var deploymentParameters = _fixture.GetBaseDeploymentParameters(publish: true);
 
-            deploymentParameters.WebConfigActionList.Add(
-                WebConfigHelpers.AddOrModifyAspNetCoreSection("stdoutLogEnabled", "true"));
-
-            var pathToLogs = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-            deploymentParameters.WebConfigActionList.Add(
-                WebConfigHelpers.AddOrModifyAspNetCoreSection("stdoutLogFile", Path.Combine(pathToLogs, "std")));
+            deploymentParameters.EnableLogging(_logFolderPath);
 
             var deploymentResult = await DeployAsync(deploymentParameters);
+            
+            await Helpers.AssertStarts(deploymentResult, path);
 
-            try
-            {
-                await Helpers.AssertStarts(deploymentResult, path);
+            StopServer();
 
-                StopServer();
+            var contents = File.ReadAllText(Helpers.GetExpectedLogName(deploymentResult, _logFolderPath));
 
-                var fileInDirectory = Directory.GetFiles(pathToLogs).Single();
-
-                var contents = File.ReadAllText(fileInDirectory);
-
-                Assert.NotNull(contents);
-                Assert.Contains("TEST MESSAGE", contents);
-                Assert.DoesNotContain(TestSink.Writes, context => context.Message.Contains("TEST MESSAGE"));
-                // TODO we should check that debug logs are restored during graceful shutdown.
-                // The IIS Express deployer doesn't support graceful shutdown.
-                //Assert.Contains(TestSink.Writes, context => context.Message.Contains("Restoring original stdout: "));
-            }
-            finally
-            {
-
-                RetryHelper.RetryOperation(
-                    () => Directory.Delete(pathToLogs, true),
-                    e => Logger.LogWarning($"Failed to delete directory : {e.Message}"),
-                    retryCount: 3,
-                    retryDelayMilliseconds: 100);
-            }
+            Assert.NotNull(contents);
+            Assert.Contains("TEST MESSAGE", contents);
         }
 
         [ConditionalFact]
@@ -82,6 +68,21 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             var deploymentResult = await DeployAsync(deploymentParameters);
 
             await Helpers.AssertStarts(deploymentResult, "HelloWorld");
+        }
+
+        [ConditionalFact]
+        public async Task OnlyOneFileCreatedWithProcessStartTime()
+        {
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(publish: true);
+
+            deploymentParameters.EnableLogging(_logFolderPath);
+
+            var deploymentResult = await DeployAsync(deploymentParameters);
+            await Helpers.AssertStarts(deploymentResult, "CheckLogFile");
+
+            StopServer();
+
+            Assert.Single(Directory.GetFiles(_logFolderPath), Helpers.GetExpectedLogName(deploymentResult, _logFolderPath));
         }
 
         [ConditionalFact]
@@ -132,7 +133,6 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         public async Task CheckStdoutLoggingToPipe_DoesNotCrashProcess(string path)
         {
             var deploymentParameters = _fixture.GetBaseDeploymentParameters(publish: true);
-            deploymentParameters.GracefulShutdown = true;
             var deploymentResult = await DeployAsync(deploymentParameters);
 
             await Helpers.AssertStarts(deploymentResult, path);
@@ -151,7 +151,6 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         public async Task CheckStdoutLoggingToPipeWithFirstWrite(string path)
         {
             var deploymentParameters = _fixture.GetBaseDeploymentParameters(publish: true);
-            deploymentParameters.GracefulShutdown = true;
 
             var firstWriteString = path + path;
 
@@ -209,8 +208,8 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 var logContents = streamReader.ReadToEnd();
                 Assert.Contains("[aspnetcorev2.dll]", logContents);
                 Assert.Contains("[aspnetcorev2_inprocess.dll]", logContents);
-                Assert.Contains("Description: IIS AspNetCore Module V2. Commit:", logContents);
-                Assert.Contains("Description: IIS ASP.NET Core Module Request Handler. Commit:", logContents);
+                Assert.Contains("Description: IIS ASP.NET Core Module V2. Commit:", logContents);
+                Assert.Contains("Description: IIS ASP.NET Core Module V2 Request Handler. Commit:", logContents);
             }
         }
     }

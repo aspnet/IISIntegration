@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -64,12 +65,15 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         {
             foreach (DirectoryInfo directoryInfo in source.GetDirectories())
             {
-                CopyFiles(directoryInfo, target.CreateSubdirectory(directoryInfo.Name), logger);
+                if (directoryInfo.FullName != target.FullName)
+                {
+                    CopyFiles(directoryInfo, target.CreateSubdirectory(directoryInfo.Name), logger);
+                }
             }
-            logger.LogDebug($"Processing {target.FullName}");
+            logger?.LogDebug($"Processing {target.FullName}");
             foreach (FileInfo fileInfo in source.GetFiles())
             {
-                logger.LogDebug($"  Copying {fileInfo.Name}");
+                logger?.LogDebug($"  Copying {fileInfo.Name}");
                 var destFileName = Path.Combine(target.FullName, fileInfo.Name);
                 fileInfo.CopyTo(destFileName);
             }
@@ -132,6 +136,20 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 verificationAction = verificationAction ?? (() => deploymentResult.AssertStarts());
                 await verificationAction();
             }
+        }
+
+        public static IEnumerable<object[]> ToTheoryData<T>(this Dictionary<string, T> dictionary)
+        {
+            return dictionary.Keys.Select(k => new[] { k });
+        }
+
+        public static string GetExpectedLogName(IISDeploymentResult deploymentResult, string logFolderPath)
+        {
+            var startTime = deploymentResult.HostProcess.StartTime.ToUniversalTime();
+            return Path.Combine(logFolderPath, $"std_{startTime.Year}{startTime.Month:D2}" +
+                $"{startTime.Day:D2}{startTime.Hour:D2}" +
+                $"{startTime.Minute:D2}{startTime.Second:D2}_" +
+                $"{deploymentResult.HostProcess.Id}.log");
         }
     }
 }

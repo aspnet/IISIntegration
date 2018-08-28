@@ -28,7 +28,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
         private const string FailedToInitializeBindingsMessage = "Failed to initialize site bindings";
         private const string UnableToStartIISExpressMessage = "Unable to start iisexpress.";
         private const int MaximumAttempts = 5;
-        private readonly TimeSpan ShutdownTimeSpan = TimeSpan.FromSeconds(60);
+        private readonly TimeSpan ShutdownTimeSpan = Debugger.IsAttached ? TimeSpan.FromMinutes(60) : TimeSpan.FromMinutes(1);
         private static readonly Regex UrlDetectorRegex = new Regex(@"^\s*Successfully registered URL ""(?<url>[^""]+)"" for site.*$");
 
         private Process _hostProcess;
@@ -249,6 +249,8 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                     else
                     {
                         _hostProcess = process;
+                        // cache the process start time for verifying log file name.
+                        var _ = _hostProcess.StartTime;
                         Logger.LogInformation("Started iisexpress successfully. Process Id : {processId}, Port: {port}", _hostProcess.Id, port);
                         return (url: url, hostExitToken: hostExitTokenSource.Token);
                     }
@@ -382,9 +384,14 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
 
         public override void Dispose()
         {
+            Dispose(gracefulShutdown: false);
+        }
+
+        public override void Dispose(bool gracefulShutdown)
+        {
             using (Logger.BeginScope("Dispose"))
             {
-                if (IISDeploymentParameters.GracefulShutdown)
+                if (gracefulShutdown)
                 {
                     GracefullyShutdownProcess(_hostProcess);
                 }

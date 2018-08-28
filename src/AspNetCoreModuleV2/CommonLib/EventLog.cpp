@@ -1,8 +1,10 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+#include <array>
 #include "EventLog.h"
 #include "debugutil.h"
+#include "StringHelpers.h"
 
 extern HANDLE       g_hEventLog;
 
@@ -13,6 +15,19 @@ EventLog::LogEvent(
     _In_ LPCWSTR pstrMsg
 )
 {
+    // Static locals to avoid getting the process ID and string multiple times.
+    // Effectively have the same semantics as global variables, except initialized
+    // on first occurence.
+    static const auto processIdString = GetProcessIdString();
+    static const auto versionInfoString = GetVersionInfoString();
+
+    std::array<LPCWSTR, 3> eventLogDataStrings
+    {
+        pstrMsg,
+        processIdString.c_str(),
+        versionInfoString.c_str()
+    };
+
     if (g_hEventLog != NULL)
     {
         ReportEventW(g_hEventLog,
@@ -20,14 +35,14 @@ EventLog::LogEvent(
             0,        // wCategory
             dwEventId,
             NULL,     // lpUserSid
-            1,        // wNumStrings
+            3,        // wNumStrings
             0,        // dwDataSize,
-            &pstrMsg,
+            eventLogDataStrings.data(),
             NULL      // lpRawData
         );
     }
 
-    DebugPrintf(dwEventInfoType == EVENTLOG_ERROR_TYPE ? ASPNETCORE_DEBUG_FLAG_ERROR : ASPNETCORE_DEBUG_FLAG_INFO, "Event Log: %S", pstrMsg);
+    DebugPrintfW(dwEventInfoType == EVENTLOG_ERROR_TYPE ? ASPNETCORE_DEBUG_FLAG_ERROR : ASPNETCORE_DEBUG_FLAG_INFO, L"Event Log: '%ls' \r\nEnd Event Log Message.", pstrMsg);
 }
 
 VOID

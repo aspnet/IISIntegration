@@ -4,6 +4,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests;
 using Microsoft.AspNetCore.Server.IntegrationTesting.IIS;
 using Microsoft.Extensions.Logging.Testing;
 using Xunit.Abstractions;
@@ -18,7 +19,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
         {
         }
 
-        protected ApplicationDeployer _deployer;
+        protected IISDeployerBase _deployer;
 
         protected ApplicationDeployer CreateDeployer(IISDeploymentParameters parameters)
         {
@@ -28,28 +29,30 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting
                 parameters.EnvironmentVariables[DebugEnvironmentVariable] = "console";
             }
 
-            if (parameters.ApplicationPublisher == null)
-            {
-                throw new InvalidOperationException("All tests should use ApplicationPublisher");
-            }
-
             return IISApplicationDeployerFactory.Create(parameters, LoggerFactory);
         }
 
         protected virtual async Task<IISDeploymentResult> DeployAsync(IISDeploymentParameters parameters)
         {
-            _deployer = CreateDeployer(parameters);
+            _deployer = (IISDeployerBase)CreateDeployer(parameters);
             return (IISDeploymentResult)await _deployer.DeployAsync();
+        }
+
+        protected virtual async Task<IISDeploymentResult> StartAsync(IISDeploymentParameters parameters)
+        {
+            var result = await DeployAsync(parameters);
+            await result.AssertStarts();
+            return result;
         }
 
         public override void Dispose()
         {
-            StopServer();
+            StopServer(false);
         }
 
-        public void StopServer()
+        public void StopServer(bool gracefulShutdown = true)
         {
-            _deployer?.Dispose();
+            _deployer?.Dispose(gracefulShutdown);
             _deployer = null;
         }
     }

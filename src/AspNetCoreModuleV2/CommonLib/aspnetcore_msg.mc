@@ -38,12 +38,6 @@ Language=English
 %1
 .
 
-Messageid=1002
-SymbolicName=ASPNETCORE_EVENT_PROCESS_CRASH
-Language=English
-%1
-.
-
 Messageid=1003
 SymbolicName=ASPNETCORE_EVENT_RAPID_FAIL_COUNT_EXCEEDED
 Language=English
@@ -110,38 +104,8 @@ Language=English
 %1
 .
 
-Messageid=1014
-SymbolicName=ASPNETCORE_EVENT_INPROCESS_FULL_FRAMEWORK_APP
-Language=English
-%1
-.
-
-Messageid=1015
-SymbolicName=ASPNETCORE_EVENT_PORTABLE_APP_DOTNET_MISSING
-Language=English
-%1
-.
-
-Messageid=1016
-SymbolicName=ASPNETCORE_EVENT_HOSTFXR_DIRECTORY_NOT_FOUND
-Language=English
-%1
-.
-
-Messageid=1017
-SymbolicName=ASPNETCORE_EVENT_HOSTFXR_DLL_NOT_FOUND
-Language=English
-%1
-.
-
 Messageid=1018
 SymbolicName=ASPNETCORE_EVENT_INPROCESS_THREAD_EXCEPTION
-Language=English
-%1
-.
-
-Messageid=1019
-SymbolicName=ASPNETCORE_EVENT_APPLICATION_EXE_NOT_FOUND
 Language=English
 %1
 .
@@ -164,12 +128,6 @@ Language=English
 %1
 .
 
-Messageid=1023
-SymbolicName=ASPNETCORE_EVENT_APP_IN_SHUTDOWN
-Language=English
-%1
-.
-
 Messageid=1024
 SymbolicName=ASPNETCORE_EVENT_MONITOR_APPOFFLINE_ERROR
 Language=English
@@ -177,19 +135,19 @@ Language=English
 .
 
 Messageid=1025
-SymbolicName=ASPNETCORE_EVENT_GENERAL_INFO_MSG
+SymbolicName=ASPNETCORE_EVENT_GENERAL_INFO
 Language=English
 %1
 .
 
 Messageid=1026
-SymbolicName=ASPNETCORE_EVENT_GENERAL_WARNING_MSG
+SymbolicName=ASPNETCORE_EVENT_GENERAL_WARNING
 Language=English
 %1
 .
 
 Messageid=1027
-SymbolicName=ASPNETCORE_EVENT_GENERAL_ERROR_MSG
+SymbolicName=ASPNETCORE_EVENT_GENERAL_ERROR
 Language=English
 %1
 .
@@ -213,7 +171,7 @@ Language=English
 .
 
 Messageid=1031
-SymbolicName=ASPNETCORE_EVENT_INVALID_PROCESS_PATH
+SymbolicName=ASPNETCORE_EVENT_INPROCESS_START_ERROR
 Language=English
 %1
 .
@@ -232,7 +190,7 @@ Language=English
 .
 
 Messageid=1034
-SymbolicName=ASPNETCORE_EVENT_UNKNOWN_HOSTING_MODEL_ERROR
+SymbolicName=ASPNETCORE_CONFIGURATION_LOAD_ERROR
 Language=English
 %1
 .

@@ -4,8 +4,8 @@
 #pragma once
 
 #include "InProcessApplicationBase.h"
-#include "requesthandler_config.h"
 #include "IOutputManager.h"
+#include "InProcessOptions.h"
 
 class IN_PROCESS_HANDLER;
 typedef REQUEST_NOTIFICATION_STATUS(WINAPI * PFN_REQUEST_HANDLER) (IN_PROCESS_HANDLER* pInProcessHandler, void* pvRequestHandlerContext);
@@ -18,7 +18,7 @@ public:
     IN_PROCESS_APPLICATION(
         IHttpServer& pHttpServer,
         IHttpApplication& pApplication,
-        std::unique_ptr<REQUESTHANDLER_CONFIG> pConfig,
+        std::unique_ptr<InProcessOptions> pConfig,
         APPLICATION_PARAMETER *pParameters,
         DWORD                  nParameters);
 
@@ -97,10 +97,10 @@ public:
         return m_struExeLocation.QueryStr();
     }
 
-    REQUESTHANDLER_CONFIG*
-    QueryConfig()
+    const InProcessOptions&
+    QueryConfig() const
     {
-        return m_pConfig.get();
+        return *m_pConfig.get();
     }
 
     bool
@@ -121,7 +121,7 @@ private:
     };
 
     // Thread executing the .NET Core process
-    HANDLE                          m_hThread;
+    HandleWrapper<InvalidHandleTraits> m_hThread;
 
     // The request handler callback from managed code
     PFN_REQUEST_HANDLER             m_RequestHandler;
@@ -134,7 +134,7 @@ private:
     PFN_ASYNC_COMPLETION_HANDLER    m_AsyncCompletionHandler;
 
     // The event that gets triggered when managed initialization is complete
-    HANDLE                          m_pInitalizeEvent;
+    HandleWrapper<InvalidHandleTraits> m_pInitalizeEvent;
 
     STRU                            m_struExeLocation;
 
@@ -146,11 +146,11 @@ private:
     volatile BOOL                   m_fShutdownCalledFromManaged;
     BOOL                            m_fInitialized;
     MANAGED_APPLICATION_STATUS      m_status;
-    std::unique_ptr<REQUESTHANDLER_CONFIG> m_pConfig;
+    std::unique_ptr<InProcessOptions> m_pConfig;
 
     static IN_PROCESS_APPLICATION*  s_Application;
 
-    IOutputManager*                 m_pLoggerProvider;
+    std::unique_ptr<IOutputManager> m_pLoggerProvider;
 
     static const LPCSTR             s_exeLocationParameterName;
 

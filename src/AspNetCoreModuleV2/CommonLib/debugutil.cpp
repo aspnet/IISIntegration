@@ -13,8 +13,8 @@
 #include "exceptions.h"
 #include "atlbase.h"
 #include "config_utility.h"
+#include "StringHelpers.h"
 
-inline HANDLE g_hStandardOutput = INVALID_HANDLE_VALUE;
 inline HANDLE g_logFile = INVALID_HANDLE_VALUE;
 inline HMODULE g_hModule;
 inline SRWLOCK g_logFileLock;
@@ -22,50 +22,79 @@ inline SRWLOCK g_logFileLock;
 HRESULT
 PrintDebugHeader()
 {
-    DWORD  verHandle = 0;
-    UINT   size      = 0;
-    LPVOID lpBuffer  = NULL;
+    // Major, minor are stored in dwFileVersionMS field and patch, build in dwFileVersionLS field as pair of 32 bit numbers
+    DebugPrintfW(ASPNETCORE_DEBUG_FLAG_INFO, L"Initializing logs for '%ls'. %ls. %ls.",
+        GetModuleName().c_str(),
+        GetProcessIdString().c_str(),
+        GetVersionInfoString().c_str()
+    );
 
-    WCHAR path[MAX_PATH];
-    RETURN_LAST_ERROR_IF(!GetModuleFileName(g_hModule, path, sizeof(path)));
+    return S_OK;
+}
 
-    DWORD verSize = GetFileVersionInfoSize(path, &verHandle);
-    RETURN_LAST_ERROR_IF(verSize == 0);
+std::wstring
+GetProcessIdString()
+{
+    return format(L"Process Id: %u.", GetCurrentProcessId());
+}
 
-    // Allocate memory to hold data structure returned by GetFileVersionInfo
-    std::vector<BYTE> verData(verSize);
-
-    RETURN_LAST_ERROR_IF(!GetFileVersionInfo(path, verHandle, verSize, verData.data()));
-    RETURN_LAST_ERROR_IF(!VerQueryValue(verData.data(), L"\\", &lpBuffer, &size));
-
-    auto verInfo = reinterpret_cast<VS_FIXEDFILEINFO *>(lpBuffer);
-    // Check result signature
-    if (verInfo->dwSignature == VS_FFI_SIGNATURE)
+std::wstring
+GetVersionInfoString()
+{
+    auto func = [](std::wstring& res)
     {
+        DWORD  verHandle = 0;
+        UINT   size = 0;
+        LPVOID lpBuffer = NULL;
+
+        auto path = GetModuleName();
+
+        DWORD verSize = GetFileVersionInfoSize(path.c_str(), &verHandle);
+        RETURN_LAST_ERROR_IF(verSize == 0);
+
+        // Allocate memory to hold data structure returned by GetFileVersionInfo
+        std::vector<BYTE> verData(verSize);
+
+        RETURN_LAST_ERROR_IF(!GetFileVersionInfo(path.c_str(), verHandle, verSize, verData.data()));
+        RETURN_LAST_ERROR_IF(!VerQueryValue(verData.data(), L"\\", &lpBuffer, &size));
+
+        auto verInfo = reinterpret_cast<VS_FIXEDFILEINFO *>(lpBuffer);
+        if (verInfo->dwSignature != VS_FFI_SIGNATURE)
+        {
+            RETURN_IF_FAILED(E_FAIL);
+        }
+
         LPVOID pvProductName = NULL;
         unsigned int iProductNameLen = 0;
         RETURN_LAST_ERROR_IF(!VerQueryValue(verData.data(), _T("\\StringFileInfo\\040904b0\\FileDescription"), &pvProductName, &iProductNameLen));
 
-        // Major, minor are stored in dwFileVersionMS field and patch, build in dwFileVersionLS field as pair of 32 bit numbers
-        DebugPrintf(ASPNETCORE_DEBUG_FLAG_INFO, "Initializing logs for %S. ProcessId: %d. File Version: %d.%d.%d.%d. Description: %S",
-            path,
-            GetCurrentProcessId(),
-            ( verInfo->dwFileVersionMS >> 16 ) & 0xffff,
-            ( verInfo->dwFileVersionMS >>  0 ) & 0xffff,
-            ( verInfo->dwFileVersionLS >> 16 ) & 0xffff,
-            ( verInfo->dwFileVersionLS >>  0 ) & 0xffff,
-            pvProductName
-        );
-    }
+        res = format(L"File Version: %d.%d.%d.%d. Description: %s",
+            (verInfo->dwFileVersionMS >> 16) & 0xffff,
+            (verInfo->dwFileVersionMS >> 0) & 0xffff,
+            (verInfo->dwFileVersionLS >> 16) & 0xffff,
+            (verInfo->dwFileVersionLS >> 0) & 0xffff,
+            pvProductName);
+        return S_OK;
+    };
 
-    return S_OK;
+    std::wstring versionInfoString;
+
+    return func(versionInfoString) == S_OK ? versionInfoString : L"";
+}
+
+std::wstring
+GetModuleName()
+{
+    WCHAR path[MAX_PATH];
+    LOG_LAST_ERROR_IF(!GetModuleFileName(g_hModule, path, sizeof(path)));
+    return path;
 }
 
 void SetDebugFlags(const std::wstring &debugValue)
 {
     try
     {
-        if (!debugValue.empty())
+        if (!debugValue.empty() && debugValue.find_first_not_of(L"0123456789") == std::wstring::npos)
         {
             const auto value = std::stoi(debugValue);
 
@@ -117,7 +146,7 @@ bool CreateDebugLogFile(const std::wstring &debugOutputFile)
         {
             if (g_logFile != INVALID_HANDLE_VALUE)
             {
-                LOG_INFOF("Switching debug log files to %S", debugOutputFile.c_str());
+                LOG_INFOF(L"Switching debug log files to '%ls'", debugOutputFile.c_str());
             }
 
             SRWExclusiveLock lock(g_logFileLock);
@@ -149,7 +178,6 @@ VOID
 DebugInitialize(HMODULE hModule)
 {
     g_hModule = hModule;
-    g_hStandardOutput = GetStdHandle(STD_OUTPUT_HANDLE);
 
     HKEY hKey;
     InitializeSRWLock(&g_logFileLock);
@@ -268,19 +296,29 @@ IsEnabled(
     return ( dwFlag & DEBUG_FLAGS_VAR );
 }
 
+void WriteFileEncoded(UINT codePage, HANDLE hFile, const LPCWSTR  szString)
+{
+    DWORD nBytesWritten = 0;
+    auto const encodedByteCount = WideCharToMultiByte(codePage, 0, szString, -1, nullptr, 0, nullptr, nullptr);
+    auto encodedBytes = std::shared_ptr<CHAR[]>(new CHAR[encodedByteCount]);
+    WideCharToMultiByte(codePage, 0, szString, -1, encodedBytes.get(), encodedByteCount, nullptr, nullptr);
+
+    WriteFile(hFile, encodedBytes.get(), encodedByteCount - 1, &nBytesWritten, nullptr);
+}
+
 VOID
-DebugPrint(
+DebugPrintW(
     DWORD   dwFlag,
-    const LPCSTR  szString
+    const LPCWSTR  szString
     )
 {
-    STACK_STRA (strOutput, 256);
+    STACK_STRU (strOutput, 256);
     HRESULT  hr = S_OK;
 
     if ( IsEnabled( dwFlag ) )
     {
-        hr = strOutput.SafeSnprintf(
-            "[%s] %s\r\n",
+        hr = strOutput.SafeSnwprintf(
+            L"[%S] %s\r\n",
             DEBUG_LABEL_VAR, szString );
 
         if (FAILED (hr))
@@ -288,22 +326,68 @@ DebugPrint(
             return;
         }
 
-        OutputDebugStringA( strOutput.QueryStr() );
-        DWORD nBytesWritten = 0;
+        OutputDebugString( strOutput.QueryStr() );
 
-        if (IsEnabled(ASPNETCORE_DEBUG_FLAG_CONSOLE))
+        if (IsEnabled(ASPNETCORE_DEBUG_FLAG_CONSOLE) || g_logFile != INVALID_HANDLE_VALUE)
         {
-            WriteFile(g_hStandardOutput, strOutput.QueryStr(), strOutput.QueryCB(), &nBytesWritten, nullptr);
+            if (IsEnabled(ASPNETCORE_DEBUG_FLAG_CONSOLE))
+            {
+                WriteFileEncoded(GetConsoleOutputCP(), GetStdHandle(STD_OUTPUT_HANDLE), strOutput.QueryStr());
+            }
+
+            if (g_logFile != INVALID_HANDLE_VALUE)
+            {
+                SRWExclusiveLock lock(g_logFileLock);
+
+                SetFilePointer(g_logFile, 0, nullptr, FILE_END);
+                WriteFileEncoded(CP_UTF8, g_logFile, strOutput.QueryStr());
+                FlushFileBuffers(g_logFile);
+            }
+        }
+    }
+}
+
+VOID
+DebugPrintfW(
+    DWORD   dwFlag,
+    const LPCWSTR  szFormat,
+    ...
+    )
+{
+    STACK_STRU (strCooked,256);
+
+    va_list  args;
+    HRESULT hr = S_OK;
+
+    if ( IsEnabled( dwFlag ) )
+    {
+        va_start( args, szFormat );
+
+        hr = strCooked.SafeVsnwprintf(szFormat, args );
+
+        va_end( args );
+
+        if (FAILED (hr))
+        {
+            return;
         }
 
-        if (g_logFile != INVALID_HANDLE_VALUE)
-        {
-            SRWExclusiveLock lock(g_logFileLock);
+        DebugPrintW( dwFlag, strCooked.QueryStr() );
+    }
+}
 
-            SetFilePointer(g_logFile, 0, nullptr, FILE_END);
-            WriteFile(g_logFile, strOutput.QueryStr(), strOutput.QueryCB(), &nBytesWritten, nullptr);
-            FlushFileBuffers(g_logFile);
-        }
+VOID
+DebugPrint(
+    DWORD   dwFlag,
+    const LPCSTR  szString
+    )
+{
+    STACK_STRU (strOutput, 256);
+
+    if ( IsEnabled( dwFlag ) )
+    {
+        strOutput.CopyA(szString);
+        DebugPrintW(dwFlag, strOutput.QueryStr());
     }
 }
 

@@ -1,7 +1,6 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Server.IIS.FunctionalTests.Utilities;
 using Microsoft.AspNetCore.Testing.xunit;
@@ -23,8 +22,9 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         public async Task CheckStartupEventLogMessage()
         {
             var deploymentParameters = _fixture.GetBaseDeploymentParameters(publish: true);
+            
             var deploymentResult = await DeployAsync(deploymentParameters);
-            await Helpers.AssertStarts(deploymentResult);
+            await deploymentResult.AssertStarts();
 
             StopServer();
 
@@ -35,9 +35,8 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         public async Task CheckShutdownEventLogMessage()
         {
             var deploymentParameters = _fixture.GetBaseDeploymentParameters(publish: true);
-            deploymentParameters.GracefulShutdown = true;
             var deploymentResult = await DeployAsync(deploymentParameters);
-            await Helpers.AssertStarts(deploymentResult);
+            await deploymentResult.AssertStarts();
 
             StopServer();
 

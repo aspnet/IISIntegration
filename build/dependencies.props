@@ -57,6 +57,6 @@
     <SystemIOPipelines21PackageVersion>4.5.0</SystemIOPipelines21PackageVersion>
     <SystemSecurityPrincipalWindows21PackageVersion>4.5.0</SystemSecurityPrincipalWindows21PackageVersion>
   </PropertyGroup>
-  <PropertyGroup Label="Package Versions: Pinned" />
   <Import Project="$(DotNetPackageVersionPropsPath)" Condition=" '$(DotNetPackageVersionPropsPath)' != '' " />
+  <PropertyGroup Label="Package Versions: Pinned" />
 </Project>
