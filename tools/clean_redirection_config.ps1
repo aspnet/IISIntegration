@@ -34,5 +34,5 @@ if (-not $isAdmin -and -not $WhatIfPreference) {
     }
 }
 
-$content = [System.IO.File]::ReadAllText($redirectionConfigFile ).Replace('enabled="true"','enabled="false"')
-[System.IO.File]::WriteAllText($redirectionConfigFile , $content)
+$content = [System.IO.File]::ReadAllText($redirectionConfigFile).Replace('enabled="true"','enabled="false"')
+[System.IO.File]::WriteAllText($redirectionConfigFile, $content)
