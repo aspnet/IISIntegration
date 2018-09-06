@@ -30,6 +30,8 @@ namespace Microsoft.AspNetCore.Server.IIS.Core
             try
             {
                 context = _application.CreateContext(this);
+                IISEventSource.Log.RequestStart(this);
+
                 await _application.ProcessRequestAsync(context);
                 // TODO Verification of Response
                 //if (Volatile.Read(ref _requestAborted) == 0)
@@ -55,6 +57,8 @@ namespace Microsoft.AspNetCore.Server.IIS.Core
                     await FireOnCompleted();
                 }
             }
+
+            IISEventSource.Log.RequestStop(this);
 
             if (Volatile.Read(ref _requestAborted) == 0)
             {
