@@ -43,41 +43,35 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         }
 
         [ConditionalFact]
+        [SkipIfHostableWebCoreNotAvailable]
         public async Task EmitsRequestStartAndStop()
         {
             var helloWorld = "Hello World";
-            var expectedPath = "/Path";
             string requestId = null;
-            string path = null;
 
             using (var testServer = await TestServer.Create(ctx =>
             {
-                path = ctx.Request.Path.ToString();
                 requestId = ctx.TraceIdentifier;
                 return ctx.Response.WriteAsync(helloWorld);
             }, LoggerFactory))
             {
-                var result = await testServer.HttpClient.GetAsync(expectedPath);
+                var result = await testServer.HttpClient.GetAsync("/");
                 Assert.Equal(helloWorld, await result.Content.ReadAsStringAsync());
-                Assert.Equal(expectedPath, path);
             }
 
-            // capture list here as other tests executing in parallel may log events
             Assert.NotNull(requestId);
 
             var events = _listener.EventData.Where(e => e != null && GetProperty(e, "requestId") == requestId).ToList();
-            {
-                var requestStart = Assert.Single(events, e => e.EventName == "RequestStart");
-                Assert.All(new[] { "connectionId", "requestId" }, p => Assert.Contains(p, requestStart.PayloadNames));
-                Assert.Equal(requestId, GetProperty(requestStart, "requestId"));
-                Assert.Same(IISEventSource.Log, requestStart.EventSource);
-            }
-            {
-                var requestStop = Assert.Single(events, e => e.EventName == "RequestStop");
-                Assert.All(new[] { "connectionId", "requestId" }, p => Assert.Contains(p, requestStop.PayloadNames));
-                Assert.Equal(requestId, GetProperty(requestStop, "requestId"));
-                Assert.Same(IISEventSource.Log, requestStop.EventSource);
-            }
+            AssertEventSourceMessage("RequestStart", requestId, events);
+            AssertEventSourceMessage("RequestStop", requestId, events);
+        }
+
+        private void AssertEventSourceMessage(string eventName, string requestId, List<EventWrittenEventArgs> events)
+        {
+            var eventResult = Assert.Single(events, e => e.EventName == eventName);
+            Assert.All(new[] { "requestId" }, p => Assert.Contains(p, eventResult.PayloadNames));
+            Assert.Equal(requestId, GetProperty(eventResult, "requestId"));
+            Assert.Same(IISEventSource.Log, eventResult.EventSource);
         }
 
         private string GetProperty(EventWrittenEventArgs data, string propName)
