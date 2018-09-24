@@ -68,7 +68,7 @@ namespace Microsoft.AspNetCore.Server.IIS.FunctionalTests
             }
 
             var client = deploymentResult.CreateClient(handler);
-            var response = await client.GetAsync("GetClientCert");
+            var response = await client.RetryRequestAsync("GetClientCert", r => r.IsSuccessStatusCode);
 
             var responseText = await response.Content.ReadAsStringAsync();
 
