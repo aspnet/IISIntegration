@@ -30,6 +30,16 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
         private readonly string _dotnetLocation = DotNetCommands.GetDotNetExecutable(RuntimeArchitecture.x64);
 
+        [ConditionalFact]
+        public async Task ExpandEnvironmentVariableInWebConfig()
+        {
+            // Point to dotnet installed in user profile.	
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(publish: true);
+            deploymentParameters.EnvironmentVariables["DotnetPath"] = _dotnetLocation;
+            deploymentParameters.WebConfigActionList.Add(WebConfigHelpers.AddOrModifyAspNetCoreSection("processPath", "%DotnetPath%"));
+            await StartAsync(deploymentParameters);
+        }
+
         [ConditionalTheory]
         [InlineData("bogus", "", @"Executable was not found at '.*?\\bogus.exe")]
         [InlineData("c:\\random files\\dotnet.exe", "something.dll", @"Could not find dotnet.exe at '.*?\\dotnet.exe'")]
