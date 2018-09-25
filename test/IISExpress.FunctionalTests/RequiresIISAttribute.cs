@@ -10,9 +10,9 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
     [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Method)]
     public sealed class RequiresIISAttribute : Attribute, ITestCondition
     {
-        public bool IsMet => IISExpressAncmSchema.SupportsInProcessHosting;
+        public bool IsMet => false;
 
-        public string SkipReason => IISExpressAncmSchema.SkipReason;
+        public string SkipReason => "test";
 
         public RequiresIISAttribute() { }
 
