@@ -29,7 +29,6 @@ void DisconnectHandler::NotifyDisconnect()
 
 void DisconnectHandler::CleanupStoredContext() noexcept
 {
-    SetHandler(nullptr);
     delete this;
 }
 

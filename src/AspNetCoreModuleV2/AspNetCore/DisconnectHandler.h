@@ -20,7 +20,6 @@ public:
     virtual
     ~DisconnectHandler()
     {
-        SetHandler(nullptr);
     }
 
     void
