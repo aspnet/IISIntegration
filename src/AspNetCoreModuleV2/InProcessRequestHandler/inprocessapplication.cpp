@@ -220,6 +220,10 @@ IN_PROCESS_APPLICATION::ExecuteApplication()
         // set the callbacks
         s_Application = this;
 
+        // Set the current working directory to the application path.
+        // This keeps the current directory behavior consistent with out of process
+        SetCurrentDirectory(QueryApplicationPhysicalPath().c_str());
+
         //Start CLR thread
         m_clrThread = std::thread(ClrThreadEntryPoint, context);
 

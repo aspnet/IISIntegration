@@ -684,5 +684,8 @@ namespace TestSite
 
         public Task HttpsHelloWorld(HttpContext ctx) =>
            ctx.Response.WriteAsync("Scheme:" + ctx.Request.Scheme + "; Original:" + ctx.Request.Headers["x-original-proto"]);
+
+        public Task ReadFileFromCurrentDirectory(HttpContext ctx) =>
+            ctx.Response.WriteAsync(File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "test.txt")));
     }
 }

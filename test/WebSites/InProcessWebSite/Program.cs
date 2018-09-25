@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -79,6 +80,9 @@ namespace TestSite
                         host.Run();
                     }
                     break;
+                case "ReadFileFromCurrentDirectory":
+                    Console.WriteLine(File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "test.txt")));
+                    return StartServer();
                 case "ConsoleErrorWriteStartServer":
                     Console.Error.WriteLine("TEST MESSAGE");
                     return StartServer();

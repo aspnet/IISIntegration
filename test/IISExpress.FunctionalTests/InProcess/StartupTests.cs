@@ -19,7 +19,7 @@ using Xunit;
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     [Collection(PublishedSitesCollection.Name)]
-    public class StartupTests : IISFunctionalTestBase
+    public class StartupTests : LogFileTestBase
     {
         private readonly PublishedSitesFixture _fixture;
 
@@ -29,16 +29,6 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         }
 
         private readonly string _dotnetLocation = DotNetCommands.GetDotNetExecutable(RuntimeArchitecture.x64);
-
-        [ConditionalFact]
-        public async Task ExpandEnvironmentVariableInWebConfig()
-        {
-            // Point to dotnet installed in user profile.
-            var deploymentParameters = _fixture.GetBaseDeploymentParameters(publish: true);
-            deploymentParameters.EnvironmentVariables["DotnetPath"] = _dotnetLocation;
-            deploymentParameters.WebConfigActionList.Add(WebConfigHelpers.AddOrModifyAspNetCoreSection("processPath", "%DotnetPath%"));
-            await StartAsync(deploymentParameters);
-        }
 
         [ConditionalTheory]
         [InlineData("bogus", "", @"Executable was not found at '.*?\\bogus.exe")]
@@ -151,6 +141,38 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             EventLogHelpers.VerifyEventLogEvents(deploymentResult,
                 EventLogHelpers.InProcessFailedToStart(deploymentResult, "CLR worker thread exited prematurely"),
                 EventLogHelpers.InProcessThreadException(deploymentResult, ".*?Application is running inside IIS process but is not configured to use IIS server"));
+        }
+
+        [ConditionalFact]
+        public async Task ReadFileFromCurrentDirectoryInMain()
+        {
+            var expected = "Read from log file";
+
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.InProcessTestSite, publish: true);
+            deploymentParameters.TransformArguments((a, _) => $"{a} ReadFileFromCurrentDirectory");
+            deploymentParameters.EnableLogging(_logFolderPath);
+
+            var deploymentResult = await DeployAsync(deploymentParameters);
+            File.WriteAllText(Path.Combine(deploymentResult.ContentRoot, "test.txt"), expected);
+            var response = await deploymentResult.HttpClient.GetAsync("/HelloWorld");
+            Assert.True(response.IsSuccessStatusCode);
+
+            StopServer();
+
+            var contents = File.ReadAllText(Helpers.GetExpectedLogName(deploymentResult, _logFolderPath));
+            Assert.Contains(expected, contents);
+        }
+
+        [ConditionalFact]
+        public async Task ReadFileFromCurrentDirectoryInRequest()
+        {
+            var expected = "Read from log file";
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.InProcessTestSite, publish: true);
+
+            var deploymentResult = await DeployAsync(deploymentParameters);
+            File.WriteAllText(Path.Combine(deploymentResult.ContentRoot, "test.txt"), expected);
+            var response = await deploymentResult.HttpClient.GetAsync("/ReadFileFromCurrentDirectory");
+            Assert.Equal(expected, await response.Content.ReadAsStringAsync());
         }
 
         [ConditionalFact]
