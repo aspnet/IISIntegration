@@ -26,7 +26,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             Assert.Equal(
                 $"ContentRootPath {_fixture.DeploymentResult.ContentRoot}" + Environment.NewLine +
                 $"WebRootPath {_fixture.DeploymentResult.ContentRoot}\\wwwroot" + Environment.NewLine +
-                $"CurrentDirectory {Path.GetDirectoryName(_fixture.DeploymentResult.HostProcess.MainModule.FileName)}",
+                $"CurrentDirectory {_fixture.DeploymentResult.ContentRoot}",
                 await _fixture.Client.GetStringAsync("/HostingEnvironment"));
         }
     }
