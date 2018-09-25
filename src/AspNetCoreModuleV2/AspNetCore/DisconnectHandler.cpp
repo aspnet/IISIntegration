@@ -34,6 +34,5 @@ void DisconnectHandler::CleanupStoredContext() noexcept
 
 void DisconnectHandler::SetHandler(std::unique_ptr<IREQUEST_HANDLER, IREQUEST_HANDLER_DELETER> handler) noexcept
 {
-    SRWExclusiveLock lock(m_handlerLock);
     handler.swap(m_pHandler);
 }
