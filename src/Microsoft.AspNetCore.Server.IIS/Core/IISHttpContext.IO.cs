@@ -193,6 +193,7 @@ namespace Microsoft.AspNetCore.Server.IIS.Core
             try
             {
                 _abortedCts?.Cancel();
+                _abortedCts = null;
             }
             catch (Exception)
             {
@@ -211,7 +212,7 @@ namespace Microsoft.AspNetCore.Server.IIS.Core
 
         internal void ConnectionReset()
         {
-            AbortIO();
+            ThreadPool.QueueUserWorkItem(t => AbortIO());
         }
     }
 }

@@ -25,7 +25,8 @@ IN_PROCESS_HANDLER::IN_PROCESS_HANDLER(
    m_pRequestHandler(pRequestHandler),
    m_pRequestHandlerContext(pRequestHandlerContext),
    m_pAsyncCompletionHandler(pAsyncCompletion),
-   m_pDisconnectHandler(pDisconnectHandler)
+   m_pDisconnectHandler(pDisconnectHandler),
+   m_disconnectWithoutCallingManaged(false)
 {
 }
 
@@ -108,8 +109,16 @@ IN_PROCESS_HANDLER::NotifyDisconnect()
     {
         return;
     }
+    if (m_pManagedHttpContext != nullptr)
+    {
+        m_pDisconnectHandler(m_pManagedHttpContext);
+    }
+    else
+    {
+        // set an atomic bool
+        m_disconnectWithoutCallingManaged = true;
+    }
 
-    assert(m_pManagedHttpContext != nullptr);
     m_pDisconnectHandler(m_pManagedHttpContext);
 }
 
@@ -136,6 +145,10 @@ IN_PROCESS_HANDLER::SetManagedHttpContext(
 )
 {
     m_pManagedHttpContext = pManagedHttpContext;
+    if (m_disconnectWithoutCallingManaged && m_pManagedHttpContext != nullptr)
+    {
+        m_pDisconnectHandler(m_pManagedHttpContext);
+    }
 }
 
 // static

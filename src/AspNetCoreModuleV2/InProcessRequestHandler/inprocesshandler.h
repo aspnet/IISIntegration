@@ -83,4 +83,5 @@ private:
     PFN_ASYNC_COMPLETION_HANDLER m_pAsyncCompletionHandler;
     PFN_DISCONNECT_HANDLER       m_pDisconnectHandler;
     static ALLOC_CACHE_HANDLER *   sm_pAlloc;
+    std::atomic_bool m_disconnectWithoutCallingManaged;
 };
