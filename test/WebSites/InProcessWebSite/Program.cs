@@ -102,6 +102,7 @@ namespace TestSite
                 })
                 .UseIIS()
                 .UseStartup<Startup>()
+                .UseShutdownTimeout(TimeSpan.FromMinutes(2))
                 .Build();
 
             host.Run();

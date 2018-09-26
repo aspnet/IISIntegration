@@ -324,6 +324,7 @@ namespace TestSite
                 result = await ctx.Request.Body.ReadAsync(readBuffer, 0, readBuffer.Length);
             }
         }
+        
         private async Task ReadAndFlushEcho(HttpContext ctx)
         {
             var readBuffer = new byte[4096];
