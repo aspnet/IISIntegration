@@ -71,10 +71,9 @@ ASPNET_CORE_PROXY_MODULE::ASPNET_CORE_PROXY_MODULE(HTTP_MODULE_ID moduleId, std:
 
 ASPNET_CORE_PROXY_MODULE::~ASPNET_CORE_PROXY_MODULE()
 {
-    if (m_pDisconnectHandler != nullptr)
-    {
-        m_pDisconnectHandler->SetHandler(nullptr);
-    }
+    // At this point m_pDisconnectHandler should be disconnected in
+    // HandleNotificationStatus
+    assert(m_pDisconnectHandler == nullptr);
 }
 
 __override
@@ -112,8 +111,6 @@ ASPNET_CORE_PROXY_MODULE::OnExecuteRequestHandler(
             FINISHED_IF_FAILED(moduleContainer->SetConnectionModuleContext(static_cast<IHttpConnectionStoredContext*>(disconnectHandler.release()), m_moduleId));
         }
 
-        m_pDisconnectHandler->SetHandler(this);
-
         FINISHED_IF_FAILED(m_pApplicationManager->GetOrCreateApplicationInfo(
             *pHttpContext,
             m_pApplicationInfo));
@@ -121,6 +118,8 @@ ASPNET_CORE_PROXY_MODULE::OnExecuteRequestHandler(
         FINISHED_IF_FAILED(m_pApplicationInfo->CreateHandler(*pHttpContext, m_pHandler));
 
         retVal = m_pHandler->OnExecuteRequestHandler();
+
+        m_pDisconnectHandler->SetHandler(::ReferenceRequestHandler(m_pHandler.get()));
     }
     catch (...)
     {
@@ -141,7 +140,7 @@ Finished:
         }
     }
 
-    return retVal;
+    return HandleNotificationStatus(retVal);
 }
 
 __override
@@ -156,18 +155,27 @@ ASPNET_CORE_PROXY_MODULE::OnAsyncCompletion(
 {
     try
     {
-        return m_pHandler->OnAsyncCompletion(
+        return HandleNotificationStatus(m_pHandler->OnAsyncCompletion(
             pCompletionInfo->GetCompletionBytes(),
-            pCompletionInfo->GetCompletionStatus());
+            pCompletionInfo->GetCompletionStatus()));
     }
     catch (...)
     {
         OBSERVE_CAUGHT_EXCEPTION();
-        return RQ_NOTIFICATION_FINISH_REQUEST;
+        return HandleNotificationStatus(RQ_NOTIFICATION_FINISH_REQUEST);
     }
 }
 
-void ASPNET_CORE_PROXY_MODULE::NotifyDisconnect() const
+REQUEST_NOTIFICATION_STATUS ASPNET_CORE_PROXY_MODULE::HandleNotificationStatus(REQUEST_NOTIFICATION_STATUS status) noexcept
 {
-    m_pHandler->NotifyDisconnect();
+    if (status != RQ_NOTIFICATION_PENDING)
+    {
+        if (m_pDisconnectHandler != nullptr)
+        {
+            m_pDisconnectHandler->SetHandler(nullptr);
+            m_pDisconnectHandler = nullptr;
+        }
+    }
+
+    return status;
 }

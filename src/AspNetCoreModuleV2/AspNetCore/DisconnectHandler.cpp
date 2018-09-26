@@ -4,15 +4,21 @@
 #include "DisconnectHandler.h"
 #include "exceptions.h"
 #include "proxymodule.h"
+#include "SRWExclusiveLock.h"
 
 void DisconnectHandler::NotifyDisconnect()
 {
     try
     {
-        const auto module = m_pModule.exchange(nullptr);
+        std::unique_ptr<IREQUEST_HANDLER, IREQUEST_HANDLER_DELETER> module;
+        {
+            SRWExclusiveLock lock(m_handlerLock);
+            m_pHandler.swap(module);
+        }
+
         if (module != nullptr)
         {
-            module ->NotifyDisconnect();
+            module->NotifyDisconnect();
         }
     }
     catch (...)
@@ -23,11 +29,11 @@ void DisconnectHandler::NotifyDisconnect()
 
 void DisconnectHandler::CleanupStoredContext() noexcept
 {
-    SetHandler(nullptr);
     delete this;
 }
 
-void DisconnectHandler::SetHandler(ASPNET_CORE_PROXY_MODULE * module) noexcept
+void DisconnectHandler::SetHandler(std::unique_ptr<IREQUEST_HANDLER, IREQUEST_HANDLER_DELETER> handler) noexcept
 {
-    m_pModule = module;
+    SRWExclusiveLock lock(m_handlerLock);
+    handler.swap(m_pHandler);
 }

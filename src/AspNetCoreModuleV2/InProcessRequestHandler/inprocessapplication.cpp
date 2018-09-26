@@ -79,6 +79,8 @@ IN_PROCESS_APPLICATION::StopClr()
         m_workerThread.join();
     }
 
+    LOG_INFOF(L"Thread join");
+
     s_Application = nullptr;
 }
 

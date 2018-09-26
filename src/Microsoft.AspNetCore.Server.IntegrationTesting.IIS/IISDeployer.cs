@@ -23,7 +23,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
     {
         private const string DetailedErrorsEnvironmentVariable = "ASPNETCORE_DETAILEDERRORS";
 
-        private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(60);
+        private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(300);
         private static readonly TimeSpan _retryDelay = TimeSpan.FromMilliseconds(200);
 
         private CancellationTokenSource _hostShutdownToken = new CancellationTokenSource();
@@ -331,6 +331,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                     var site = serverManager.Sites.SingleOrDefault();
                     if (site == null)
                     {
+                        Logger.LogInformation($"Site not found");
                         throw new InvalidOperationException("Site not found");
                     }
 
@@ -364,6 +365,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                                 wp.State == WorkerProcessState.Running ||
                                 wp.State == WorkerProcessState.Stopping))
                         {
+                            Logger.LogInformation($"WorkerProcess not stopped yet");
                             throw new InvalidOperationException("WorkerProcess not stopped yet");
                         }
 
@@ -400,7 +402,10 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
 
                     serverManager.CommitChanges();
 
-                    Directory.Delete(_configPath, true);
+                    if (Directory.Exists(_configPath))
+                    {
+                        Directory.Delete(_configPath, true);
+                    }
                 });
             }
         }
