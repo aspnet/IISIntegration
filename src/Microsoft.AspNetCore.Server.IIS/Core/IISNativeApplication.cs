@@ -8,7 +8,7 @@ namespace Microsoft.AspNetCore.Server.IIS.Core
 {
     internal class IISNativeApplication
     {
-        private readonly IntPtr _nativeApplication;
+        private IntPtr _nativeApplication;
 
         public IISNativeApplication(IntPtr nativeApplication)
         {
@@ -22,7 +22,11 @@ namespace Microsoft.AspNetCore.Server.IIS.Core
 
         public void StopCallsIntoManaged()
         {
-            NativeMethods.HttpStopCallsIntoManaged(_nativeApplication);
+            if (_nativeApplication != IntPtr.Zero)
+            {
+                NativeMethods.HttpStopCallsIntoManaged(_nativeApplication);
+                _nativeApplication = IntPtr.Zero;
+            }
         }
 
         public void RegisterCallbacks(
