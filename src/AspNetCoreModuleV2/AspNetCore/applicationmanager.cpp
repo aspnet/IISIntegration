@@ -11,12 +11,9 @@
 
 extern BOOL         g_fInShutdown;
 
-// The application manager is a singleton across ANCM.
-APPLICATION_MANAGER* APPLICATION_MANAGER::sm_pApplicationManager = NULL;
-
 //
 // Retrieves the application info from the application manager
-// Will create the application info if it isn't initalized
+// Will create the application info if it isn't initialized
 //
 HRESULT
 APPLICATION_MANAGER::GetOrCreateApplicationInfo(
@@ -24,7 +21,6 @@ APPLICATION_MANAGER::GetOrCreateApplicationInfo(
     _Out_ std::shared_ptr<APPLICATION_INFO>& ppApplicationInfo
 )
 {
-
     auto &pApplication = *pHttpContext.GetApplication();
 
     // The configuration path is unique for each application and is used for the

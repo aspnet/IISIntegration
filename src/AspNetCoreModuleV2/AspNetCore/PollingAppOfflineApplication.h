@@ -14,7 +14,7 @@ enum PollingAppOfflineApplicationMode
 class PollingAppOfflineApplication: public APPLICATION
 {
 public:
-    PollingAppOfflineApplication(IHttpApplication& pApplication, PollingAppOfflineApplicationMode mode)
+    PollingAppOfflineApplication(const IHttpApplication& pApplication, PollingAppOfflineApplicationMode mode)
         : APPLICATION(pApplication),
         m_ulLastCheckTime(0),
         m_appOfflineLocation(GetAppOfflineLocation(pApplication)),
@@ -23,16 +23,20 @@ public:
     {
         InitializeSRWLock(&m_statusLock);
     }
+    
+    HRESULT
+    TryCreateHandler(
+        _In_ IHttpContext       *pHttpContext,
+        _Outptr_result_maybenull_ IREQUEST_HANDLER  **pRequestHandler) override;
 
-    APPLICATION_STATUS QueryStatus() override;
     void CheckAppOffline();
     virtual HRESULT OnAppOfflineFound() = 0;
     void StopInternal(bool fServerInitiated) override { UNREFERENCED_PARAMETER(fServerInitiated); }
 
 protected:
     std::filesystem::path m_appOfflineLocation;
-    static std::filesystem::path GetAppOfflineLocation(IHttpApplication& pApplication);
-    static bool FileExists(const std::filesystem::path& path);
+    static std::filesystem::path GetAppOfflineLocation(const IHttpApplication& pApplication);
+    static bool FileExists(const std::filesystem::path& path) noexcept;
 private:
     static const int c_appOfflineRefreshIntervalMS = 200;
     std::string m_strAppOfflineContent;

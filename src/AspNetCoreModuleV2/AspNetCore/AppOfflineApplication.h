@@ -10,7 +10,7 @@
 class AppOfflineApplication: public PollingAppOfflineApplication
 {
 public:
-    AppOfflineApplication(IHttpApplication& pApplication)
+    AppOfflineApplication(const IHttpApplication& pApplication)
         : PollingAppOfflineApplication(pApplication, PollingAppOfflineApplicationMode::StopWhenRemoved)
     {
         CheckAppOffline();
@@ -20,7 +20,7 @@ public:
 
     HRESULT OnAppOfflineFound() override;
 
-    static bool ShouldBeStarted(IHttpApplication& pApplication);
+    static bool ShouldBeStarted(const IHttpApplication& pApplication);
 
 private:
     std::string m_strAppOfflineContent;

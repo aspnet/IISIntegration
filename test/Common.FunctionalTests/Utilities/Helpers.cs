@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.AspNetCore.Server.IntegrationTesting.IIS;
 using Microsoft.AspNetCore.Testing;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
@@ -19,7 +21,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
     public static class Helpers
     {
         private static readonly TimeSpan RetryRequestDelay = TimeSpan.FromMilliseconds(100);
-        private static readonly int RetryRequestCount = 5;
+        private static readonly int RetryRequestCount = 10;
 
         public static string GetTestWebSitePath(string name)
         {
@@ -111,10 +113,10 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             return response;
         }
 
-        public static void AssertWorkerProcessStop(this IISDeploymentResult deploymentResult)
+        public static void AssertWorkerProcessStop(this IISDeploymentResult deploymentResult, int? timeout = null)
         {
             var hostProcess = deploymentResult.HostProcess;
-            Assert.True(hostProcess.WaitForExit((int)TimeoutExtensions.DefaultTimeout.TotalMilliseconds));
+            Assert.True(hostProcess.WaitForExit(timeout ?? (int)TimeoutExtensions.DefaultTimeoutValue.TotalMilliseconds));
 
             if (deploymentResult.DeploymentParameters.ServerType == ServerType.IISExpress)
             {
@@ -146,10 +148,27 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         public static string GetExpectedLogName(IISDeploymentResult deploymentResult, string logFolderPath)
         {
             var startTime = deploymentResult.HostProcess.StartTime.ToUniversalTime();
-            return Path.Combine(logFolderPath, $"std_{startTime.Year}{startTime.Month:D2}" +
+
+            if (deploymentResult.DeploymentParameters.HostingModel == HostingModel.InProcess)
+            {
+                return Path.Combine(logFolderPath, $"std_{startTime.Year}{startTime.Month:D2}" +
                 $"{startTime.Day:D2}{startTime.Hour:D2}" +
                 $"{startTime.Minute:D2}{startTime.Second:D2}_" +
                 $"{deploymentResult.HostProcess.Id}.log");
+            }
+            else
+            {
+                return Directory.GetFiles(logFolderPath).Single();
+            }
+        }
+
+        public static void ModifyFrameworkVersionInRuntimeConfig(IISDeploymentResult deploymentResult)
+        {
+            var path = Path.Combine(deploymentResult.ContentRoot, "InProcessWebSite.runtimeconfig.json");
+            dynamic depsFileContent = JsonConvert.DeserializeObject(File.ReadAllText(path));
+            depsFileContent["runtimeOptions"]["framework"]["version"] = "2.9.9";
+            var output = JsonConvert.SerializeObject(depsFileContent);
+            File.WriteAllText(path, output);
         }
     }
 }

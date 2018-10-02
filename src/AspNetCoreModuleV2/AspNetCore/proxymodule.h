@@ -6,16 +6,18 @@
 #include <memory>
 #include "applicationinfo.h"
 #include "irequesthandler.h"
+#include "applicationmanager.h"
+#include "DisconnectHandler.h"
 
 extern HTTP_MODULE_ID   g_pModuleId;
 
-class ASPNET_CORE_PROXY_MODULE : public CHttpModule
+class ASPNET_CORE_PROXY_MODULE : NonCopyable, public CHttpModule
 {
  public:
 
-     ASPNET_CORE_PROXY_MODULE();
+     ASPNET_CORE_PROXY_MODULE(HTTP_MODULE_ID moduleId, std::shared_ptr<APPLICATION_MANAGER> applicationManager) noexcept;
 
-    ~ASPNET_CORE_PROXY_MODULE() = default;
+    ~ASPNET_CORE_PROXY_MODULE();
 
     void * operator new(size_t size, IModuleAllocator * pPlacement)
     {
@@ -33,7 +35,7 @@ class ASPNET_CORE_PROXY_MODULE : public CHttpModule
     OnExecuteRequestHandler(
         IHttpContext *          pHttpContext,
         IHttpEventProvider *    pProvider
-    );
+    ) override;
 
     __override
     REQUEST_NOTIFICATION_STATUS
@@ -43,22 +45,35 @@ class ASPNET_CORE_PROXY_MODULE : public CHttpModule
         BOOL                    fPostNotification,
         IHttpEventProvider *    pProvider,
         IHttpCompletionInfo *   pCompletionInfo
-    );
+    ) override;
+
+    void
+    NotifyDisconnect() const;
 
  private:
+    std::shared_ptr<APPLICATION_MANAGER> m_pApplicationManager;
     std::shared_ptr<APPLICATION_INFO> m_pApplicationInfo;
-    std::unique_ptr<IREQUEST_HANDLER, IREQUEST_HANDLER_DELETER>  m_pHandler;
+    std::unique_ptr<IREQUEST_HANDLER, IREQUEST_HANDLER_DELETER> m_pHandler;
+    HTTP_MODULE_ID m_moduleId;
+    DisconnectHandler * m_pDisconnectHandler;
 };
 
-class ASPNET_CORE_PROXY_MODULE_FACTORY : public IHttpModuleFactory
+class ASPNET_CORE_PROXY_MODULE_FACTORY : NonCopyable, public IHttpModuleFactory
 {
  public:
+    ASPNET_CORE_PROXY_MODULE_FACTORY(HTTP_MODULE_ID moduleId, std::shared_ptr<APPLICATION_MANAGER> applicationManager) noexcept;
+    virtual ~ASPNET_CORE_PROXY_MODULE_FACTORY() = default;
+
     HRESULT
     GetHttpModule(
         CHttpModule **      ppModule,
         IModuleAllocator *  pAllocator
-    );
+    ) override;
 
     VOID
-    Terminate();
+    Terminate() noexcept override;
+
+ private:
+    std::shared_ptr<APPLICATION_MANAGER> m_pApplicationManager;
+    HTTP_MODULE_ID m_moduleId;
 };

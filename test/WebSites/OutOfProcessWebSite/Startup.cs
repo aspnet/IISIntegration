@@ -5,12 +5,10 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -19,9 +17,9 @@ using Microsoft.AspNetCore.Server.IISIntegration;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace TestSites
+namespace TestSite
 {
-    public class Startup
+    public partial class Startup
     {
         private IServerAddressesFeature _serverAddresses;
 
@@ -38,29 +36,11 @@ namespace TestSites
 
         public Task BodyLimit(HttpContext ctx) => ctx.Response.WriteAsync(ctx.Features.Get<IHttpMaxRequestBodySizeFeature>()?.MaxRequestBodySize?.ToString() ?? "null");
 
-        public async Task Auth(HttpContext ctx)
-        {
-            var iisAuth = Environment.GetEnvironmentVariable("ASPNETCORE_IIS_HTTPAUTH");
-            var authProvider = ctx.RequestServices.GetService<IAuthenticationSchemeProvider>();
-            var authScheme = (await authProvider.GetAllSchemesAsync()).SingleOrDefault();
-            if (string.IsNullOrEmpty(iisAuth))
-            {
-                await ctx.Response.WriteAsync("backcompat;" + (authScheme?.Name ?? "null"));
-            }
-            else
-            {
-                await ctx.Response.WriteAsync("latest;" + (authScheme?.Name ?? "null"));
-            }
-        }
 
         public Task HelloWorld(HttpContext ctx) => ctx.Response.WriteAsync("Hello World");
 
         public Task HttpsHelloWorld(HttpContext ctx) =>
             ctx.Response.WriteAsync("Scheme:" + ctx.Request.Scheme + "; Original:" + ctx.Request.Headers["x-original-proto"]);
-
-        public Task CheckClientCert(HttpContext ctx) =>
-            ctx.Response.WriteAsync("Scheme:" + ctx.Request.Scheme + "; Original:" + ctx.Request.Headers["x-original-proto"]
-                                                   + "; has cert? " + (ctx.Connection.ClientCertificate != null));
 
         public Task Anonymous(HttpContext context) => context.Response.WriteAsync("Anonymous?" + !context.User.Identity.IsAuthenticated);
 
@@ -110,15 +90,6 @@ namespace TestSites
             }
 
             return context.Response.WriteAsync(context.Request.Headers["ANCMRHPath"]);
-        }
-
-        private async Task HostingEnvironment(HttpContext context)
-        {
-            var hostingEnv = context.RequestServices.GetService<IHostingEnvironment>();
-
-            await context.Response.WriteAsync("ContentRootPath "+hostingEnv.ContentRootPath + Environment.NewLine);
-            await context.Response.WriteAsync("WebRootPath "+hostingEnv.WebRootPath + Environment.NewLine);
-            await context.Response.WriteAsync("CurrentDirectory "+Environment.CurrentDirectory);
         }
 
         private async Task ProcessId(HttpContext context)

@@ -14,13 +14,13 @@ class REQUEST_HANDLER: public virtual IREQUEST_HANDLER
 
 public:
     VOID
-    ReferenceRequestHandler() override
+    ReferenceRequestHandler() noexcept override
     {
         InterlockedIncrement(&m_cRefs);
     }
 
     VOID
-    DereferenceRequestHandler() override
+    DereferenceRequestHandler() noexcept override
     {
         DBG_ASSERT(m_cRefs != 0);
 
@@ -39,9 +39,37 @@ public:
         return RQ_NOTIFICATION_FINISH_REQUEST;
     }
 
-    VOID TerminateRequest(bool fClientInitiated) override
+    #pragma warning( push )
+    #pragma warning ( disable : 26440 ) // Disable "Can be marked with noexcept"
+    VOID NotifyDisconnect() override
+    #pragma warning( pop )
     {
-        UNREFERENCED_PARAMETER(fClientInitiated);
+    }
+
+protected:
+
+    static
+    void WriteStaticResponse(IHttpContext& pContext, std::string &s_html500Page, HRESULT hr, bool disableStartupErrorPage)
+    {
+        if (disableStartupErrorPage)
+        {
+            pContext.GetResponse()->SetStatus(500, "Internal Server Error", 30, E_FAIL);
+            return;
+        }
+
+        HTTP_DATA_CHUNK dataChunk = {};
+        IHttpResponse* pResponse = pContext.GetResponse();
+        pResponse->SetStatus(500, "Internal Server Error", 0, hr, nullptr, true);
+        pResponse->SetHeader("Content-Type",
+            "text/html",
+            (USHORT)strlen("text/html"),
+            FALSE
+        );
+        dataChunk.DataChunkType = HttpDataChunkFromMemory;
+
+        dataChunk.FromMemory.pBuffer = s_html500Page.data();
+        dataChunk.FromMemory.BufferLength = static_cast<ULONG>(s_html500Page.size());
+        pResponse->WriteEntityChunkByReference(&dataChunk);
     }
 
 private:

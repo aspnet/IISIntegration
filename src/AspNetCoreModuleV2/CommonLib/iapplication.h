@@ -6,12 +6,6 @@
 #include <memory>
 #include "irequesthandler.h"
 
-enum APPLICATION_STATUS
-{
-    RUNNING,
-    RECYCLED,
-};
-
 struct APPLICATION_PARAMETER
 {
     LPCSTR pzName;
@@ -29,10 +23,6 @@ public:
     ~IAPPLICATION() = 0 { };
 
     virtual
-    APPLICATION_STATUS
-    QueryStatus() = 0;
-
-    virtual
     VOID
     ReferenceApplication() = 0;
 
@@ -42,9 +32,9 @@ public:
 
     virtual
     HRESULT
-    CreateHandler(
+    TryCreateHandler(
         _In_  IHttpContext       *pHttpContext,
-        _Out_ IREQUEST_HANDLER  **pRequestHandler) = 0;
+        _Outptr_ IREQUEST_HANDLER  **pRequestHandler) = 0;
 };
 
 struct IAPPLICATION_DELETER
@@ -61,3 +51,13 @@ std::unique_ptr<APPLICATION, IAPPLICATION_DELETER> ReferenceApplication(APPLICAT
     application->ReferenceApplication();
     return std::unique_ptr<APPLICATION, IAPPLICATION_DELETER>(application);
 };
+
+template< class APPLICATION, typename ...Params >
+std::unique_ptr<IAPPLICATION, IAPPLICATION_DELETER> make_application(Params&&... params)
+{
+#pragma warning( push )
+#pragma warning ( disable : 26409 ) // Disable "Avoid using new", using custom deleter here
+    return std::unique_ptr<IAPPLICATION, IAPPLICATION_DELETER>(new APPLICATION(std::forward<Params>(params)...));
+#pragma warning( pop )
+}
+

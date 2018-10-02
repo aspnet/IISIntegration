@@ -22,7 +22,7 @@ class FORWARDING_HANDLER : public REQUEST_HANDLER
 public:
     FORWARDING_HANDLER(
         _In_ IHttpContext *pW3Context,
-        _In_ OUT_OF_PROCESS_APPLICATION  *pApplication
+        _In_ std::unique_ptr<OUT_OF_PROCESS_APPLICATION, IAPPLICATION_DELETER> pApplication
     );
 
     ~FORWARDING_HANDLER();
@@ -68,9 +68,7 @@ public:
     StaticTerminate();
 
     VOID
-    TerminateRequest(
-        bool    fClientInitiated
-    );
+    NotifyDisconnect() override;
 
     static void * operator new(size_t size);
 
@@ -220,7 +218,6 @@ private:
     DWORD                               m_cMinBufferLimit;
     ULONGLONG                           m_cContentLength;
     WEBSOCKET_HANDLER *                 m_pWebSocket;
-    ASYNC_DISCONNECT_CONTEXT *          m_pDisconnect;
 
     BYTE *                              m_pEntityBuffer;
     static const SIZE_T                 INLINE_ENTITY_BUFFERS = 8;
@@ -238,6 +235,6 @@ private:
 
     mutable LONG                        m_cRefs;
     IHttpContext*                       m_pW3Context;
-    OUT_OF_PROCESS_APPLICATION*         m_pApplication;
-    HTTP_MODULE_ID                      m_pModuleId;
+    std::unique_ptr<OUT_OF_PROCESS_APPLICATION, IAPPLICATION_DELETER> m_pApplication;
+    bool                                m_fReactToDisconnect;
 };

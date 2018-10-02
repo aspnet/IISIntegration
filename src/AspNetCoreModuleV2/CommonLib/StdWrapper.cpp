@@ -12,7 +12,7 @@ StdWrapper::StdWrapper(FILE* stdStream, DWORD stdHandleNumber, HANDLE handleToRe
     : m_previousFileDescriptor(0),
     m_stdStream(stdStream),
     m_stdHandleNumber(stdHandleNumber),
-    m_fEnableNativeRedirection(fEnableNativeRedirection),
+    m_enableNativeRedirection(fEnableNativeRedirection),
     m_handleToRedirectTo(handleToRedirectTo),
     m_redirectedFile(nullptr)
 {
@@ -48,7 +48,7 @@ StdWrapper::StartRedirection()
         m_previousFileDescriptor = _dup(_fileno(m_stdStream));
     }
 
-    if (!m_fEnableNativeRedirection)
+    if (!m_enableNativeRedirection)
     {
         RETURN_LAST_ERROR_IF(!SetStdHandle(m_stdHandleNumber, m_handleToRedirectTo));
 
@@ -78,14 +78,14 @@ StdWrapper::StartRedirection()
 
     if (fileDescriptor == -1)
     {
-        RETURN_IF_FAILED(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
+        RETURN_HR(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
     }
 
     m_redirectedFile = _fdopen(fileDescriptor, "w");
 
     if (m_redirectedFile == nullptr)
     {
-        RETURN_IF_FAILED(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
+        RETURN_HR(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
     }
 
     // Set stdout/stderr to the newly created file.
@@ -93,13 +93,13 @@ StdWrapper::StartRedirection()
 
     if (dup2Result != 0)
     {
-        RETURN_IF_FAILED(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
+        RETURN_HR(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
     }
 
     // Removes buffering from the output
     if (setvbuf(m_stdStream, nullptr, _IONBF, 0) != 0)
     {
-        RETURN_IF_FAILED(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
+        RETURN_HR(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
     }
 
     return S_OK;
@@ -117,12 +117,12 @@ StdWrapper::StopRedirection() const
     FILE * file = _fdopen(m_previousFileDescriptor, "w");
     if (file == nullptr)
     {
-        RETURN_IF_FAILED(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
+        RETURN_HR(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
     }
 
     RETURN_LAST_ERROR_IF(!SetStdHandle(m_stdHandleNumber, reinterpret_cast<HANDLE>(_get_osfhandle(m_previousFileDescriptor))));
 
-    if (!m_fEnableNativeRedirection)
+    if (!m_enableNativeRedirection)
     {
         return S_OK;
     }
@@ -131,17 +131,17 @@ StdWrapper::StopRedirection() const
     const auto dup2Result = _dup2(_fileno(file), _fileno(m_stdStream));
     if (dup2Result != 0)
     {
-        RETURN_IF_FAILED(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
+        RETURN_HR(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
     }
 
     if (setvbuf(m_stdStream, nullptr, _IONBF, 0) != 0)
     {
-        RETURN_IF_FAILED(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
+        RETURN_HR(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
     }
 
     if (fclose(m_redirectedFile) != 0)
     {
-        RETURN_IF_FAILED(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
+        RETURN_HR(HRESULT_FROM_WIN32(ERROR_FILE_INVALID));
     }
 
     return S_OK;

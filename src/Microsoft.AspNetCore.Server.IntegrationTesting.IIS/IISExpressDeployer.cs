@@ -249,8 +249,14 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                     else
                     {
                         _hostProcess = process;
+
+                        // Ensure iisexpress.exe is killed if test process termination is non-graceful.
+                        // Prevents locked files when stop debugging unit test.
+                        ProcessTracker.Add(_hostProcess);
+
                         // cache the process start time for verifying log file name.
                         var _ = _hostProcess.StartTime;
+
                         Logger.LogInformation("Started iisexpress successfully. Process Id : {processId}, Port: {port}", _hostProcess.Id, port);
                         return (url: url, hostExitToken: hostExitTokenSource.Token);
                     }
@@ -287,7 +293,8 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
 
             ConfigureModuleAndBinding(config.Root, contentRoot, port);
 
-            if (!DeploymentParameters.PublishApplicationBeforeDeployment)
+            var webConfigPath = Path.Combine(contentRoot, "web.config");
+            if (!DeploymentParameters.PublishApplicationBeforeDeployment && !File.Exists(webConfigPath))
             {
                 // The elements normally in the web.config are in the applicationhost.config for unpublished apps.
                 AddAspNetCoreElement(config.Root);
@@ -336,7 +343,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                 // For published apps, prefer the content in the web.config, but update it.
                 yield return WebConfigHelpers.AddOrModifyAspNetCoreSection(
                     key: "hostingModel",
-                    value: DeploymentParameters.HostingModel == HostingModel.InProcess ? "inprocess" : "");
+                    value: DeploymentParameters.HostingModel.ToString());
 
                 yield return WebConfigHelpers.AddOrModifyHandlerSection(
                     key: "modules",
@@ -483,7 +490,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
             }
             else
             {
-                throw new InvalidOperationException($"iisexpress Process {hostProcess.Id} crashed before shutdown was triggered.");
+                throw new InvalidOperationException($"iisexpress Process {hostProcess?.Id} crashed before shutdown was triggered.");
             }
         }
     }

@@ -12,6 +12,9 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         Websockets = 1,
         WindowsAuthentication = 2,
         PoolEnvironmentVariables = 4,
-        ShutdownToken = 8
+        ShutdownToken = 8,
+        DynamicCompression = 16,
+        ApplicationInitialization = 32,
+        TracingModule = 64
     }
 }

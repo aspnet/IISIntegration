@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Server.IIS.FunctionalTests.Utilities;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.AspNetCore.Server.IntegrationTesting.IIS;
 using Microsoft.AspNetCore.Testing.xunit;
+using Newtonsoft.Json;
 using Xunit;
 
 namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
@@ -59,7 +60,9 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
             StopServer();
 
-            EventLogHelpers.VerifyEventLogEvent(deploymentResult, TestSink, $@"Application '{Regex.Escape(deploymentResult.ContentRoot)}\\' wasn't able to start. {subError}");
+            EventLogHelpers.VerifyEventLogEvent(deploymentResult, $@"Application '{Regex.Escape(deploymentResult.ContentRoot)}\\' wasn't able to start. {subError}");
+
+            Assert.Contains("HTTP Error 500.0 - ANCM InProcess Startup Failure", await response.Content.ReadAsStringAsync());
         }
 
         [ConditionalFact]
@@ -97,6 +100,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             var deploymentResult = await DeployAsync(deploymentParameters);
             await deploymentResult.AssertStarts();
 
+            StopServer();
             // Verify that in this scenario where.exe was invoked only once by shim and request handler uses cached value
             Assert.Equal(1, TestSink.Writes.Count(w => w.Message.Contains("Invoking where.exe to find dotnet.exe")));
         }
@@ -133,15 +137,136 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
         }
 
         [ConditionalFact]
-        public async Task DetectsOveriddenServer()
+        public async Task DetectsOverriddenServer()
         {
-            var deploymentResult = await DeployAsync(_fixture.GetBaseDeploymentParameters(_fixture.OverriddenServerWebSite, publish: true));
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.InProcessTestSite, publish: true);
+            deploymentParameters.TransformArguments((a, _) => $"{a} OverriddenServer");
+
+            var deploymentResult = await DeployAsync(deploymentParameters);
             var response = await deploymentResult.HttpClient.GetAsync("/");
-            Assert.False(response.IsSuccessStatusCode);
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
 
             StopServer();
 
-            Assert.Contains(TestSink.Writes, context => context.Message.Contains("Application is running inside IIS process but is not configured to use IIS server"));
+            EventLogHelpers.VerifyEventLogEvents(deploymentResult,
+                EventLogHelpers.InProcessFailedToStart(deploymentResult, "CLR worker thread exited prematurely"),
+                EventLogHelpers.InProcessThreadException(deploymentResult, ".*?Application is running inside IIS process but is not configured to use IIS server"));
+        }
+
+        [ConditionalFact]
+        public async Task LogsStartupExceptionExitError()
+        {
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.InProcessTestSite, publish: true);
+            deploymentParameters.TransformArguments((a, _) => $"{a} Throw");
+
+            var deploymentResult = await DeployAsync(deploymentParameters);
+
+            var response = await deploymentResult.HttpClient.GetAsync("/");
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+
+            StopServer();
+
+            EventLogHelpers.VerifyEventLogEvents(deploymentResult,
+                EventLogHelpers.InProcessFailedToStart(deploymentResult, "CLR worker thread exited prematurely"),
+                EventLogHelpers.InProcessThreadException(deploymentResult, ", exception code = '0xe0434352'"));
+        }
+
+        [ConditionalFact]
+        public async Task LogsUnexpectedThreadExitError()
+        {
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.InProcessTestSite, publish: true);
+            deploymentParameters.TransformArguments((a, _) => $"{a} EarlyReturn");
+            var deploymentResult = await DeployAsync(deploymentParameters);
+
+            var response = await deploymentResult.HttpClient.GetAsync("/HelloWorld");
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+
+            StopServer();
+
+            EventLogHelpers.VerifyEventLogEvents(deploymentResult,
+                EventLogHelpers.InProcessFailedToStart(deploymentResult, "CLR worker thread exited prematurely"),
+                EventLogHelpers.InProcessThreadExit(deploymentResult, "12"));
+        }
+
+        [ConditionalFact]
+        public async Task RemoveHostfxrFromApp_InProcessHostfxrInvalid()
+        {
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.InProcessTestSite, publish: true);
+            deploymentParameters.ApplicationType = ApplicationType.Standalone;
+            var deploymentResult = await DeployAsync(deploymentParameters);
+
+            File.Copy(
+                Path.Combine(deploymentResult.ContentRoot, "aspnetcorev2_inprocess.dll"),
+                Path.Combine(deploymentResult.ContentRoot, "hostfxr.dll"),
+                true);
+            await AssertSiteFailsToStartWithInProcessStaticContent(deploymentResult);
+
+            EventLogHelpers.VerifyEventLogEvent(deploymentResult, EventLogHelpers.InProcessHostfxrInvalid(deploymentResult), Logger);
+        }
+
+        [ConditionalFact]
+        public async Task TargedDifferenceSharedFramework_FailedToFindNativeDependencies()
+        {
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.InProcessTestSite, publish: true);
+            var deploymentResult = await DeployAsync(deploymentParameters);
+
+            Helpers.ModifyFrameworkVersionInRuntimeConfig(deploymentResult);
+            await AssertSiteFailsToStartWithInProcessStaticContent(deploymentResult);
+
+            EventLogHelpers.VerifyEventLogEvent(deploymentResult, EventLogHelpers.InProcessFailedToFindNativeDependencies(deploymentResult), Logger);
+        }
+
+        [ConditionalFact]
+        public async Task RemoveInProcessReference_FailedToFindRequestHandler()
+        {
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.InProcessTestSite, publish: true);
+            deploymentParameters.ApplicationType = ApplicationType.Standalone;
+            var deploymentResult = await DeployAsync(deploymentParameters);
+
+            File.Delete(Path.Combine(deploymentResult.ContentRoot, "aspnetcorev2_inprocess.dll"));
+
+            await AssertSiteFailsToStartWithInProcessStaticContent(deploymentResult);
+
+            EventLogHelpers.VerifyEventLogEvent(deploymentResult, EventLogHelpers.InProcessFailedToFindRequestHandler(deploymentResult), Logger);
+        }
+
+        [ConditionalFact]
+        public async Task StartupTimeoutIsApplied()
+        {
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.InProcessTestSite, publish: true);
+            deploymentParameters.TransformArguments((a, _) => $"{a} Hang");
+            deploymentParameters.WebConfigActionList.Add(
+                WebConfigHelpers.AddOrModifyAspNetCoreSection("startupTimeLimit", "1"));
+
+            var deploymentResult = await DeployAsync(deploymentParameters);
+
+            var response = await deploymentResult.HttpClient.GetAsync("/");
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+
+            StopServer();
+
+            EventLogHelpers.VerifyEventLogEvents(deploymentResult,
+                EventLogHelpers.InProcessFailedToStart(deploymentResult, "Managed server didn't initialize after 1000 ms.")
+                );
+        }
+
+        [ConditionalFact]
+        public async Task ShutdownTimeoutIsApplied()
+        {
+            var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.InProcessTestSite, publish: true);
+            deploymentParameters.TransformArguments((a, _) => $"{a} HangOnStop");
+            deploymentParameters.WebConfigActionList.Add(
+                WebConfigHelpers.AddOrModifyAspNetCoreSection("shutdownTimeLimit", "1"));
+
+            var deploymentResult = await DeployAsync(deploymentParameters);
+
+            Assert.Equal("Hello World", await deploymentResult.HttpClient.GetStringAsync("/HelloWorld"));
+
+            StopServer();
+
+            EventLogHelpers.VerifyEventLogEvents(deploymentResult,
+                EventLogHelpers.InProcessStarted(deploymentResult),
+                EventLogHelpers.InProcessFailedToStop(deploymentResult, ""));
         }
 
         [ConditionalFact]
@@ -158,9 +283,10 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 
             StopServer();
 
-            EventLogHelpers.VerifyEventLogEvent(deploymentResult, TestSink, "Unknown hosting model 'bogus'. Please specify either hostingModel=\"inprocess\" or hostingModel=\"outofprocess\" in the web.config file.");
+            EventLogHelpers.VerifyEventLogEvents(deploymentResult,
+                EventLogHelpers.ConfigurationLoadError(deploymentResult, "Unknown hosting model 'bogus'. Please specify either hostingModel=\"inprocess\" or hostingModel=\"outofprocess\" in the web.config file.")
+                );
         }
-
 
         private static Dictionary<string, (string, Action<XElement>)> InvalidConfigTransformations = InitInvalidConfigTransformations();
         public static IEnumerable<object[]> InvalidConfigTransformationsScenarios => InvalidConfigTransformations.ToTheoryData();
@@ -177,7 +303,10 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             Assert.Equal(HttpStatusCode.InternalServerError, result.StatusCode);
 
             StopServer();
-            EventLogHelpers.VerifyEventLogEvent(deploymentResult, TestSink, "Configuration load error. " + expectedError);
+
+            EventLogHelpers.VerifyEventLogEvents(deploymentResult,
+                EventLogHelpers.ConfigurationLoadError(deploymentResult, expectedError)
+            );
         }
 
         public static Dictionary<string, (string, Action<XElement>)> InitInvalidConfigTransformations()
@@ -223,42 +352,42 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             dictionary.Add("App in bin subdirectory full path to dll using exec and quotes",
                 parameters => {
                     MoveApplication(parameters, "bin");
-                    TransformArguments(parameters, (arguments, root) => "exec " + Path.Combine(root, "bin", arguments));
+                    parameters.TransformArguments((arguments, root) => "exec " + Path.Combine(root, "bin", arguments));
                     return "";
                 });
 
             dictionary.Add("App in subdirectory with space",
                 parameters => {
                     MoveApplication(parameters, pathWithSpace);
-                    TransformArguments(parameters, (arguments, root) => Path.Combine(pathWithSpace, arguments));
+                    parameters.TransformArguments((arguments, root) => Path.Combine(pathWithSpace, arguments));
                     return "";
                 });
 
             dictionary.Add("App in subdirectory with space and full path to dll",
                 parameters => {
                     MoveApplication(parameters, pathWithSpace);
-                    TransformArguments(parameters, (arguments, root) => Path.Combine(root, pathWithSpace, arguments));
+                    parameters.TransformArguments((arguments, root) => Path.Combine(root, pathWithSpace, arguments));
                     return "";
                 });
 
             dictionary.Add("App in bin subdirectory with space full path to dll using exec and quotes",
                 parameters => {
                     MoveApplication(parameters, pathWithSpace);
-                    TransformArguments(parameters, (arguments, root) => "exec \"" + Path.Combine(root, pathWithSpace, arguments) + "\" extra arguments");
+                    parameters.TransformArguments((arguments, root) => "exec \"" + Path.Combine(root, pathWithSpace, arguments) + "\" extra arguments");
                     return "extra|arguments";
                 });
 
             dictionary.Add("App in bin subdirectory and quoted argument",
                 parameters => {
                     MoveApplication(parameters, "bin");
-                    TransformArguments(parameters, (arguments, root) => Path.Combine("bin", arguments) + " \"extra argument\"");
+                    parameters.TransformArguments((arguments, root) => Path.Combine("bin", arguments) + " \"extra argument\"");
                     return "extra argument";
                 });
 
             dictionary.Add("App in bin subdirectory full path to dll",
                 parameters => {
                     MoveApplication(parameters, "bin");
-                    TransformArguments(parameters, (arguments, root) => Path.Combine(root, "bin", arguments) + " extra arguments");
+                    parameters.TransformArguments((arguments, root) => Path.Combine(root, "bin", arguments) + " extra arguments");
                     return "extra|arguments";
                 });
             return dictionary;
@@ -288,16 +417,16 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             dictionary.Add("App in subdirectory",
                 parameters => {
                     MoveApplication(parameters, pathWithSpace);
-                    TransformPath(parameters, (path, root) => Path.Combine(pathWithSpace, path));
-                    TransformArguments(parameters, (arguments, root) => "\"additional argument\"");
+                    parameters.TransformPath((path, root) => Path.Combine(pathWithSpace, path));
+                    parameters.TransformArguments((arguments, root) => "\"additional argument\"");
                     return "additional argument";
                 });
 
             dictionary.Add("App in bin subdirectory full path",
                 parameters => {
                     MoveApplication(parameters, pathWithSpace);
-                    TransformPath(parameters, (path, root) => Path.Combine(root, pathWithSpace, path));
-                    TransformArguments(parameters, (arguments, root) => "additional arguments");
+                    parameters.TransformPath((path, root) => Path.Combine(root, pathWithSpace, path));
+                    parameters.TransformArguments((arguments, root) => "additional arguments");
                     return "additional|arguments";
                 });
 
@@ -323,25 +452,12 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             });
         }
 
-        private static void TransformPath(IISDeploymentParameters parameters, Func<string, string, string> transformation)
+        private async Task AssertSiteFailsToStartWithInProcessStaticContent(IISDeploymentResult deploymentResult)
         {
-            parameters.WebConfigActionList.Add(
-                (config, contentRoot) =>
-                {
-                    var aspNetCoreElement = config.Descendants("aspNetCore").Single();
-                    aspNetCoreElement.SetAttributeValue("processPath", transformation((string)aspNetCoreElement.Attribute("processPath"), contentRoot));
-                });
+            var response = await deploymentResult.HttpClient.GetAsync("/HelloWorld");
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            Assert.Contains("HTTP Error 500.0 - ANCM InProcess Startup Failure", await response.Content.ReadAsStringAsync());
+            StopServer();
         }
-
-        private static void TransformArguments(IISDeploymentParameters parameters, Func<string, string, string> transformation)
-        {
-            parameters.WebConfigActionList.Add(
-                (config, contentRoot) =>
-                {
-                    var aspNetCoreElement = config.Descendants("aspNetCore").Single();
-                    aspNetCoreElement.SetAttributeValue("arguments", transformation((string)aspNetCoreElement.Attribute("arguments"), contentRoot));
-                });
-        }
-
     }
 }

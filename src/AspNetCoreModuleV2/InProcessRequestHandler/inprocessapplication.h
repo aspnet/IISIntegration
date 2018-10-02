@@ -3,12 +3,14 @@
 
 #pragma once
 
+#include <thread>
 #include "InProcessApplicationBase.h"
-#include "IOutputManager.h"
 #include "InProcessOptions.h"
+#include "BaseOutputManager.h"
 
 class IN_PROCESS_HANDLER;
 typedef REQUEST_NOTIFICATION_STATUS(WINAPI * PFN_REQUEST_HANDLER) (IN_PROCESS_HANDLER* pInProcessHandler, void* pvRequestHandlerContext);
+typedef VOID(WINAPI * PFN_DISCONNECT_HANDLER) (void *pvManagedHttpContext);
 typedef BOOL(WINAPI * PFN_SHUTDOWN_HANDLER) (void* pvShutdownHandlerContext);
 typedef REQUEST_NOTIFICATION_STATUS(WINAPI * PFN_ASYNC_COMPLETION_HANDLER)(void *pvManagedHttpContext, HRESULT hrCompletionStatus, DWORD cbCompletion);
 
@@ -32,6 +34,7 @@ public:
     SetCallbackHandles(
         _In_ PFN_REQUEST_HANDLER request_callback,
         _In_ PFN_SHUTDOWN_HANDLER shutdown_callback,
+        _In_ PFN_DISCONNECT_HANDLER disconnect_callback,
         _In_ PFN_ASYNC_COMPLETION_HANDLER managed_context_callback,
         _In_ VOID* pvRequstHandlerContext,
         _In_ VOID* pvShutdownHandlerContext
@@ -45,35 +48,26 @@ public:
     override;
 
     // Executes the .NET Core process
-    HRESULT
-    ExecuteApplication(
-        VOID
-    );
+    void
+    ExecuteApplication();
 
     HRESULT
-    LoadManagedApplication(
-        VOID
-    );
+    LoadManagedApplication();
 
-    VOID
-    LogErrorsOnMainExit(
-        HRESULT hr
-    );
 
-    VOID
-    StopCallsIntoManaged(
-        VOID
-    )
+    void
+    QueueStop();
+
+    void
+    StopIncomingRequests()
     {
-        m_fBlockCallbacksIntoManaged = TRUE;
+        QueueStop();
     }
 
-    VOID
-    StopIncomingRequests(
-        VOID
-    )
+    void
+    StopCallsIntoManaged()
     {
-        m_fShutdownCalledFromManaged = TRUE;
+        m_blockManagedCallbacks = true;
     }
 
     static
@@ -84,44 +78,64 @@ public:
 
     static
     IN_PROCESS_APPLICATION*
-    GetInstance(
-        VOID
-    )
+    GetInstance()
     {
         return s_Application;
     }
 
-    PCWSTR
-    QueryExeLocation()
+    const std::wstring&
+    QueryExeLocation() const
     {
-        return m_struExeLocation.QueryStr();
+        return m_dotnetExeKnownLocation;
     }
 
     const InProcessOptions&
     QueryConfig() const
     {
-        return *m_pConfig.get();
+        return *m_pConfig;
     }
 
     bool
     QueryBlockCallbacksIntoManaged() const
     {
-        return m_fBlockCallbacksIntoManaged;
+        return m_blockManagedCallbacks;
     }
 
-private:
+    static
+    HRESULT Start(
+        IHttpServer& pServer,
+        IHttpApplication& pHttpApplication,
+        APPLICATION_PARAMETER* pParameters,
+        DWORD nParameters,
+        std::unique_ptr<IN_PROCESS_APPLICATION, IAPPLICATION_DELETER>& application);
 
-    enum MANAGED_APPLICATION_STATUS
+private:
+    struct ExecuteClrContext: std::enable_shared_from_this<ExecuteClrContext>
     {
-        UNKNOWN = 0,
-        STARTING,
-        RUNNING_MANAGED,
-        SHUTDOWN,
-        FAIL
+        ExecuteClrContext():
+            m_argc(0),
+            m_pProc(nullptr),
+            m_exitCode(0),
+            m_exceptionCode(0)
+        {
+        }
+
+        DWORD m_argc;
+        std::unique_ptr<PCWSTR[]>   m_argv;
+        hostfxr_main_fn m_pProc;
+
+        int m_exitCode;
+        int m_exceptionCode;
     };
 
-    // Thread executing the .NET Core process
-    HandleWrapper<InvalidHandleTraits> m_hThread;
+    // Thread executing the .NET Core process this might be abandoned in timeout cases
+    std::thread                     m_clrThread;
+    // Thread tracking the CLR thread, this one is always joined on shutdown
+    std::thread                     m_workerThread;
+    // The event that gets triggered when managed initialization is complete
+    HandleWrapper<NullHandleTraits> m_pInitializeEvent;
+    // The event that gets triggered when worker thread should exit
+    HandleWrapper<NullHandleTraits> m_pShutdownEvent;
 
     // The request handler callback from managed code
     PFN_REQUEST_HANDLER             m_RequestHandler;
@@ -132,54 +146,40 @@ private:
     VOID*                           m_ShutdownHandlerContext;
 
     PFN_ASYNC_COMPLETION_HANDLER    m_AsyncCompletionHandler;
+    PFN_DISCONNECT_HANDLER          m_DisconnectHandler;
 
-    // The event that gets triggered when managed initialization is complete
-    HandleWrapper<InvalidHandleTraits> m_pInitalizeEvent;
+    std::wstring                    m_dotnetExeKnownLocation;
 
-    STRU                            m_struExeLocation;
+    std::atomic_bool                m_blockManagedCallbacks;
+    bool                            m_Initialized;
+    bool                            m_waitForShutdown;
 
-    // The exit code of the .NET Core process
-    INT                             m_ProcessExitCode;
-
-    volatile BOOL                   m_fBlockCallbacksIntoManaged;
-    volatile BOOL                   m_fShutdownCalledFromNative;
-    volatile BOOL                   m_fShutdownCalledFromManaged;
-    BOOL                            m_fInitialized;
-    MANAGED_APPLICATION_STATUS      m_status;
     std::unique_ptr<InProcessOptions> m_pConfig;
 
     static IN_PROCESS_APPLICATION*  s_Application;
 
-    std::unique_ptr<IOutputManager> m_pLoggerProvider;
+    std::unique_ptr<BaseOutputManager> m_pLoggerProvider;
 
-    static const LPCSTR             s_exeLocationParameterName;
-
-    static
-    VOID
-    ExecuteAspNetCoreProcess(
-        _In_ LPVOID pContext
-    );
-
-    HRESULT
-    SetEnvironementVariablesOnWorkerProcess(
-        VOID
-    );
-
-    HRESULT
-    RunDotnetApplication(
-        DWORD argc,
-        CONST PCWSTR* argv,
-        hostfxr_main_fn pProc
-    );
-
-    static
-    DWORD WINAPI
-    DoShutDown(
-        LPVOID lpParam
-    );
+    inline static const LPCSTR      s_exeLocationParameterName = "InProcessExeLocation";
 
     VOID
-    ShutDownInternal(
-        VOID
-    );
+    UnexpectedThreadExit(const ExecuteClrContext& context) const;
+
+    HRESULT
+    SetEnvironmentVariablesOnWorkerProcess();
+
+    void
+    StopClr();
+
+    static
+    void
+    ClrThreadEntryPoint(const std::shared_ptr<ExecuteClrContext> &context);
+
+    static
+    void
+    ExecuteClr(const std::shared_ptr<ExecuteClrContext> &context);
+
+    // Allows to override call to hostfxr_main with custom callback
+    // used in testing
+    inline static hostfxr_main_fn  s_fMainCallback = nullptr;
 };

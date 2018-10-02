@@ -18,6 +18,7 @@ public:
         _In_ IHttpContext   *pW3Context,
         _In_ PFN_REQUEST_HANDLER pRequestHandler,
         _In_ void * pRequestHandlerContext,
+        _In_ PFN_DISCONNECT_HANDLER m_DisconnectHandler,
         _In_ PFN_ASYNC_COMPLETION_HANDLER pAsyncCompletion);
 
     ~IN_PROCESS_HANDLER() override = default;
@@ -35,14 +36,10 @@ public:
 
     __override
     VOID
-    TerminateRequest(
-        bool    fClientInitiated
-    ) override;
-    
+    NotifyDisconnect() override;
+
     IHttpContext*
-    QueryHttpContext(
-        VOID
-    ) const
+    QueryHttpContext() const
     {
         return m_pW3Context;
     }
@@ -53,9 +50,7 @@ public:
     );
 
     VOID
-    IndicateManagedRequestComplete(
-        VOID
-    );
+    IndicateManagedRequestComplete();
 
     VOID
     SetAsyncCompletionStatus(
@@ -68,11 +63,11 @@ public:
 
     static
     HRESULT
-    StaticInitialize(VOID);
+    StaticInitialize();
 
     static
     void
-    StaticTerminate(VOID);
+    StaticTerminate();
 
 private:
     REQUEST_NOTIFICATION_STATUS
@@ -86,6 +81,6 @@ private:
     PFN_REQUEST_HANDLER         m_pRequestHandler;
     void*                       m_pRequestHandlerContext;
     PFN_ASYNC_COMPLETION_HANDLER m_pAsyncCompletionHandler;
-
+    PFN_DISCONNECT_HANDLER       m_pDisconnectHandler;
     static ALLOC_CACHE_HANDLER *   sm_pAlloc;
 };

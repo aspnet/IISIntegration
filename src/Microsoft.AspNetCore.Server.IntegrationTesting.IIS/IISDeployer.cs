@@ -23,7 +23,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
     {
         private const string DetailedErrorsEnvironmentVariable = "ASPNETCORE_DETAILEDERRORS";
 
-        private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(60);
         private static readonly TimeSpan _retryDelay = TimeSpan.FromMilliseconds(200);
 
         private CancellationTokenSource _hostShutdownToken = new CancellationTokenSource();
@@ -88,7 +88,7 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                     !IISDeploymentParameters.HandlerSettings.ContainsKey("debugFile"))
                 {
                     _debugLogFile = Path.GetTempFileName();
-                    IISDeploymentParameters.HandlerSettings["debugLevel"] = "4";
+                    IISDeploymentParameters.HandlerSettings["debugLevel"] = "file";
                     IISDeploymentParameters.HandlerSettings["debugFile"] = _debugLogFile;
                 }
 
@@ -115,6 +115,10 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
 
         protected override IEnumerable<Action<XElement, string>> GetWebConfigActions()
         {
+            yield return WebConfigHelpers.AddOrModifyAspNetCoreSection(
+                key: "hostingModel",
+                value: DeploymentParameters.HostingModel.ToString());
+
             if (DeploymentParameters.ApplicationType == ApplicationType.Portable)
             {
                 yield return WebConfigHelpers.AddOrModifyAspNetCoreSection(
@@ -126,14 +130,11 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                 key: "modules",
                 value: DeploymentParameters.AncmVersion.ToString());
 
-
             foreach (var action in base.GetWebConfigActions())
             {
                 yield return action;
             }
         }
-
-
 
         private void GetLogsFromFile()
         {
@@ -254,6 +255,11 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                 }
 
                 HostProcess = Process.GetProcessById(workerProcess.ProcessId);
+
+                // Ensure w3wp.exe is killed if test process termination is non-graceful.
+                // Prevents locked files when stop debugging unit test.
+                ProcessTracker.Add(HostProcess);
+
                 // cache the process start time for verifying log file name.
                 var _ = HostProcess.StartTime;
 
@@ -351,10 +357,27 @@ namespace Microsoft.AspNetCore.Server.IntegrationTesting.IIS
                         throw new InvalidOperationException("Site not stopped yet");
                     }
 
-                    if (appPool.WorkerProcesses != null && appPool.WorkerProcesses.Any(wp => wp.State == WorkerProcessState.Running ||
-                                                          wp.State == WorkerProcessState.Stopping))
+                    try
                     {
-                        throw new InvalidOperationException("WorkerProcess not stopped yet");
+                        if (appPool.WorkerProcesses != null &&
+                            appPool.WorkerProcesses.Any(wp =>
+                                wp.State == WorkerProcessState.Running ||
+                                wp.State == WorkerProcessState.Stopping))
+                        {
+                            throw new InvalidOperationException("WorkerProcess not stopped yet");
+                        }
+
+                    }
+                    // If WAS was stopped for some reason appPool.WorkerProcesses
+                    // would throw UnauthorizedAccessException.
+                    // check if it's the case and continue shutting down deployer
+                    catch (UnauthorizedAccessException)
+                    {
+                        var serviceController = new ServiceController("was");
+                        if (serviceController.Status != ServiceControllerStatus.Stopped)
+                        {
+                            throw;
+                        }
                     }
 
                     if (!HostProcess.HasExited)

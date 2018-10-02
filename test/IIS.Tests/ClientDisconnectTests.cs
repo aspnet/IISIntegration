@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.AspNetCore.Testing.xunit;
 using Microsoft.Extensions.Logging.Testing;
@@ -14,15 +15,15 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
 {
     [SkipIfHostableWebCoreNotAvailable]
     [OSSkipCondition(OperatingSystems.Windows, WindowsVersions.Win7, "https://github.com/aspnet/IISIntegration/issues/866")]
-    public class ClientDisconnectTests : LoggedTest
+    public class ClientDisconnectTests : StrictTestServerTests
     {
-         
-        [ConditionalFact(Skip = "See: https://github.com/aspnet/IISIntegration/issues/1075")]
+
+        [ConditionalFact]
         public async Task WritesSucceedAfterClientDisconnect()
         {
-            var requestStartedCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var clientDisconnectedCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var requestCompletedCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var requestStartedCompletionSource = CreateTaskCompletionSource();
+            var clientDisconnectedCompletionSource = CreateTaskCompletionSource();
+            var requestCompletedCompletionSource = CreateTaskCompletionSource();
 
             var data = new byte[1024];
             using (var testServer = await TestServer.Create(
@@ -41,19 +42,59 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 using (var connection = testServer.CreateConnection())
                 {
                     await SendContentLength1Post(connection);
-                    await requestStartedCompletionSource.Task.TimeoutAfterDefault();
+                    await requestStartedCompletionSource.Task.DefaultTimeout();
                 }
                 clientDisconnectedCompletionSource.SetResult(true);
 
-                await requestCompletedCompletionSource.Task.TimeoutAfterDefault();
+                await requestCompletedCompletionSource.Task.DefaultTimeout();
             }
         }
 
-        [ConditionalFact(Skip = "See: https://github.com/aspnet/IISIntegration/issues/1075")]
+        [ConditionalFact]
+        public async Task WritesCancelledWhenUsingAbortedToken()
+        {
+            var requestStartedCompletionSource = CreateTaskCompletionSource();
+            var requestCompletedCompletionSource = CreateTaskCompletionSource();
+
+            Exception exception = null;
+
+            var data = new byte[1];
+            using (var testServer = await TestServer.Create(async ctx =>
+            {
+                requestStartedCompletionSource.SetResult(true);
+                try
+                {
+                    while (true)
+                    {
+                        await ctx.Response.Body.WriteAsync(data, ctx.RequestAborted);
+                    }
+                }
+                catch (Exception e)
+                {
+                    exception = e;
+                }
+
+                requestCompletedCompletionSource.SetResult(true);
+            }, LoggerFactory))
+            {
+                using (var connection = testServer.CreateConnection())
+                {
+                    await SendContentLength1Post(connection);
+
+                    await requestStartedCompletionSource.Task.DefaultTimeout();
+                }
+
+                await requestCompletedCompletionSource.Task.DefaultTimeout();
+
+                Assert.IsType<OperationCanceledException>(exception);
+            }
+        }
+
+        [ConditionalFact]
         public async Task ReadThrowsAfterClientDisconnect()
         {
-            var requestStartedCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var requestCompletedCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var requestStartedCompletionSource = CreateTaskCompletionSource();
+            var requestCompletedCompletionSource = CreateTaskCompletionSource();
 
             Exception exception = null;
 
@@ -76,21 +117,21 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 using (var connection = testServer.CreateConnection())
                 {
                     await SendContentLength1Post(connection);
-                    await requestStartedCompletionSource.Task.TimeoutAfterDefault();
+                    await requestStartedCompletionSource.Task.DefaultTimeout();
                 }
 
-                await requestCompletedCompletionSource.Task.TimeoutAfterDefault();
+                await requestCompletedCompletionSource.Task.DefaultTimeout();
             }
 
-            Assert.IsType<IOException>(exception);
-            Assert.Equal("Native IO operation failed", exception.Message);
+            Assert.IsType<ConnectionResetException>(exception);
+            Assert.Equal("The client has disconnected", exception.Message);
         }
 
         [ConditionalFact(Skip = "See: https://github.com/aspnet/IISIntegration/issues/1075")]
         public async Task WriterThrowsCancelledException()
         {
-            var requestStartedCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var requestCompletedCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var requestStartedCompletionSource = CreateTaskCompletionSource();
+            var requestCompletedCompletionSource = CreateTaskCompletionSource();
 
             Exception exception = null;
             var cancellationTokenSource = new CancellationTokenSource();
@@ -103,7 +144,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 {
                     while (true)
                     {
-                        await ctx.Response.Body.WriteAsync(data, cancellationTokenSource.Token);   
+                        await ctx.Response.Body.WriteAsync(data, cancellationTokenSource.Token);
                     }
                 }
                 catch (Exception e)
@@ -118,20 +159,19 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 {
                     await SendContentLength1Post(connection);
 
-                    await requestStartedCompletionSource.Task.TimeoutAfterDefault();
+                    await requestStartedCompletionSource.Task.DefaultTimeout();
                     cancellationTokenSource.Cancel();
-                    await requestCompletedCompletionSource.Task.TimeoutAfterDefault();
+                    await requestCompletedCompletionSource.Task.DefaultTimeout();
                 }
 
                 Assert.IsType<OperationCanceledException>(exception);
             }
         }
-
         [ConditionalFact(Skip = "See: https://github.com/aspnet/IISIntegration/issues/1075")]
         public async Task ReaderThrowsCancelledException()
         {
-            var requestStartedCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var requestCompletedCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var requestStartedCompletionSource = CreateTaskCompletionSource();
+            var requestCompletedCompletionSource = CreateTaskCompletionSource();
 
             Exception exception = null;
             var cancellationTokenSource = new CancellationTokenSource();
@@ -155,14 +195,86 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
                 using (var connection = testServer.CreateConnection())
                 {
                     await SendContentLength1Post(connection);
-                    await requestStartedCompletionSource.Task.TimeoutAfterDefault();
+                    await requestStartedCompletionSource.Task.DefaultTimeout();
                     cancellationTokenSource.Cancel();
-                    await requestCompletedCompletionSource.Task.TimeoutAfterDefault();
+                    await requestCompletedCompletionSource.Task.DefaultTimeout();
                 }
                 Assert.IsType<OperationCanceledException>(exception);
             }
         }
 
+        [ConditionalFact]
+        public async Task ReaderThrowsResetExceptionOnInvalidBody()
+        {
+            var requestStartedCompletionSource = CreateTaskCompletionSource();
+            var requestCompletedCompletionSource = CreateTaskCompletionSource();
+
+            Exception exception = null;
+
+            var data = new byte[1024];
+            using (var testServer = await TestServer.Create(async ctx =>
+            {
+                requestStartedCompletionSource.SetResult(true);
+                try
+                {
+                    await ctx.Request.Body.ReadAsync(data);
+                }
+                catch (Exception e)
+                {
+                    exception = e;
+                }
+
+                requestCompletedCompletionSource.SetResult(true);
+            }, LoggerFactory))
+            {
+                using (var connection = testServer.CreateConnection())
+                {
+                    await connection.Send(
+                        "POST / HTTP/1.1",
+                        "Transfer-Encoding: chunked",
+                        "Host: localhost",
+                        "Connection: close",
+                        "",
+                        "");
+
+                    await requestStartedCompletionSource.Task;
+                    await connection.Send(
+                        "ZZZZZZZZZZZZZ");
+
+                    await connection.Receive(
+                        "HTTP/1.1 400 Bad Request",
+                        ""
+                        );
+
+                }
+                await requestCompletedCompletionSource.Task.DefaultTimeout();
+            }
+
+            Assert.IsType<ConnectionResetException>(exception);
+            Assert.Equal("The client has disconnected", exception.Message);
+        }
+
+        [ConditionalFact]
+        public async Task RequestAbortedIsTrippedWithoutIO()
+        {
+            var requestStarted = CreateTaskCompletionSource();
+            var requestAborted = CreateTaskCompletionSource();
+
+            using (var testServer = await TestServer.Create(
+                async ctx => {
+                    ctx.RequestAborted.Register(() => requestAborted.SetResult(true));
+                    requestStarted.SetResult(true);
+                    await requestAborted.Task;
+                }, LoggerFactory))
+            {
+                using (var connection = testServer.CreateConnection())
+                {
+                    await SendContentLength1Post(connection);
+                    await requestStarted.Task;
+                }
+                await requestAborted.Task;
+            }
+        }
         private static async Task SendContentLength1Post(TestConnection connection)
         {
             await connection.Send(

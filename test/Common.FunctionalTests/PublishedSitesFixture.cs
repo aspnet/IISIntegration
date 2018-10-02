@@ -12,7 +12,7 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
     /// This type just maps collection names to available fixtures
     /// </summary>
     [CollectionDefinition(Name)]
-    public class PublishedSitesCollection : ICollectionFixture<PublishedSitesFixture>
+    public class PublishedSitesCollection : ICollectionFixture<PublishedSitesFixture>, ICollectionFixture<ClientCertificateFixture>
     {
         public const string Name = nameof(PublishedSitesCollection);
     }
@@ -21,15 +21,11 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
     {
         public CachingApplicationPublisher InProcessTestSite { get; } = new CachingApplicationPublisher(Helpers.GetInProcessTestSitesPath());
         public CachingApplicationPublisher OutOfProcessTestSite { get; } = new CachingApplicationPublisher(Helpers.GetOutOfProcessTestSitesPath());
-        public CachingApplicationPublisher StartupExceptionWebsite { get; } = new CachingApplicationPublisher(Helpers.GetTestWebSitePath("StartupExceptionWebsite"));
-        public CachingApplicationPublisher OverriddenServerWebSite { get; } = new CachingApplicationPublisher(Helpers.GetTestWebSitePath("OverriddenServerWebSite"));
 
         public void Dispose()
         {
             InProcessTestSite.Dispose();
             OutOfProcessTestSite.Dispose();
-            StartupExceptionWebsite.Dispose();
-            OverriddenServerWebSite.Dispose();
         }
 
         public IISDeploymentParameters GetBaseDeploymentParameters(HostingModel hostingModel = HostingModel.InProcess, bool publish = false)

@@ -15,11 +15,26 @@ public:
     APPLICATION(const APPLICATION&) = delete;
     const APPLICATION& operator=(const APPLICATION&) = delete;
 
-    APPLICATION_STATUS
-    QueryStatus() override
+    HRESULT
+    TryCreateHandler(
+        _In_  IHttpContext       *pHttpContext,
+        _Outptr_result_maybenull_ IREQUEST_HANDLER  **pRequestHandler) override
     {
-        return m_fStopCalled ? APPLICATION_STATUS::RECYCLED : APPLICATION_STATUS::RUNNING;
+        *pRequestHandler = nullptr;
+
+        if (m_fStopCalled)
+        {
+            return S_FALSE;
+        }
+
+        return CreateHandler(pHttpContext, pRequestHandler);
     }
+
+    virtual
+    HRESULT
+    CreateHandler(
+        _In_ IHttpContext       *pHttpContext,
+        _Outptr_opt_ IREQUEST_HANDLER  **pRequestHandler) = 0;
 
     APPLICATION(const IHttpApplication& pHttpApplication)
         : m_fStopCalled(false),
@@ -56,7 +71,7 @@ public:
     }
 
     VOID
-    ReferenceApplication() override
+    ReferenceApplication() noexcept override
     {
         DBG_ASSERT(m_cRefs > 0);
 
@@ -64,7 +79,7 @@ public:
     }
 
     VOID
-    DereferenceApplication() override
+    DereferenceApplication() noexcept override
     {
         DBG_ASSERT(m_cRefs > 0);
 
@@ -75,25 +90,25 @@ public:
     }
 
     const std::wstring&
-    QueryApplicationId() const
+    QueryApplicationId() const noexcept
     {
         return m_applicationId;
     }
 
     const std::wstring&
-    QueryApplicationPhysicalPath() const
+    QueryApplicationPhysicalPath() const noexcept
     {
         return m_applicationPhysicalPath;
     }
 
     const std::wstring&
-    QueryApplicationVirtualPath() const
+    QueryApplicationVirtualPath() const noexcept
     {
         return m_applicationVirtualPath;
     }
 
     const std::wstring&
-    QueryConfigPath() const
+    QueryConfigPath() const noexcept
     {
         return m_applicationConfigPath;
     }

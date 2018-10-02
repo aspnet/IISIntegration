@@ -16,6 +16,7 @@ register_callbacks(
     _In_ IN_PROCESS_APPLICATION* pInProcessApplication,
     _In_ PFN_REQUEST_HANDLER request_handler,
     _In_ PFN_SHUTDOWN_HANDLER shutdown_handler,
+    _In_ PFN_DISCONNECT_HANDLER disconnect_handler,
     _In_ PFN_ASYNC_COMPLETION_HANDLER async_completion_handler,
     _In_ VOID* pvRequstHandlerContext,
     _In_ VOID* pvShutdownHandlerContext
@@ -29,6 +30,7 @@ register_callbacks(
     pInProcessApplication->SetCallbackHandles(
         request_handler,
         shutdown_handler,
+        disconnect_handler,
         async_completion_handler,
         pvRequstHandlerContext,
         pvShutdownHandlerContext
@@ -84,6 +86,19 @@ http_get_server_variable(
     }
 Finished:
     return hr;
+}
+
+EXTERN_C __MIDL_DECLSPEC_DLLEXPORT
+HRESULT
+http_set_server_variable(
+    _In_ IN_PROCESS_HANDLER* pInProcessHandler,
+    _In_ PCSTR pszVariableName,
+    _In_ PCWSTR pszVariableValue
+)
+{
+    return pInProcessHandler
+        ->QueryHttpContext()
+        ->SetServerVariable(pszVariableName, pszVariableValue);
 }
 
 EXTERN_C __MIDL_DECLSPEC_DLLEXPORT
@@ -184,7 +199,7 @@ http_get_application_properties(
         return E_FAIL;
     }
 
-    auto pConfiguration = pInProcessApplication->QueryConfig();
+    const auto& pConfiguration = pInProcessApplication->QueryConfig();
 
     pIISCofigurationData->pInProcessApplication = pInProcessApplication;
     pIISCofigurationData->pwzFullApplicationPath = SysAllocString(pInProcessApplication->QueryApplicationPhysicalPath().c_str());
@@ -398,6 +413,27 @@ http_cancel_io(
 )
 {
     return pInProcessHandler->QueryHttpContext()->CancelIo();
+}
+
+EXTERN_C __MIDL_DECLSPEC_DLLEXPORT
+HRESULT
+http_disable_buffering(
+    _In_ IN_PROCESS_HANDLER* pInProcessHandler
+)
+{
+    pInProcessHandler->QueryHttpContext()->GetResponse()->DisableBuffering();
+
+    return S_OK;
+}
+
+EXTERN_C __MIDL_DECLSPEC_DLLEXPORT
+HRESULT
+http_close_connection(
+    _In_ IN_PROCESS_HANDLER* pInProcessHandler
+)
+{
+    pInProcessHandler->QueryHttpContext()->GetResponse()->ResetConnection();
+    return S_OK;
 }
 
 EXTERN_C __MIDL_DECLSPEC_DLLEXPORT
