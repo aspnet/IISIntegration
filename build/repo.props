@@ -3,7 +3,6 @@
 
   <PropertyGroup>
     <AssemblySigningCertName>Microsoft</AssemblySigningCertName>
-    <AncmZipOutputPath>$(BuildDir)AspNetCoreModule.zip</AncmZipOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
