@@ -52,11 +52,12 @@
     <Tooling_NewtonsoftJsonPackageVersion>9.0.1</Tooling_NewtonsoftJsonPackageVersion>
     <XunitPackageVersion>2.3.1</XunitPackageVersion>
     <XunitRunnerVisualStudioPackageVersion>2.4.0</XunitRunnerVisualStudioPackageVersion>
+
     <MicrosoftAspNetCoreAuthenticationCore21PackageVersion>2.1.0</MicrosoftAspNetCoreAuthenticationCore21PackageVersion>
-    <MicrosoftAspNetCoreConnectionsAbstractionsPackageVersion>2.1.0</MicrosoftAspNetCoreConnectionsAbstractionsPackageVersion>
+    <MicrosoftAspNetCoreConnectionsAbstractions21PackageVersion>2.1.0</MicrosoftAspNetCoreConnectionsAbstractions21PackageVersion>
     <MicrosoftAspNetCoreHostingAbstractions21PackageVersion>2.1.0</MicrosoftAspNetCoreHostingAbstractions21PackageVersion>
     <MicrosoftAspNetCoreHttpSysSources21PackageVersion>2.1.0</MicrosoftAspNetCoreHttpSysSources21PackageVersion>
-    <SystemIOPipelines21PackageVersion>4.5.0</SystemIOPipelines21PackageVersion>
+    <SystemIOPipelines21PackageVersion>4.5.2</SystemIOPipelines21PackageVersion>
     <SystemSecurityPrincipalWindows21PackageVersion>4.5.0</SystemSecurityPrincipalWindows21PackageVersion>
   </PropertyGroup>
   <Import Project="$(DotNetPackageVersionPropsPath)" Condition=" '$(DotNetPackageVersionPropsPath)' != '' " />
