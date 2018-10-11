@@ -4,15 +4,22 @@
 #include "DisconnectHandler.h"
 #include "exceptions.h"
 #include "proxymodule.h"
+#include "SRWExclusiveLock.h"
 
 void DisconnectHandler::NotifyDisconnect()
 {
     try
     {
-        const auto module = m_pModule.exchange(nullptr);
-        if (module != nullptr)
+        std::unique_ptr<IREQUEST_HANDLER, IREQUEST_HANDLER_DELETER> pHandler;
         {
-            module ->NotifyDisconnect();
+            SRWExclusiveLock lock(m_handlerLock);
+            m_pHandler.swap(pHandler);
+            m_disconnectFired = true;
+        }
+
+        if (pHandler != nullptr)
+        {
+            pHandler->NotifyDisconnect();
         }
     }
     catch (...)
@@ -23,11 +30,28 @@ void DisconnectHandler::NotifyDisconnect()
 
 void DisconnectHandler::CleanupStoredContext() noexcept
 {
-    SetHandler(nullptr);
     delete this;
 }
 
-void DisconnectHandler::SetHandler(ASPNET_CORE_PROXY_MODULE * module) noexcept
+void DisconnectHandler::SetHandler(std::unique_ptr<IREQUEST_HANDLER, IREQUEST_HANDLER_DELETER> handler)
 {
-    m_pModule = module;
+    IREQUEST_HANDLER* pHandler = nullptr;
+    {
+        SRWExclusiveLock lock(m_handlerLock);
+
+        handler.swap(m_pHandler);
+        pHandler = m_pHandler.get();
+    }
+
+    assert(pHandler != nullptr);
+
+    if (pHandler != nullptr && (m_disconnectFired || m_pHttpConnection != nullptr && !m_pHttpConnection->IsConnected()))
+    {
+        pHandler->NotifyDisconnect();
+    }
+}
+
+void DisconnectHandler::RemoveHandler() noexcept
+{
+    m_pHandler = nullptr;
 }
