@@ -191,7 +191,6 @@ namespace Microsoft.AspNetCore.Server.IIS.FunctionalTests
 
         [ConditionalTheory]
         [InlineData(HostingModel.InProcess)]
-        [InlineData(HostingModel.OutOfProcess)]
         public async Task AppOfflineAddedAndRemovedStress(HostingModel hostingModel)
         {
             var deploymentResult = await AssertStarts(hostingModel);
