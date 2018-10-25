@@ -96,5 +96,25 @@ namespace Microsoft.AspNetCore.Server.IISIntegration.FunctionalTests
             var responseText = await response.Content.ReadAsStringAsync();
             Assert.Contains("500.30 - ANCM In-Process Start Failure", responseText);
         }
+
+        [ConditionalFact]
+        public async Task ThrowInMain()
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                var deploymentParameters = _fixture.GetBaseDeploymentParameters(_fixture.InProcessTestSite, publish: true);
+                deploymentParameters.TransformArguments((a, _) => $"{a} Throw");
+
+                var deploymentResult = await DeployAsync(deploymentParameters);
+
+                var response = await deploymentResult.HttpClient.GetAsync("/HelloWorld");
+                Assert.False(response.IsSuccessStatusCode);
+                Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+
+                var responseText = await response.Content.ReadAsStringAsync();
+                Assert.Contains("500.30 - ANCM In-Process Start Failure", responseText);
+                StopServer();
+            }
+        }
     }
 }
