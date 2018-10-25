@@ -15,6 +15,9 @@ public:
         IHttpServer& pHttpServer,
         IHttpApplication& pHttpApplication);
 
+    void
+    RecycleWorkerProcess();
+
     ~InProcessApplicationBase() = default;
 
     VOID StopInternal(bool fServerInitiated) override;
@@ -22,5 +25,6 @@ public:
 protected:
     BOOL m_fRecycleCalled;
     IHttpServer& m_pHttpServer;
+    SRWLOCK recycleProcessLock;
 };
 

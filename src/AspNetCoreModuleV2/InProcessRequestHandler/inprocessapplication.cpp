@@ -45,6 +45,7 @@ IN_PROCESS_APPLICATION::~IN_PROCESS_APPLICATION()
 VOID
 IN_PROCESS_APPLICATION::StopInternal(bool fServerInitiated)
 {
+    RecycleWorkerProcess();
     StopClr();
     InProcessApplicationBase::StopInternal(fServerInitiated);
 }
