@@ -53,7 +53,7 @@
 
   <Target Name="PrepareInjectionApp" Condition="'$(InProcessTestSite)' == 'true'">
     <PropertyGroup>
-      <InjectDepsAssembly>$(MSBuildThisFileDirectory)..\test\TestTasks\bin\$(Configuration)\$(TargetFramework)\TestTasks</InjectDepsAssembly>
+      <InjectDepsAssembly>$(MSBuildThisFileDirectory)..\test\FunctionalTests\TestTasks\bin\$(Configuration)\$(TargetFramework)\TestTasks</InjectDepsAssembly>
       <InjectDepsApp Condition="'$(TargetFramework)' == 'net461'">$(InjectDepsAssembly)</InjectDepsApp>
       <InjectDepsArguments>"win7-$(NativePlatform)" "$(AncmInProcessRHPath)"</InjectDepsArguments>
     </PropertyGroup>

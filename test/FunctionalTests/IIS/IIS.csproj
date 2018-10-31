@@ -26,7 +26,7 @@
 
   <ItemGroup>
     <Compile Include="..\Common.FunctionalTests\**\*.cs" />
-    <Compile Include="..\IIS.Shared.FunctionalTests\**\*.cs" />
+    <Compile Include="..\IIS.Shared\**\*.cs" />
   </ItemGroup>
 
   <Import Project="$(RepositoryRoot)\build\functional-test-assets.targets" />

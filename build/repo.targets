@@ -125,7 +125,7 @@
 
   <Target Name="PackageStressTestApp">
     <PropertyGroup>
-      <StressAppBasePath>$(MSBuildThisFileDirectory)..\test\WebSites\StressTestWebSite\</StressAppBasePath>
+      <StressAppBasePath>$(RepositoryRoot)test\FunctionalTests\WebSites\StressTestWebSite\</StressAppBasePath>
       <StressAppPublishPath>$(StressAppBasePath)bin\published\</StressAppPublishPath>
     </PropertyGroup>
 

@@ -26,13 +26,13 @@
     <ProjectReference Include="$(RepositoryRoot)\src\Microsoft.AspNetCore.Server.IISIntegration\Microsoft.AspNetCore.Server.IISIntegration.csproj" />
     <ProjectReference Include="$(RepositoryRoot)\test\FunctionalTests\IISExpress\IISExpress.csproj" />
     <ProjectReference Include="$(RepositoryRoot)\test\UnitTests\IIS.Tests\IIS.Tests.csproj" />
-    <ProjectReference Include="$(RepositoryRoot)\FunctionalTests\test\FunctionalTests\WebSites\InProcessWebSite\InProcessWebSite.csproj">
+    <ProjectReference Include="$(RepositoryRoot)\test\FunctionalTests\WebSites\InProcessWebSite\InProcessWebSite.csproj">
       <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="$(RepositoryRoot)\FunctionalTests\test\FunctionalTests\WebSites\OutOfProcessWebSite\OutOfProcessWebSite.csproj">
+    <ProjectReference Include="$(RepositoryRoot)\test\FunctionalTests\WebSites\OutOfProcessWebSite\OutOfProcessWebSite.csproj">
       <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="$(RepositoryRoot)\FunctionalTests\test\FunctionalTests\WebSites\StressTestWebSite\StressTestWebSite.csproj">
+    <ProjectReference Include="$(RepositoryRoot)\test\FunctionalTests\WebSites\StressTestWebSite\StressTestWebSite.csproj">
       <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
