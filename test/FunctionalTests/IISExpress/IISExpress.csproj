@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(RepositoryRoot)src\Microsoft.AspNetCore.Server.IntegrationTesting.IIS\Microsoft.AspNetCore.Server.IntegrationTesting.IIS.csproj" />
-    <ProjectReference Include="..\..\Common.Tests\Common.Tests.csproj" />
+    <ProjectReference Include="$(RepositoryRoot)test\Common.Tests\Common.Tests.csproj" />
     <ProjectReference Include="..\WebSites\**\*.csproj">
       <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>

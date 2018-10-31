@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Common.Tests\Common.Tests.csproj" />
-    <ProjectReference Include="..\WebSites\InProcessForwardsCompatWebSite\InProcessWebSite.csproj">
+    <ProjectReference Include="$(RepositoryRoot)test\Common.Tests\Common.Tests.csproj" />
       <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\WebSites\OutOfProcessWebSite\OutOfProcessWebSite.csproj">
