@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Microsoft.AspNetCore.Server.IntegrationTesting.IIS\Microsoft.AspNetCore.Server.IntegrationTesting.IIS.csproj" />
+    <ProjectReference Include="$(RepositoryRoot)\src\Microsoft.AspNetCore.Server.IntegrationTesting.IIS\Microsoft.AspNetCore.Server.IntegrationTesting.IIS.csproj" />
     <ProjectReference Include="..\Common.Tests\Common.Tests.csproj" />
     <ProjectReference Include="..\WebSites\**\*.csproj">
       <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
@@ -21,7 +21,7 @@
     <Compile Include="..\Common.FunctionalTests\**\*.cs" />
   </ItemGroup>
 
-  <Import Project="..\..\build\functional-test-assets.targets" />
+  <Import Project="$(RepositoryRoot)\build\functional-test-assets.targets" />
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Server.IntegrationTesting" Version="$(MicrosoftAspNetCoreServerIntegrationTestingPackageVersion)" />

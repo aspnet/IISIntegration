@@ -49,7 +49,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{7E80C58E
 		build\testsite.props = build\testsite.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IISExpress.FunctionalTests", "test\IISExpress.FunctionalTests\IISExpress.FunctionalTests.csproj", "{4E3E1F5C-CD52-4CC0-A35F-D1FA1685D2FA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IISExpress.FunctionalTests", "test\IISExpress\IISExpress.csproj", "{4E3E1F5C-CD52-4CC0-A35F-D1FA1685D2FA}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7F87406C-A3C8-4139-A68D-E4C344294A67} = {7F87406C-A3C8-4139-A68D-E4C344294A67}
 	EndProjectSection
@@ -71,7 +71,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StressTestWebSite", "test\W
 		{46A8612B-418B-4D70-B3A7-A21DD0627473} = {46A8612B-418B-4D70-B3A7-A21DD0627473}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestTasks", "test\TestTasks\TestTasks.csproj", "{064D860B-4D7C-4B1D-918F-E020F1B99E2A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestTasks", "test\FunctionalTests\TestTasks\TestTasks.csproj", "{064D860B-4D7C-4B1D-918F-E020F1B99E2A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebSites", "WebSites", "{744ACDC6-F6A0-4FF9-9421-F25C5F2DC520}"
 EndProject

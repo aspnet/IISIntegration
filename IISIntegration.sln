@@ -31,7 +31,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.AspNetCore.Server
 		{46A8612B-418B-4D70-B3A7-A21DD0627473} = {46A8612B-418B-4D70-B3A7-A21DD0627473}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IISIntegration.Tests", "test\UnitTests\IISIntegration.Tests.csproj", "{4106DB10-E09F-480E-9CE6-B39235512EE6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IISIntegration.Tests", "test\UnitTests\IISIntegration.Tests\IISIntegration.Tests.csproj", "{4106DB10-E09F-480E-9CE6-B39235512EE6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{7E80C58E-9CC8-450C-8A8D-94FC76428150}"
 	ProjectSection(SolutionItems) = preProject

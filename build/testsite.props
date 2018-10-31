@@ -46,7 +46,7 @@
 
   <!-- Deps file injection-->
   <ItemGroup Condition="('$(InProcessTestSite)' == 'true') AND ('$(ReferenceTestTasks)' != 'false')">
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\test\TestTasks\TestTasks.csproj">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\test\FunctionalTests\TestTasks\TestTasks.csproj">
       <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

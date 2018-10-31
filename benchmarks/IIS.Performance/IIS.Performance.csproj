@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\..\test\Common.FunctionalTests\AppHostConfig\*.config" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\test\FunctionalTests\Common.FunctionalTests\AppHostConfig\*.config" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
@@ -24,15 +24,15 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Microsoft.AspNetCore.Server.IISIntegration\Microsoft.AspNetCore.Server.IISIntegration.csproj" />
-    <ProjectReference Include="..\..\test\IISExpress.FunctionalTests\IISExpress.FunctionalTests.csproj" />
-    <ProjectReference Include="..\..\test\IIS.Tests\IIS.Tests.csproj" />
-    <ProjectReference Include="..\..\test\WebSites\InProcessWebSite\InProcessWebSite.csproj">
+    <ProjectReference Include="..\..\test\FunctionalTests\IISExpress.FunctionalTests\IISExpress.FunctionalTests.csproj" />
+    <ProjectReference Include="..\..\test\UnitTests\IIS.Tests\IIS.Tests.csproj" />
+    <ProjectReference Include="..\..\FunctionalTests\test\WebSites\InProcessWebSite\InProcessWebSite.csproj">
       <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\test\WebSites\OutOfProcessWebSite\OutOfProcessWebSite.csproj">
+    <ProjectReference Include="..\..\FunctionalTests\test\WebSites\OutOfProcessWebSite\OutOfProcessWebSite.csproj">
       <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\test\WebSites\StressTestWebSite\StressTestWebSite.csproj">
+    <ProjectReference Include="..\..\FunctionalTests\test\WebSites\StressTestWebSite\StressTestWebSite.csproj">
       <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
