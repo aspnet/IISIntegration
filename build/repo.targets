@@ -119,7 +119,7 @@
     <PropertyGroup>
       <BuildArgs>-p:Configuration=$(Configuration) -v:m -nologo -clp:NoSummary</BuildArgs>
     </PropertyGroup>
-    <Exec Command="&quot;$(VisualStudioMSBuildx86Path)&quot; &quot;$(RepositoryRoot)test\CommonLibTests\CommonLibTests.vcxproj&quot; /t:Test $(BuildArgs) -p:Platform=%(Platforms.VCPlatform)"
+    <Exec Command="&quot;$(VisualStudioMSBuildx86Path)&quot; &quot;$(RepositoryRoot)test\NativeTests\NativeTests.vcxproj&quot; /t:Test $(BuildArgs) -p:Platform=%(Platforms.VCPlatform)"
       Condition="'$(VisualStudioMSBuildx86Path)' != ''" />
   </Target>
 
