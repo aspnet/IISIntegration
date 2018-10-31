@@ -4,10 +4,10 @@
     <TargetFrameworks>netcoreapp2.2</TargetFrameworks>
   </PropertyGroup>
 
-  <Import Project="$(RepositoryRoot)\build\functional-test-assets.targets" />
+  <Import Project="$(RepositoryRoot)build\functional-test-assets.targets" />
 
   <ItemGroup>
-    <ProjectReference Include="$(RepositoryRoot)\src\Microsoft.AspNetCore.Server.IIS\Microsoft.AspNetCore.Server.IIS.csproj" />
+    <ProjectReference Include="$(RepositoryRoot)src\Microsoft.AspNetCore.Server.IIS\Microsoft.AspNetCore.Server.IIS.csproj" />
     <ProjectReference Include="..\..\Common.Tests\Common.Tests.csproj" />
   </ItemGroup>
 

@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <ExcludeFromTest Include="$(RepositoryRoot)test\FunctionalTests\WebSites\**\*.csproj" />
-    <ExcludeSolutions Include="$(RepositoryRoot)IISIntegration.NoV1.sln" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(SkipIISTests)' == 'true'" >

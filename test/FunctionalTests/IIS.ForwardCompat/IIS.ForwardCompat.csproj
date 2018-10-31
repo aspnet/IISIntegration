@@ -28,7 +28,7 @@
     <Compile Include="..\IIS.Shared\**\*.cs" />
   </ItemGroup>
 
-  <Import Project="$(RepositoryRoot)\build\functional-test-assets.targets" />
+  <Import Project="$(RepositoryRoot)build\functional-test-assets.targets" />
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Server.IntegrationTesting" Version="$(MicrosoftAspNetCoreServerIntegrationTestingPackageVersion)" />
