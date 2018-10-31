@@ -87,12 +87,14 @@ OUT_OF_PROCESS_APPLICATION::SetWebsocketStatus(
     PCWSTR pszTempWebsocketValue;
     DWORD cbLength;
 
-    if (FAILED_LOG(pHttpContext->GetServerVariable("WEBSOCKET_VERSION", &pszTempWebsocketValue, &cbLength)))
+    if (FAILED(pHttpContext->GetServerVariable("WEBSOCKET_VERSION", &pszTempWebsocketValue, &cbLength)))
     {
+        LOG_INFO(L"Websocket support is disabled.");
         m_fWebSocketSupported = WEBSOCKET_STATUS::WEBSOCKET_NOT_SUPPORTED;
     }
     else
     {
+        LOG_INFO(L"Websocket support is enabled.");
         m_fWebSocketSupported = WEBSOCKET_STATUS::WEBSOCKET_SUPPORTED;
     }
 }

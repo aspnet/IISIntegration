@@ -37,7 +37,7 @@ PrintDebugHeader()
 std::wstring
 GetProcessIdString()
 {
-    return format(L"Process Id: %u.", GetCurrentProcessId());
+    return format(L"Process Id: %u", GetCurrentProcessId());
 }
 
 std::wstring

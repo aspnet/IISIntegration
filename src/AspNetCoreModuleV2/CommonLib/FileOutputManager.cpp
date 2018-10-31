@@ -139,7 +139,7 @@ FileOutputManager::Stop()
         fileData.nFileSizeLow == 0) // skip check of nFileSizeHigh
     {
         FindClose(handle);
-        LOG_LAST_ERROR_IF(!DeleteFile(m_logFilePath.c_str()));
+        LOG_LAST_ERROR_IF(!DeleteFile(m_logFilePath.c_str()) && GetLastError() != ERROR_SHARING_VIOLATION);
         return;
     }
 
