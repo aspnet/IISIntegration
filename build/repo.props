@@ -13,19 +13,19 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(SkipIISTests)' == 'true'" >
-      <ExcludeFromTest Include="$(RepositoryRoot)test\IIS.FunctionalTests\*.csproj" />
+      <ExcludeFromTest Include="$(RepositoryRoot)test\IIS\*.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(SkipIISExpressTests)' == 'true'" >
-      <ExcludeFromTest Include="$(RepositoryRoot)test\IISExpress.FunctionalTests\*.csproj" />
+      <ExcludeFromTest Include="$(RepositoryRoot)test\IISExpress\*.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(SkipIISBackwardsCompatibilityTests)' == 'true'" >
-      <ExcludeFromTest Include="$(RepositoryRoot)test\IIS.BackwardsCompatibility.FunctionalTests\*.csproj" />
+      <ExcludeFromTest Include="$(RepositoryRoot)test\IIS.BackCompat\*.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(SkipIISForwardsCompatibilityTests)' == 'true'" >
-      <ExcludeFromTest Include="$(RepositoryRoot)test\IIS.ForwardsCompatibility.FunctionalTests\*.csproj" />
+      <ExcludeFromTest Include="$(RepositoryRoot)test\IIS.ForwardCompat\*.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

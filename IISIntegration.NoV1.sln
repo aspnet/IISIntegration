@@ -56,7 +56,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IISExpress.FunctionalTests"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NativeIISSample", "samples\NativeIISSample\NativeIISSample.csproj", "{9BC4AFCB-325D-4C81-8228-8CF301CE2F97}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InProcessWebSite", "test\WebSites\InProcessWebSite\InProcessWebSite.csproj", "{679FA2A2-898B-4320-884E-C2D294A97CE1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InProcessWebSite", "test\FunctionalTests\WebSites\InProcessWebSite\InProcessWebSite.csproj", "{679FA2A2-898B-4320-884E-C2D294A97CE1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.AspNetCore.Server.IIS", "src\Microsoft.AspNetCore.Server.IIS\Microsoft.AspNetCore.Server.IIS.csproj", "{46A8612B-418B-4D70-B3A7-A21DD0627473}"
 	ProjectSection(ProjectDependencies) = postProject
