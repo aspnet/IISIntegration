@@ -73,7 +73,7 @@
     <ProjectReference Include="..\..\src\AspNetCoreModuleV2\RequestHandlerLib\RequestHandlerLib.vcxproj">
       <Project>{1533e271-f61b-441b-8b74-59fb61df0552}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\gtest\gtest.vcxproj">
+    <ProjectReference Include="gtest\gtest.vcxproj">
       <Project>{cac1267b-8778-4257-aac6-caf481723b01}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\src\AspNetCoreModuleV2\InProcessRequestHandler\InProcessRequestHandler.vcxproj">
